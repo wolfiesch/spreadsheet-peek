@@ -98,7 +98,7 @@ def main() -> None:
         )
 
     print()
-    print("## Ratio (box-drawing vs text export, normalized per row)")
+    print("## Per-row ratio (box-drawing vs text export)")
     box = next(r for r in results if r["label"] == "Box-drawing (5 rows)")
     text = next(r for r in results if r["label"] == "Text export (head -5)")
     ratio = box["tokens_per_row"] / max(1, text["tokens_per_row"])
