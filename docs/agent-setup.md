@@ -2,18 +2,31 @@
 
 Detailed installation for each AI coding agent. If your agent isn't listed, the pattern is the same: paste the content of `SKILL.md` into whatever mechanism your agent uses for persistent system instructions.
 
+## Verification status
+
+Each agent below carries a badge indicating how the integration was confirmed.
+
+| Badge | Meaning |
+|-------|---------|
+| ✅ **Verified** | Skill was loaded into a live session of that agent and the expected behavior was observed directly. Date shown is the last-verified date. |
+| 📖 **Documented** | Install steps follow the agent's published configuration docs, but were not personally round-tripped on real hardware. Works in principle; please open an issue if you hit problems. |
+
+Badges get re-dated whenever the skill, the agent, or the agent's instruction-loading mechanism changes meaningfully.
+
 ## Table of contents
 
-- [Claude Code](#claude-code) (native skill support)
-- [Codex](#codex) (via `AGENTS.md`)
-- [Cursor](#cursor) (via Rules for AI)
-- [Continue](#continue) (via custom system message)
-- [Aider](#aider) (via `.aider.conf.yml`)
+- [Claude Code](#claude-code) ✅ Verified 2026-04-16
+- [Codex](#codex) 📖 Documented
+- [Cursor](#cursor) 📖 Documented
+- [Continue](#continue) 📖 Documented
+- [Aider](#aider) 📖 Documented
 - [Generic / any agent](#generic)
 
 ---
 
 ## Claude Code
+
+> ✅ **Verified 2026-04-16** - Skill loads from `~/.claude/skills/spreadsheet-peek/SKILL.md` in an active Claude Code session; frontmatter description and `filePattern`/`bashPattern` triggers are recognized by the skills index.
 
 Claude Code has native support for skills via the `~/.claude/skills/` directory. The skill's frontmatter (`name`, `description`, `filePattern`, `bashPattern`) is used to auto-invoke it when relevant.
 
@@ -48,6 +61,8 @@ curl -fsSL https://raw.githubusercontent.com/wolfiesch/spreadsheet-peek/master/S
 ---
 
 ## Codex
+
+> 📖 **Documented** - Install steps below follow Codex's published `AGENTS.md` convention. Not yet round-tripped in a live Codex session. If the agent fails to pick up the skill, please open an issue.
 
 Codex reads `AGENTS.md` from the repo root as its persistent instructions. Add a section for spreadsheet-peek:
 
@@ -91,6 +106,8 @@ curl -fsSL https://raw.githubusercontent.com/wolfiesch/spreadsheet-peek/master/S
 
 ## Cursor
 
+> 📖 **Documented** - Install steps below follow Cursor's published Rules for AI and `.cursor/rules/` docs. Not personally round-tripped. PRs with a verification screenshot welcome.
+
 Cursor uses "Rules for AI" (Settings → General → Rules for AI) for persistent instructions. Paste the body of `SKILL.md` (everything after the YAML frontmatter) into that box.
 
 Or use project-level rules:
@@ -108,6 +125,8 @@ Cursor will pick up markdown files in `.cursor/rules/` automatically.
 
 ## Continue
 
+> 📖 **Documented** - Based on Continue's published `config.json` `systemMessage` field. Not personally round-tripped.
+
 Continue uses `~/.continue/config.json`. Add a `systemMessage` entry or append to an existing one:
 
 ```json
@@ -120,6 +139,8 @@ Continue uses `~/.continue/config.json`. Add a `systemMessage` entry or append t
 ---
 
 ## Aider
+
+> 📖 **Documented** - Based on Aider's published `.aider.conf.yml` `read:` mechanism. Not personally round-tripped.
 
 Aider reads `.aider.conf.yml` for configuration. Set `instructions` pointing to a file:
 

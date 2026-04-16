@@ -1,0 +1,117 @@
+name: Benchmark
+
+# Re-measure token costs on every PR that touches SKILL.md, the benchmark
+# harness, or the sample spreadsheet. Posts a comment if the numbers moved
+# vs master so drifts in the token-efficiency claims can't ship silently.
+#
+# Security: uses `pull_request` (not `pull_request_target`), so forked-PR
+# code runs with zero write permissions to the base repo and no secrets.
+
+on:
+  pull_request:
+    paths:
+      - "SKILL.md"
+      - "benchmarks/**"
+      - "examples/**"
+      - ".github/workflows/benchmark.yml"
+
+permissions:
+  pull-requests: write
+  contents: read
+
+env:
+  # Pin xleak version here. Bump when upstream releases changes affect output.
+  XLEAK_VERSION: "0.9.0"
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          path: pr
+
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          path: main
+
+      - name: Cache xleak binary
+        id: cargo-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/xleak
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: xleak-${{ runner.os }}-${{ env.XLEAK_VERSION }}
+
+      - name: Install xleak
+        if: steps.cargo-cache.outputs.cache-hit != 'true'
+        run: cargo install xleak --version "$XLEAK_VERSION"
+
+      - name: Add cargo bin to PATH
+        run: echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Install Python deps
+        run: python3 -m pip install --quiet tiktoken openpyxl
+
+      - name: Run benchmark on PR branch
+        run: python3 pr/benchmarks/measure_tokens.py | tee /tmp/pr.txt
+
+      - name: Run benchmark on master
+        run: python3 main/benchmarks/measure_tokens.py | tee /tmp/main.txt
+
+      - name: Diff benchmarks
+        id: diff
+        run: |
+          if diff -u /tmp/main.txt /tmp/pr.txt > /tmp/bench.diff; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Benchmark unchanged vs master."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Benchmark changed vs master:"
+            cat /tmp/bench.diff
+          fi
+
+      - name: Build comment body
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          {
+            echo '### Benchmark drift detected'
+            echo
+            echo 'The token-cost numbers changed between `master` and this PR.'
+            echo 'If this is expected (e.g. sample file grew), update `README.md`,'
+            echo '`docs/how-it-works.md`, and `SKILL.md` so the cited numbers match.'
+            echo
+            echo '<details><summary>master output</summary>'
+            echo
+            echo '```'
+            cat /tmp/main.txt
+            echo '```'
+            echo '</details>'
+            echo
+            echo '<details open><summary>PR output</summary>'
+            echo
+            echo '```'
+            cat /tmp/pr.txt
+            echo '```'
+            echo '</details>'
+            echo
+            echo '<details><summary>diff</summary>'
+            echo
+            echo '```diff'
+            cat /tmp/bench.diff
+            echo '```'
+            echo '</details>'
+          } > /tmp/comment.md
+
+      - name: Post or update PR comment
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: /tmp/comment.md
+          edit-mode: replace

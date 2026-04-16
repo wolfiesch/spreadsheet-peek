@@ -1,0 +1,62 @@
+name: Bug report
+description: The skill misfires, xleak output is misleading, or the agent doesn't preview when it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. A repro the maintainer can run locally beats any amount of prose.
+
+  - type: input
+    id: agent
+    attributes:
+      label: Agent + version
+      description: Which coding agent hit the bug? Include the version if you know it.
+      placeholder: e.g. Claude Code 2.x, Codex CLI, Cursor 0.40
+    validations:
+      required: true
+
+  - type: input
+    id: xleak-version
+    attributes:
+      label: xleak version
+      description: Output of `xleak --version`
+      placeholder: e.g. xleak 0.8.1
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: |
+        Exact steps to reproduce. If the bug involves a specific spreadsheet
+        layout, a minimal `.xlsx` or CSV attached here helps enormously.
+      placeholder: |
+        1. Install the skill with `install.sh`
+        2. In a fresh Claude Code session, reference `data/q3.xlsx`
+        3. Run ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Paste the agent's actual output or the xleak output that looked wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, shell, terminal emulator if relevant. Paste whatever seems useful.
+      placeholder: macOS 14.5, zsh, Ghostty

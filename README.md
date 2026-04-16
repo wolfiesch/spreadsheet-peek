@@ -42,11 +42,17 @@ Box-drawing output looks pretty but costs real tokens. The skill teaches the age
 uv run --with tiktoken python benchmarks/measure_tokens.py
 ```
 
-Over a long agent session with dozens of spreadsheet inspections, this is the difference between a context window that survives and one that blows up mid-task. Full methodology in [`benchmarks/`](benchmarks/).
+Over a long agent session with dozens of spreadsheet inspections, this is the difference between a context window that survives and one that blows up mid-task. Full methodology in [`benchmarks/`](benchmarks/) and the worked example in [`docs/how-it-works.md`](docs/how-it-works.md).
 
 ## Quick start
 
-Install the dependency:
+One-liner (installs `xleak` + the skill into `~/.claude/skills/spreadsheet-peek/`):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wolfiesch/spreadsheet-peek/master/install.sh | sh
+```
+
+Or manually:
 
 ```bash
 brew install bgreenwell/tap/xleak
@@ -103,6 +109,10 @@ alias peek='xleak -n 20 -w 40'
 alias peekall='xleak -n 0'
 alias peekwide='xleak -n 20 -w 60'
 ```
+
+## Deep dive
+
+For the full technical rationale (why proactive triggers, how the token math works at scale, and how to extend the pattern to PDFs, SQL, and Parquet), read [`docs/how-it-works.md`](docs/how-it-works.md). The embedded screencast also walks through xleak's interactive TUI mode, which most users miss.
 
 ## What's in the skill
 

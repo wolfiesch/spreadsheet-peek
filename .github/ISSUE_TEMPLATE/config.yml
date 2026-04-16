@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Agent setup guide
+    url: https://github.com/wolfiesch/spreadsheet-peek/blob/master/docs/agent-setup.md
+    about: Per-agent installation instructions (Claude Code, Codex, Cursor, Continue, Aider).
+  - name: How it works
+    url: https://github.com/wolfiesch/spreadsheet-peek/blob/master/docs/how-it-works.md
+    about: Technical deep-dive covering proactive triggers, token math, and extending the pattern.

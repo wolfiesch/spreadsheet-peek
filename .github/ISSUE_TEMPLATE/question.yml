@@ -1,0 +1,22 @@
+name: Question
+description: Ask anything. No bad questions. No form police.
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        From CONTRIBUTING.md: *"I'd rather answer the same question 50 times than
+        have someone bounce silently."* So: ask away.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context (optional)
+      description: What are you trying to accomplish? Which agent? Anything else that helps.

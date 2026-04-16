@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest a new proactive trigger, agent integration, benchmark, or doc.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening a feature request, please skim `CONTRIBUTING.md` for the
+        scope guards - the skill is intentionally a thin behavioral wrapper.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What situation is the skill handling poorly (or not at all) today?
+      placeholder: |
+        The agent uses box-drawing mode on every preview even in long sessions,
+        which eats the context window.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: |
+        Concrete change you'd like to see. If it's a new proactive trigger,
+        describe the condition that should fire it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other framings you thought about and rejected, and why.
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This works across multiple AI agents (not Claude Code-specific)
+        - label: This does not require replacing xleak with a different backend
+        - label: This does not add heavy dependencies to the skill
