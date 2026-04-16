@@ -47,14 +47,16 @@ Show inline ASCII table previews of spreadsheet files using `xleak`. This skill 
 
 ## Token Efficiency (IMPORTANT)
 
-xleak's box-drawing output is ~7x larger than raw TSV for the same data due to Unicode border characters. Choose the right mode based on context:
+xleak's box-drawing output uses Unicode border characters that cost real tokens. Choose the right mode based on context:
 
-| Mode | When to use | Token cost |
-|------|-------------|------------|
-| **Box-drawing** (`xleak file -n 15`) | User is looking, readability matters | ~690 tokens for 5 rows |
-| **Text export** (`xleak file --export text \| head -20`) | Context-sensitive, large files, repeated previews | ~54 tokens for 5 rows |
+| Mode | When to use | Token cost (5 rows) |
+|------|-------------|---------------------|
+| **Box-drawing** (`xleak file -n 5`) | User is looking, readability matters | ~593 tokens (~119/row) |
+| **Text export** (`xleak file --export text \| head -5`) | Context-sensitive, large files, repeated previews | ~117 tokens (~23/row) |
 
 **Default rule**: Use box-drawing for the FIRST preview in a conversation (readability). Switch to `--export text | head` for subsequent previews or when context is getting long.
+
+**Measured ratio**: box-drawing is ~5x more expensive per row than text export. The overhead is mostly fixed (header/border lines), so the per-row cost improves with more rows - but text export is still cheaper at every size.
 
 **Note**: `--export text` ignores the `-n` flag and dumps ALL rows. Always pipe through `head -N` to limit output.
 

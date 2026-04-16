@@ -1,0 +1,16 @@
+# Local-only launch drafts (marketing content not for public repo)
+docs/launch-content.md
+
+# Python artifacts from running generate_sample.py / measure_tokens.py
+__pycache__/
+*.pyc
+.venv/
+.uv/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
