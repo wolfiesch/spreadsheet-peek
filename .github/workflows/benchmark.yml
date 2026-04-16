@@ -21,7 +21,8 @@ permissions:
 
 env:
   # Pin xleak version here. Bump when upstream releases changes affect output.
-  XLEAK_VERSION: "0.9.0"
+  # Verified against crates.io on 2026-04-16; bump via `cargo search xleak`.
+  XLEAK_VERSION: "0.2.5"
 
 jobs:
   benchmark:
