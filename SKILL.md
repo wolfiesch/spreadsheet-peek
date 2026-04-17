@@ -1,7 +1,7 @@
 ---
 name: spreadsheet-peek
-description: Inline terminal preview of Excel/CSV/spreadsheet files using xleak. Use proactively when working with .xlsx, .xls, .xlsm, .xlsb, .ods, or .csv files - before data processing, after fixture generation, when debugging table parsing, or when the user references a spreadsheet. Also use when asked to "peek", "preview", "show me the file", or "what does this spreadsheet look like".
-version: 1.2.0
+description: Inline terminal preview of Excel spreadsheets using xleak. Use proactively when working with .xlsx, .xls, .xlsm, .xlsb, or .ods files - before data processing, after fixture generation, when debugging table parsing, or when the user references a spreadsheet. Also use when asked to "peek", "preview", "show me the file", or "what does this spreadsheet look like". For .csv files, see the CSV fallback section below.
+version: 1.3.0
 metadata:
   author: wolfgangs
   filePattern:
@@ -10,6 +10,7 @@ metadata:
     - "**/*.xlsm"
     - "**/*.xlsb"
     - "**/*.ods"
+    - "**/*.csv"
   bashPattern:
     - "xleak"
     - "peek\\b"
@@ -22,7 +23,8 @@ Show inline ASCII table previews of spreadsheet files using `xleak`. This skill 
 ## Prerequisites
 
 - `xleak` must be installed: `brew install bgreenwell/tap/xleak`
-- Supports: `.xlsx`, `.xls`, `.xlsm`, `.xlsb`, `.ods`, `.csv`
+- Supports Excel-family formats: `.xlsx`, `.xls`, `.xlsm`, `.xlsb`, `.ods`
+- `.csv` is **not** handled by `xleak` directly - see [CSV Fallback](#csv-fallback) below
 
 ## When to Invoke (Proactive Triggers)
 
@@ -111,6 +113,39 @@ xleak <file> --export csv
 ```bash
 xleak <file> --export json
 ```
+
+### List Excel tables in a workbook (.xlsx only)
+```bash
+xleak <file> --list-tables
+```
+
+### Extract a specific Excel table by name (.xlsx only)
+```bash
+xleak <file> --table "SalesByRegion" -n 15
+```
+
+## CSV Fallback
+
+`xleak` does **not** read `.csv` files as of 0.2.5 - passing a CSV produces `Error: Cannot detect file format`. For CSVs, use these token-efficient alternatives instead of writing disposable Python:
+
+```bash
+# Quick peek - first 15 rows, raw
+head -15 file.csv
+
+# Pretty-printed with column alignment (handles commas reasonably)
+head -15 file.csv | column -s, -t | head -15
+
+# Large CSV, specific columns only (requires mlr or csvkit)
+mlr --icsv --opprint head -n 15 file.csv         # miller
+csvlook -n file.csv | head -20                    # csvkit
+
+# Row and column dimensions (before deciding how to peek)
+wc -l file.csv && head -1 file.csv | tr , '\n' | wc -l
+```
+
+**Which to use**: `head` is always available and costs zero tokens for the tool invocation. Use `column -s, -t` when columns have consistent widths and no embedded commas. For CSVs with quoted fields, embedded newlines, or BOMs, reach for `mlr` or `csvkit` - plain `head`/`column` will mis-render them.
+
+**If you must use Python** (CSV too messy for shell tools), reach for `csv.DictReader` + `tabulate`, not pandas - pandas has a ~1s import cost and is overkill for a preview.
 
 ## Multi-Sheet Workflow
 

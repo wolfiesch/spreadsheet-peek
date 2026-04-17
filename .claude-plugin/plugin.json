@@ -1,0 +1,22 @@
+{
+  "name": "spreadsheet-peek",
+  "version": "1.3.0",
+  "description": "Teaches AI coding agents to use the xleak CLI for instant inline previews of Excel-family spreadsheets, with proactive triggers, token-efficiency rules, and a CSV fallback baked in.",
+  "author": {
+    "name": "Wolfgang Schoenberger",
+    "url": "https://github.com/wolfiesch"
+  },
+  "homepage": "https://github.com/wolfiesch/spreadsheet-peek",
+  "repository": "https://github.com/wolfiesch/spreadsheet-peek",
+  "license": "MIT",
+  "keywords": [
+    "spreadsheet",
+    "excel",
+    "xlsx",
+    "xleak",
+    "preview",
+    "agent",
+    "skill",
+    "token-efficiency"
+  ]
+}

@@ -14,3 +14,6 @@ __pycache__/
 .vscode/
 .idea/
 *.swp
+
+# Claude Code session hook artifacts
+logs/

@@ -18,7 +18,9 @@ from pathlib import Path
 
 import tiktoken
 
-SAMPLE = Path(__file__).parent.parent / "examples" / "sample-financials.xlsx"
+EXAMPLES = Path(__file__).parent.parent / "examples"
+FINANCIALS = EXAMPLES / "sample-financials.xlsx"
+WIDE = EXAMPLES / "wide-table.xlsx"
 ENC = tiktoken.get_encoding("cl100k_base")
 
 
@@ -58,35 +60,30 @@ def bench(label: str, cmd: list[str]) -> dict:
     }
 
 
-def main() -> None:
-    if not SAMPLE.exists():
-        raise SystemExit(
-            f"Sample file not found: {SAMPLE}\n"
-            f"Run examples/generate_sample.py first."
-        )
-
-    results = [
-        bench(
-            "Box-drawing (5 rows)",
-            ["xleak", str(SAMPLE), "-n", "5"],
-        ),
-        bench(
-            "Box-drawing (15 rows)",
-            ["xleak", str(SAMPLE), "-n", "15"],
-        ),
-        bench(
-            "Text export (head -5)",
-            ["bash", "-c", f"xleak {SAMPLE} --export text | head -5"],
-        ),
-        bench(
-            "Text export (head -15)",
-            ["bash", "-c", f"xleak {SAMPLE} --export text | head -15"],
-        ),
-        bench(
-            "CSV export (head -5)",
-            ["bash", "-c", f"xleak {SAMPLE} --export csv | head -5"],
-        ),
+def benches_for(sample_path: Path, prefix: str) -> list[dict]:
+    """Produce the same suite of benchmarks for a given sample file."""
+    s = str(sample_path)
+    return [
+        bench(f"{prefix} - Box-drawing (5 rows)",  ["xleak", s, "-n", "5"]),
+        bench(f"{prefix} - Box-drawing (15 rows)", ["xleak", s, "-n", "15"]),
+        bench(f"{prefix} - Text export (head -5)",  ["bash", "-c", f"xleak {s} --export text | head -5"]),
+        bench(f"{prefix} - Text export (head -15)", ["bash", "-c", f"xleak {s} --export text | head -15"]),
+        bench(f"{prefix} - CSV export (head -5)",   ["bash", "-c", f"xleak {s} --export csv | head -5"]),
     ]
+
+
+def main() -> None:
+    for sample in (FINANCIALS, WIDE):
+        if not sample.exists():
+            raise SystemExit(
+                f"Sample file not found: {sample}\n"
+                f"Run examples/generate_sample.py and examples/generate_wide_table.py first."
+            )
+
+    results = (
+        benches_for(FINANCIALS, "Financials (7 cols)")
+        + benches_for(WIDE,       "Wide (29 cols)")
+    )
 
     # Print markdown table
     print("| Mode | Tokens | Bytes | Data rows | Tokens/row |")
@@ -98,11 +95,12 @@ def main() -> None:
         )
 
     print()
-    print("## Ratio (box-drawing vs text export, normalized per row)")
-    box = next(r for r in results if r["label"] == "Box-drawing (5 rows)")
-    text = next(r for r in results if r["label"] == "Text export (head -5)")
-    ratio = box["tokens_per_row"] / max(1, text["tokens_per_row"])
-    print(f"Box-drawing is **{ratio:.1f}x** more expensive per row than text export.")
+    print("## Ratios (box-drawing vs text export, normalized per row)")
+    for prefix in ("Financials (7 cols)", "Wide (29 cols)"):
+        box = next(r for r in results if r["label"] == f"{prefix} - Box-drawing (5 rows)")
+        text = next(r for r in results if r["label"] == f"{prefix} - Text export (head -5)")
+        ratio = box["tokens_per_row"] / max(1, text["tokens_per_row"])
+        print(f"- **{prefix}**: box-drawing is **{ratio:.1f}x** more expensive per row than text export.")
 
 
 if __name__ == "__main__":
