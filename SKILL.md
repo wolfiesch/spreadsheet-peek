@@ -148,7 +148,7 @@ csvlook -n file.csv | head -20                    # csvkit
 wc -l file.csv && head -1 file.csv | tr , '\n' | wc -l
 # Accurate dimensions for messy files:
 mlr --icsv --opprint count file.csv              # row count, CSV-aware
-mlr --icsv --opprint --headerless-csv-output head -n 1 file.csv | tr , '\n' | wc -l
+mlr --icsv --opprint put '$columns = NF' then head -n 1 file.csv
 ```
 
 **Which to use**: `head` is always available and costs zero tokens for the tool invocation. Use `column -s, -t` only on simple CSVs where no field contains a comma, a quote, or a newline. For any CSV with quoted fields, embedded newlines, or BOMs, reach for `mlr` or `csvkit` - plain `head`/`column` will mis-render them and `wc`/`tr` will lie about the dimensions.
