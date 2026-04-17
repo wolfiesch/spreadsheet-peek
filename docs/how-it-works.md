@@ -40,15 +40,20 @@ This is the part of the skill that pays the agent-level dividend. The technical 
 
 The next layer is more mechanical. `xleak`'s default output uses Unicode box-drawing characters for borders. They look great in a terminal. They cost real tokens in an agent's context window.
 
-From [`benchmarks/measure_tokens.py`](../benchmarks/measure_tokens.py), measured against [`examples/sample-financials.xlsx`](../examples/sample-financials.xlsx) with `cl100k_base` (GPT-4 tokenizer, a reasonable proxy for Claude):
+From [`benchmarks/measure_tokens.py`](../benchmarks/measure_tokens.py), measured with `cl100k_base` (GPT-4 tokenizer, a reasonable proxy for Claude) against two sample shapes committed to `examples/`:
 
-| Mode | Command | Tokens (5 rows) | Tokens/row |
-|------|---------|----------------:|-----------:|
-| Box-drawing | `xleak file -n 5` | **593** | 118.6 |
-| Text export | `xleak file --export text \| head -5` | **117** | 23.4 |
-| CSV export | `xleak file --export csv \| head -5` | 119 | 23.8 |
+| Sample | Mode | Command | Tokens (5 rows) | Tokens/row |
+|--------|------|---------|----------------:|-----------:|
+| [`sample-financials.xlsx`](../examples/sample-financials.xlsx) (7 cols) | Box-drawing | `xleak file -n 5` | **593** | 118.6 |
+| 〃 | Text export | `xleak file --export text \| head -5` | **117** | 23.4 |
+| 〃 | CSV export | `xleak file --export csv \| head -5` | 119 | 23.8 |
+| [`wide-table.xlsx`](../examples/wide-table.xlsx) (29 cols) | Box-drawing | `xleak file -n 5` | **2,263** | 452.6 |
+| 〃 | Text export | `xleak file --export text \| head -5` | **632** | 126.4 |
 
-Text export is **5.1x cheaper per row** than box-drawing. The overhead is mostly fixed (header lines, border runs), so the per-row cost improves with larger slices, but the ratio holds.
+Two observations from the two-shape comparison:
+
+1. On the financial workbook, text export is **5.1x cheaper per row** than box-drawing. The overhead is mostly fixed (header lines, border runs), so the per-row cost improves with larger slices, but the ratio holds.
+2. On the wide workbook, the *ratio* drops to **3.6x** - because the text-export baseline is itself larger per row when a table has many columns. But the *absolute* per-row savings grows from ~95 tokens/row (financials) to ~326 tokens/row (wide). The wider the workbook, the more expensive naive usage gets in raw tokens, even if the ratio looks less dramatic.
 
 Here's the worked example the skill encodes implicitly. Imagine a 30-spreadsheet agent session (a realistic FDD or QoE engagement). Naive usage runs the box-drawing default on every file:
 

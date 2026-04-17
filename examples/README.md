@@ -6,18 +6,24 @@ This directory contains a reproducible demo and sample data for `spreadsheet-pee
 
 | File | Purpose |
 |------|---------|
-| `generate_sample.py` | Generates `sample-financials.xlsx` - a synthetic multi-sheet financial workbook (P&L, Balance Sheet, Revenue Breakdown). |
-| `sample-financials.xlsx` | The generated sample workbook. Commit regenerated to keep the demo reproducible. |
-| `demo.tape` | VHS tape script that records the README demo GIF. |
-| `demo.gif` | Rendered demo GIF (used in the main README). |
+| `generate_sample.py` | Generates `sample-financials.xlsx` - a synthetic multi-sheet financial workbook (P&L, Balance Sheet, Revenue Breakdown). This is the "typical" shape benchmark. |
+| `sample-financials.xlsx` | The generated financial workbook. Regenerate and commit whenever the generator changes so the demo and benchmarks stay reproducible. |
+| `generate_wide_table.py` | Generates `wide-table.xlsx` - a 29-column × 24-row operations dashboard. Exists to stress-test the token-cost claims: wide tables amplify box-drawing overhead because every row adds that many column separators. |
+| `wide-table.xlsx` | The generated wide workbook. Fed into `benchmarks/measure_tokens.py` alongside the financial sample. |
+| `generate_messy_csv.py` | Generates `messy.csv` - a CSV designed to break naive previews (BOM, quoted commas, embedded newlines, escaped quotes, emoji, mixed decimal formats). |
+| `messy.csv` | The generated messy CSV. Use it to sanity-check the SKILL.md CSV fallback chain - `head` alone mis-renders it; `csvlook`/`mlr` handle it cleanly. |
+| `demo.tape` | VHS tape script that records the main README demo GIF. |
+| `demo.gif` | Rendered README demo GIF. |
 
-## Regenerating the sample
+## Regenerating the samples
 
-The sample data is synthetic - no real company data. Regenerate with:
+All sample data is synthetic - no real company data. Regenerate with:
 
 ```bash
 # From the repo root
 uv run --with openpyxl python examples/generate_sample.py
+uv run --with openpyxl python examples/generate_wide_table.py
+python3 examples/generate_messy_csv.py     # no deps beyond stdlib
 ```
 
 ## Re-recording the GIF
@@ -42,9 +48,17 @@ xleak examples/sample-financials.xlsx -n 10
 # Switch sheets
 xleak examples/sample-financials.xlsx --sheet "Balance Sheet" -n 8
 
-# Token-efficient mode (13x cheaper for repeat views)
+# Token-efficient mode (~5x cheaper for repeat views)
 xleak examples/sample-financials.xlsx --export text | head -15
 
 # Wide columns for long account names
 xleak examples/sample-financials.xlsx -n 15 -w 50
+
+# Wide-table stress test - box-drawing mode on 29 columns is HUGE
+xleak examples/wide-table.xlsx -n 3
+xleak examples/wide-table.xlsx --export text | head -5
+
+# Messy CSV: the skill's CSV fallback in action
+head -6 examples/messy.csv | column -s, -t     # naive, mis-renders
+csvlook examples/messy.csv                      # csvkit, renders correctly
 ```

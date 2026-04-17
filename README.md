@@ -2,7 +2,13 @@
 
 > **Stop letting AI agents write throwaway Python just to look at a spreadsheet.**
 
-An agent-agnostic skill that teaches AI coding agents (Claude Code, Codex, Cursor, etc.) to use [`xleak`](https://github.com/bgreenwell/xleak) for instant inline previews of Excel/CSV files - with proactive triggers and token-efficiency rules baked in.
+An agent-agnostic skill that teaches AI coding agents (Claude Code, Codex, Cursor, etc.) to use [`xleak`](https://github.com/bgreenwell/xleak) for instant inline previews of Excel-family spreadsheets - with proactive triggers, token-efficiency rules, and a CSV fallback baked in.
+
+**Before vs after** - a naive agent writes throwaway Python every time; the same agent with `spreadsheet-peek` runs one `xleak` call:
+
+![contrast demo](assets/contrast.gif)
+
+And here is the interactive TUI mode most users miss (run `xleak file.xlsx` with no flags):
 
 ![demo](examples/demo.gif)
 
@@ -29,20 +35,22 @@ With `spreadsheet-peek`, the agent runs `xleak data.xlsx -n 15` instead:
 
 ## Token efficiency (the part that's easy to miss)
 
-Box-drawing output looks pretty but costs real tokens. The skill teaches the agent when to switch modes:
+Box-drawing output looks pretty but costs real tokens. The skill teaches the agent when to switch modes, with measurements taken against two sample shapes: a typical financial workbook (7 columns) and a wide operations dashboard (29 columns).
 
-| Mode | Command | Tokens (5 rows) | Tokens/row | When to use |
-|------|---------|-----------------|------------|-------------|
-| **Box-drawing** | `xleak file -n 5` | 593 | 118.6 | First preview, readability matters |
-| **Text export** | `xleak file --export text \| head -5` | 117 | 23.4 | Repeated previews, large files, long conversations |
+| Sample | Mode | Command | Tokens (5 rows) | Tokens/row |
+|--------|------|---------|----------------:|-----------:|
+| Financials (7 cols) | Box-drawing | `xleak file -n 5` | 593 | 118.6 |
+| Financials (7 cols) | Text export | `xleak file --export text \| head -5` | 117 | 23.4 |
+| Wide (29 cols)      | Box-drawing | `xleak file -n 5` | 2,263 | 452.6 |
+| Wide (29 cols)      | Text export | `xleak file --export text \| head -5` | 632 | 126.4 |
 
-**~5x cheaper** for the text-export path, measured with `cl100k_base` (GPT-4 tokenizer) on [`examples/sample-financials.xlsx`](examples/sample-financials.xlsx). Reproduce with:
+**~5x cheaper per row on typical shapes, ~3.6x on wide tables** - but the *absolute* per-row savings is far larger on wide tables (326 tokens/row vs 95). Measured with `cl100k_base` (GPT-4 tokenizer) against [`examples/sample-financials.xlsx`](examples/sample-financials.xlsx) and [`examples/wide-table.xlsx`](examples/wide-table.xlsx). Reproduce with:
 
 ```bash
-uv run --with tiktoken python benchmarks/measure_tokens.py
+uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
 ```
 
-Over a long agent session with dozens of spreadsheet inspections, this is the difference between a context window that survives and one that blows up mid-task. Full methodology in [`benchmarks/`](benchmarks/) and the worked example in [`docs/how-it-works.md`](docs/how-it-works.md).
+A single naive 15-row preview of a 29-column workbook already costs ~5,600 tokens - more than four financial-shape previews combined. Over a long agent session, the mode-switch rule is the difference between a context window that survives and one that blows up mid-task. Full methodology in [`benchmarks/`](benchmarks/) and the worked example in [`docs/how-it-works.md`](docs/how-it-works.md).
 
 ## Quick start
 
@@ -62,7 +70,17 @@ Then install the skill for your agent (see [Agent Setup](#agent-setup) below).
 
 ## Agent Setup
 
-### Claude Code (Skills)
+### Claude Code
+
+**Option A - Plugin install (recommended):**
+
+```bash
+/plugin install wolfiesch/spreadsheet-peek
+```
+
+Picks up the skill via the plugin manifest at `.claude-plugin/plugin.json`. Benefits: one-command install, versioned, uninstall via `/plugin uninstall spreadsheet-peek`.
+
+**Option B - Skill-only install (no plugin):**
 
 ```bash
 # Global - available in all projects
@@ -75,7 +93,7 @@ mkdir -p .claude/skills/spreadsheet-peek
 cp SKILL.md .claude/skills/spreadsheet-peek/
 ```
 
-Claude Code auto-invokes skills based on the frontmatter `description` and `filePattern` triggers.
+Either way, Claude Code auto-invokes the skill based on the frontmatter `description` and `filePattern` triggers. You still need `xleak` on your `PATH` - either run the `install.sh` one-liner in Quick Start or `brew install bgreenwell/tap/xleak` separately.
 
 ### Codex (AGENTS.md)
 
@@ -84,8 +102,9 @@ Codex reads `AGENTS.md` from the repo root. Paste the body of `SKILL.md` into yo
 ```markdown
 ## Spreadsheet Previews
 
-When the user references a `.xlsx`, `.csv`, or `.ods` file, or when about to
-run a data pipeline, preview the file first with xleak:
+When the user references a `.xlsx`, `.xls`, `.xlsm`, `.xlsb`, or `.ods`
+file, or when about to run a data pipeline that reads one, preview it
+first with xleak:
 
     xleak <file> -n 15
 
@@ -93,6 +112,17 @@ For large files or repeat previews in the same conversation, use the
 token-efficient mode:
 
     xleak <file> --export text | head -20
+
+For `.csv` files, xleak doesn't read them directly. For simple CSVs:
+
+    head -15 file.csv | column -s, -t
+
+If the CSV has quoted commas, embedded newlines, or a UTF-8 BOM,
+`column -s, -t` will mis-render it. Use a CSV-aware tool instead:
+
+    mlr --icsv --opprint head -n 15 file.csv   # or: csvlook file.csv
+
+See SKILL.md#csv-fallback for the full decision tree.
 
 Full skill reference: https://github.com/wolfiesch/spreadsheet-peek
 ```
@@ -113,6 +143,26 @@ alias peekwide='xleak -n 20 -w 60'
 ## Deep dive
 
 For the full technical rationale (why proactive triggers, how the token math works at scale, and how to extend the pattern to PDFs, SQL, and Parquet), read [`docs/how-it-works.md`](docs/how-it-works.md). The embedded screencast also walks through xleak's interactive TUI mode, which most users miss.
+
+## FAQ
+
+**Why a skill instead of an MCP server?**
+An MCP server is a long-running process with its own install, auth, and schema surface. The skill is one markdown file that teaches the agent a shell command it can already run. If `xleak` grows features that benefit from structured responses (pagination tokens, typed schema), an MCP wrapper becomes interesting. Today it would just be a layer of indirection over `xleak <file>`.
+
+**Why not `pandas.read_excel()` or `openpyxl` directly?**
+Speed and tokens. `openpyxl` cold-start is 0.5-1s before it reads a byte; `xleak` is instantaneous. Tuple-dump output also costs 4-5x more tokens per row than `xleak --export text` for the same information, and is harder for the user to read. The skill includes a Python fallback for sandboxed agents that can't shell out, but it's the fallback, not the default.
+
+**What about agents that can't execute shell commands?**
+The skill's "Python fallback" section (`SKILL.md`) covers this: `openpyxl` + `tabulate` produces a similar box-drawing table. Token costs are higher and startup is slower, but the output shape matches so the agent can keep its downstream reasoning identical.
+
+**Does this actually work with CSV?**
+`xleak 0.2.5` does not read CSV directly - it's Excel-family (`.xlsx`, `.xls`, `.xlsm`, `.xlsb`, `.ods`). The skill handles CSV through a shell fallback (`head`, `column -s, -t`, `mlr`, `csvlook`) and the frontmatter still triggers on `.csv` paths so the agent knows to reach for the right tool. See the [CSV Fallback](SKILL.md#csv-fallback) section.
+
+**Windows support?**
+`xleak` is available on macOS, Linux, and Windows through two paths: prebuilt binaries from the [xleak GitHub releases page](https://github.com/bgreenwell/xleak/releases), or `cargo install xleak` for a source build (requires a Rust toolchain). Homebrew is the easiest path on macOS/Linux via the `bgreenwell/tap` tap; on Windows, grab the release binary and add it to `PATH`. The skill itself is platform-agnostic (it's a markdown file). The CSV fallback uses `head` and `column`, which are POSIX utilities - on Windows use WSL, Git Bash, or substitute PowerShell equivalents (`Get-Content -TotalCount 15`, `Import-Csv | Format-Table`, etc.) in your shell config.
+
+**Will this bloat my context window with a giant system prompt?**
+`SKILL.md` is ~6.7 KB. Claude Code loads it on-demand only when a trigger fires (file pattern match, bash pattern match, or description relevance), so a session that never touches a spreadsheet pays zero cost. Other agents that paste it into a static system prompt pay the 6.7 KB once per conversation - a fraction of what a single naive box-drawing preview costs.
 
 ## What's in the skill
 
@@ -138,7 +188,9 @@ For the full technical rationale (why proactive triggers, how the token math wor
 
 ## File formats supported
 
-`.xlsx` · `.xls` · `.xlsm` · `.xlsb` · `.ods` · `.csv`
+**Excel-family (via xleak)**: `.xlsx` · `.xls` · `.xlsm` · `.xlsb` · `.ods`
+
+**CSV**: Handled via a shell fallback (`head`, `column -s, -t`, `mlr`, `csvkit`) rather than xleak - xleak 0.2.5 doesn't read CSV directly. The skill teaches agents the right command to reach for. See the [CSV Fallback section of `SKILL.md`](SKILL.md#csv-fallback).
 
 ## Try it
 

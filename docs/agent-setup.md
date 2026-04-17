@@ -28,9 +28,23 @@ Badges get re-dated whenever the skill, the agent, or the agent's instruction-lo
 
 > ✅ **Verified 2026-04-16** - Skill loads from `~/.claude/skills/spreadsheet-peek/SKILL.md` in an active Claude Code session; frontmatter description and `filePattern`/`bashPattern` triggers are recognized by the skills index.
 
-Claude Code has native support for skills via the `~/.claude/skills/` directory. The skill's frontmatter (`name`, `description`, `filePattern`, `bashPattern`) is used to auto-invoke it when relevant.
+Claude Code has two install paths: a **plugin** (recommended, one command, versioned, easy to uninstall) and a **skill-only** install (no plugin machinery, just a SKILL.md in the skills directory). Both end up with the skill active; pick whichever fits your setup.
 
-**Global install (all projects):**
+**Option A - Plugin install (recommended):**
+
+```bash
+/plugin install wolfiesch/spreadsheet-peek
+```
+
+This reads `.claude-plugin/plugin.json` from the repo and registers the skill at `skills/spreadsheet-peek/SKILL.md` (which is a symlink back to the canonical root `SKILL.md`, so there's one source of truth).
+
+Uninstall:
+
+```bash
+/plugin uninstall spreadsheet-peek
+```
+
+**Option B - Skill-only install (global, all projects):**
 
 ```bash
 mkdir -p ~/.claude/skills/spreadsheet-peek
@@ -38,7 +52,7 @@ curl -fsSL https://raw.githubusercontent.com/wolfiesch/spreadsheet-peek/master/S
   -o ~/.claude/skills/spreadsheet-peek/SKILL.md
 ```
 
-**Project-specific install:**
+**Option C - Skill-only install (project-specific):**
 
 ```bash
 # From your project root
@@ -51,12 +65,14 @@ curl -fsSL https://raw.githubusercontent.com/wolfiesch/spreadsheet-peek/master/S
 
 Start a new session and ask Claude: "What skills do you have available?" The spreadsheet-peek skill should appear. You can also reference a `.xlsx` file and the skill should auto-trigger.
 
-**Keep it updated:**
+**Keep it updated (skill-only paths):**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/wolfiesch/spreadsheet-peek/master/SKILL.md \
   -o ~/.claude/skills/spreadsheet-peek/SKILL.md
 ```
+
+Plugin installs update via `/plugin update spreadsheet-peek`.
 
 ---
 
@@ -74,9 +90,9 @@ cat >> AGENTS.md << 'EOF'
 
 Prerequisites: `brew install bgreenwell/tap/xleak`
 
-When the user references a `.xlsx`, `.csv`, or `.ods` file, or when about to
-run a data pipeline or script that reads a spreadsheet, preview the file first
-with xleak before doing anything else:
+When the user references a `.xlsx`, `.xls`, `.xlsm`, `.xlsb`, or `.ods`
+file, or when about to run a data pipeline or script that reads a
+spreadsheet, preview the file first with xleak before doing anything else:
 
     xleak <file> -n 15
 
@@ -88,6 +104,18 @@ token-efficient mode:
 For multi-sheet workbooks, preview each relevant sheet:
 
     xleak <file> --sheet "Balance Sheet" -n 15
+
+For `.csv` files (xleak doesn't read them directly), start with:
+
+    head -15 file.csv | column -s, -t
+
+If `column` mis-renders quoted commas, embedded newlines, or a UTF-8 BOM,
+use a CSV-aware tool instead:
+
+    mlr --icsv --opprint head -n 15 file.csv
+    csvlook file.csv
+
+See SKILL.md#csv-fallback for the full CSV decision tree.
 
 Never write disposable Python to view a spreadsheet. Use xleak.
 
@@ -132,7 +160,7 @@ Continue uses `~/.continue/config.json`. Add a `systemMessage` entry or append t
 ```json
 {
   "models": [...],
-  "systemMessage": "When the user references a .xlsx or .csv file, preview it with `xleak <file> -n 15` before discussing it. For repeat previews, use `xleak <file> --export text | head -20` to save tokens. Never write Python just to inspect a spreadsheet. Full reference: https://github.com/wolfiesch/spreadsheet-peek"
+  "systemMessage": "When the user references an Excel file (.xlsx/.xls/.xlsm/.xlsb/.ods), preview it with `xleak <file> -n 15` before discussing it. For repeat previews, use `xleak <file> --export text | head -20` to save tokens. For .csv files (xleak does not read CSV) start with `head -15 file.csv | column -s, -t` on simple CSVs; for quoted commas, embedded newlines, or BOMs use a CSV-aware tool such as `mlr --icsv --opprint head -n 15 file.csv` or `csvlook file.csv`. See SKILL.md#csv-fallback for the full decision tree. Never write Python just to inspect a spreadsheet. Full reference: https://github.com/wolfiesch/spreadsheet-peek"
 }
 ```
 
