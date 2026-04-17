@@ -75,10 +75,11 @@ Then install the skill for your agent (see [Agent Setup](#agent-setup) below).
 **Option A - Plugin install (recommended):**
 
 ```bash
-/plugin install wolfiesch/spreadsheet-peek
+/plugin marketplace add wolfiesch/spreadsheet-peek
+/plugin install spreadsheet-peek@wolfie-tools
 ```
 
-Picks up the skill via the plugin manifest at `.claude-plugin/plugin.json`. Benefits: one-command install, versioned, uninstall via `/plugin uninstall spreadsheet-peek`.
+First line registers this repo's marketplace (`wolfie-tools`, defined in `.claude-plugin/marketplace.json`); second line installs the `spreadsheet-peek` plugin from it. Benefits: versioned, auto-updates via `/plugin marketplace update`, uninstall via `/plugin uninstall spreadsheet-peek@wolfie-tools`.
 
 **Option B - Skill-only install (no plugin):**
 

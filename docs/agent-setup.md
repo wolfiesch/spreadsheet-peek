@@ -33,15 +33,22 @@ Claude Code has two install paths: a **plugin** (recommended, one command, versi
 **Option A - Plugin install (recommended):**
 
 ```bash
-/plugin install wolfiesch/spreadsheet-peek
+/plugin marketplace add wolfiesch/spreadsheet-peek
+/plugin install spreadsheet-peek@wolfie-tools
 ```
 
-This reads `.claude-plugin/plugin.json` from the repo and registers the skill at `skills/spreadsheet-peek/SKILL.md` (which is a symlink back to the canonical root `SKILL.md`, so there's one source of truth).
+The first command registers the `wolfie-tools` marketplace defined in `.claude-plugin/marketplace.json`. The second installs the `spreadsheet-peek` plugin from it - which in turn reads `.claude-plugin/plugin.json` and loads the skill from `skills/spreadsheet-peek/SKILL.md` (a symlink back to the canonical root `SKILL.md`, so there's one source of truth).
 
 Uninstall:
 
 ```bash
-/plugin uninstall spreadsheet-peek
+/plugin uninstall spreadsheet-peek@wolfie-tools
+```
+
+Update (after publishing a new release):
+
+```bash
+/plugin marketplace update wolfie-tools
 ```
 
 **Option B - Skill-only install (global, all projects):**
