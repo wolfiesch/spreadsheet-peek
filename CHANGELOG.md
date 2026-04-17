@@ -2,7 +2,7 @@
 
 All notable changes to `spreadsheet-peek` are documented here. This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.4.0] - 2026-04-17
 
 Pre-publish hardening: closed the CSV-support gap, shipped the plugin path, diversified the benchmark corpus, and added the "why this exists" visual.
 
@@ -26,6 +26,8 @@ Pre-publish hardening: closed the CSV-support gap, shipped the plugin path, dive
 ### Fixed
 - Incorrect `xleak` CSV support claim across `README.md`, `SKILL.md`, and `docs/agent-setup.md`. `xleak 0.2.5` returns `Error: Cannot detect file format` on CSV input; pre-publish docs implied otherwise. This was the highest-impact pre-release bug - a user following the README would have tried `xleak data.csv` and hit a confusing parse error. Fixed at all four levels: prerequisite line in SKILL.md, frontmatter description, agent-setup snippets, and README file-formats table
 - `scripts/naive_preview.py` Pyright warning - added `assert ws is not None` for the Optional `wb.active` return (appropriate for a demo script representing agent-written code)
+- `README.md` Windows FAQ referenced `Get-Content -Head`, which is not a real PowerShell parameter. Replaced with `Get-Content -TotalCount 15` and added `Import-Csv | Format-Table` as the `column -s, -t` equivalent so the Windows-user guidance actually runs
+- `SKILL.md` "accurate column count" recipe still piped `mlr` output through `tr ,` and `wc -l`, which mis-counts on the quoted-comma case the section warns about. Replaced with `mlr --icsv --opprint put '$columns = NF' then head -n 1 file.csv` using mlr's built-in NF (number of fields) for a quote-aware count
 
 ## [1.3.0] - 2026-04-16
 
