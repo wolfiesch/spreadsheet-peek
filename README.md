@@ -113,9 +113,16 @@ token-efficient mode:
 
     xleak <file> --export text | head -20
 
-For `.csv` files, xleak doesn't read them directly - use a shell fallback:
+For `.csv` files, xleak doesn't read them directly. For simple CSVs:
 
     head -15 file.csv | column -s, -t
+
+If the CSV has quoted commas, embedded newlines, or a UTF-8 BOM,
+`column -s, -t` will mis-render it. Use a CSV-aware tool instead:
+
+    mlr --icsv --opprint head -n 15 file.csv   # or: csvlook file.csv
+
+See SKILL.md#csv-fallback for the full decision tree.
 
 Full skill reference: https://github.com/wolfiesch/spreadsheet-peek
 ```
@@ -152,7 +159,7 @@ The skill's "Python fallback" section (`SKILL.md`) covers this: `openpyxl` + `ta
 `xleak 0.2.5` does not read CSV directly - it's Excel-family (`.xlsx`, `.xls`, `.xlsm`, `.xlsb`, `.ods`). The skill handles CSV through a shell fallback (`head`, `column -s, -t`, `mlr`, `csvlook`) and the frontmatter still triggers on `.csv` paths so the agent knows to reach for the right tool. See the [CSV Fallback](SKILL.md#csv-fallback) section.
 
 **Windows support?**
-`xleak` ships prebuilt binaries for macOS, Linux, and Windows via the `bgreenwell/tap` Homebrew tap and cargo. The skill itself is platform-agnostic (it's a markdown file). The CSV fallback uses `head` and `column`, which are POSIX utilities - on Windows use WSL, Git Bash, or substitute PowerShell equivalents (`Get-Content -Head` etc.) in your shell config.
+`xleak` is available on macOS, Linux, and Windows through two paths: prebuilt binaries from the [xleak GitHub releases page](https://github.com/bgreenwell/xleak/releases), or `cargo install xleak` for a source build (requires a Rust toolchain). Homebrew is the easiest path on macOS/Linux via the `bgreenwell/tap` tap; on Windows, grab the release binary and add it to `PATH`. The skill itself is platform-agnostic (it's a markdown file). The CSV fallback uses `head` and `column`, which are POSIX utilities - on Windows use WSL, Git Bash, or substitute PowerShell equivalents (`Get-Content -Head` etc.) in your shell config.
 
 **Will this bloat my context window with a giant system prompt?**
 `SKILL.md` is ~6.7 KB. Claude Code loads it on-demand only when a trigger fires (file pattern match, bash pattern match, or description relevance), so a session that never touches a spreadsheet pays zero cost. Other agents that paste it into a static system prompt pay the 6.7 KB once per conversation - a fraction of what a single naive box-drawing preview costs.

@@ -16,7 +16,7 @@ Pre-publish hardening: closed the CSV-support gap, shipped the plugin path, dive
 - `CSV Fallback` section in `SKILL.md` - shell recipes (`head`, `column -s, -t`, `mlr --icsv --opprint`, `csvlook`) the agent should reach for on `.csv` input since `xleak 0.2.5` doesn't parse CSV directly
 
 ### Changed
-- `SKILL.md` version bumped to 1.3.0; frontmatter `description` narrowed to Excel-family with explicit "CSV via shell fallback" language so the retrieval hook is accurate; `filePattern` keeps `*.csv` so the skill still fires on CSV paths and the agent reaches for the fallback instead of blindly trying `xleak`
+- `SKILL.md` version bumped to 1.4.0 (behavioral change: the body now includes a full `CSV Fallback` section with the shell decision tree); frontmatter `description` narrowed to Excel-family with explicit "CSV via shell fallback" language so the retrieval hook is accurate; `filePattern` keeps `*.csv` so the skill still fires on CSV paths and the agent reaches for the fallback instead of blindly trying `xleak`. `.claude-plugin/plugin.json` version tracks 1.4.0 to match
 - `SKILL.md` command reference - documented `--list-tables` and `--table` for workbooks with Excel named tables
 - `benchmarks/measure_tokens.py` - refactored to run the same mode grid against every sample via a `benches_for(path, prefix)` helper; now benchmarks both `sample-financials.xlsx` and `wide-table.xlsx` with per-sample ratio summaries
 - `benchmarks/README.md` and `docs/how-it-works.md` - results tables and worked examples updated to show the two-sample story: ratio drops from 5.1x (financials) to 3.6x (wide), but absolute per-row savings grows 3.4x (95 -> 326 tokens/row). Wide-table users pay more in raw tokens, so the mode-switch rule matters more for them

@@ -11,12 +11,15 @@ that the SKILL.md CSV fallback section explicitly warns about:
   - Unicode (emoji, non-ASCII punctuation)
   - Mixed number formats (US decimals vs European commas-as-decimals)
 
-Keeping this as a generator (not a committed CSV) means the file is
-reproducible and the edge cases are documented alongside the data.
+The generator is the source of truth; `examples/messy.csv` is the
+committed output so the CSV fallback recipes in SKILL.md stay
+demonstrable without requiring readers to run Python first. Regenerate
+and recommit whenever you add a new edge case to ROWS.
 
 Regenerate with:
     python3 examples/generate_messy_csv.py
 """
+import csv
 from pathlib import Path
 
 OUT_PATH = Path(__file__).parent / "messy.csv"
@@ -66,21 +69,15 @@ ROWS: list[list[str]] = [
 ]
 
 
-def csv_escape(value: str) -> str:
-    """Minimal RFC 4180-ish escaper: quote if the value contains comma,
-    quote, or newline; double any embedded quotes.
-    """
-    if any(c in value for c in [",", '"', "\n", "\r"]):
-        return '"' + value.replace('"', '""') + '"'
-    return value
-
-
 def main() -> None:
     # Write with a UTF-8 BOM so the first cell of the header gets mangled
     # by any tool that doesn't strip it (which is most of them).
+    # lineterminator="\n" keeps embedded newlines (inside quoted fields) and
+    # between-row newlines distinguishable on diff, instead of csv.writer's
+    # default "\r\n" which makes the test fixture harder to read.
     with OUT_PATH.open("w", encoding="utf-8-sig", newline="") as f:
-        for row in ROWS:
-            f.write(",".join(csv_escape(v) for v in row) + "\n")
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerows(ROWS)
 
     print(f"Wrote {OUT_PATH} ({len(ROWS)} rows including header)")
 

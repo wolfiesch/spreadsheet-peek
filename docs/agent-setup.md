@@ -105,9 +105,17 @@ For multi-sheet workbooks, preview each relevant sheet:
 
     xleak <file> --sheet "Balance Sheet" -n 15
 
-For `.csv` files (xleak doesn't read them directly), use:
+For `.csv` files (xleak doesn't read them directly), start with:
 
     head -15 file.csv | column -s, -t
+
+If `column` mis-renders quoted commas, embedded newlines, or a UTF-8 BOM,
+use a CSV-aware tool instead:
+
+    mlr --icsv --opprint head -n 15 file.csv
+    csvlook file.csv
+
+See SKILL.md#csv-fallback for the full CSV decision tree.
 
 Never write disposable Python to view a spreadsheet. Use xleak.
 
@@ -152,7 +160,7 @@ Continue uses `~/.continue/config.json`. Add a `systemMessage` entry or append t
 ```json
 {
   "models": [...],
-  "systemMessage": "When the user references an Excel file (.xlsx/.xls/.xlsm/.xlsb/.ods), preview it with `xleak <file> -n 15` before discussing it. For repeat previews, use `xleak <file> --export text | head -20` to save tokens. For .csv files, use `head -15 file.csv | column -s, -t` instead - xleak does not read CSV. Never write Python just to inspect a spreadsheet. Full reference: https://github.com/wolfiesch/spreadsheet-peek"
+  "systemMessage": "When the user references an Excel file (.xlsx/.xls/.xlsm/.xlsb/.ods), preview it with `xleak <file> -n 15` before discussing it. For repeat previews, use `xleak <file> --export text | head -20` to save tokens. For .csv files (xleak does not read CSV) start with `head -15 file.csv | column -s, -t` on simple CSVs; for quoted commas, embedded newlines, or BOMs use a CSV-aware tool such as `mlr --icsv --opprint head -n 15 file.csv` or `csvlook file.csv`. See SKILL.md#csv-fallback for the full decision tree. Never write Python just to inspect a spreadsheet. Full reference: https://github.com/wolfiesch/spreadsheet-peek"
 }
 ```
 

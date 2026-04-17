@@ -1,7 +1,7 @@
 ---
 name: spreadsheet-peek
 description: Inline terminal preview of Excel spreadsheets using xleak. Use proactively when working with .xlsx, .xls, .xlsm, .xlsb, or .ods files - before data processing, after fixture generation, when debugging table parsing, or when the user references a spreadsheet. Also use when asked to "peek", "preview", "show me the file", or "what does this spreadsheet look like". For .csv files, see the CSV fallback section below.
-version: 1.3.0
+version: 1.4.0
 metadata:
   author: wolfgangs
   filePattern:
@@ -132,18 +132,26 @@ xleak <file> --table "SalesByRegion" -n 15
 # Quick peek - first 15 rows, raw
 head -15 file.csv
 
-# Pretty-printed with column alignment (handles commas reasonably)
-head -15 file.csv | column -s, -t | head -15
+# Pretty-printed column alignment for simple CSVs (no quoted commas or
+# embedded newlines - column -s, -t is not CSV-aware, it just splits on ,)
+head -15 file.csv | column -s, -t
 
-# Large CSV, specific columns only (requires mlr or csvkit)
+# CSV-aware tools (use these when the file might have quoted fields,
+# embedded newlines, UTF-8 BOM, or any non-trivial escaping):
 mlr --icsv --opprint head -n 15 file.csv         # miller
 csvlook -n file.csv | head -20                    # csvkit
 
-# Row and column dimensions (before deciding how to peek)
+# Rough row and column dimensions (heuristic - wc -l over-counts rows
+# when fields contain embedded newlines; tr , wc -l over-counts columns
+# when fields contain quoted commas. Use mlr/csvkit for an accurate count
+# on non-trivial CSVs):
 wc -l file.csv && head -1 file.csv | tr , '\n' | wc -l
+# Accurate dimensions for messy files:
+mlr --icsv --opprint count file.csv              # row count, CSV-aware
+mlr --icsv --opprint --headerless-csv-output head -n 1 file.csv | tr , '\n' | wc -l
 ```
 
-**Which to use**: `head` is always available and costs zero tokens for the tool invocation. Use `column -s, -t` when columns have consistent widths and no embedded commas. For CSVs with quoted fields, embedded newlines, or BOMs, reach for `mlr` or `csvkit` - plain `head`/`column` will mis-render them.
+**Which to use**: `head` is always available and costs zero tokens for the tool invocation. Use `column -s, -t` only on simple CSVs where no field contains a comma, a quote, or a newline. For any CSV with quoted fields, embedded newlines, or BOMs, reach for `mlr` or `csvkit` - plain `head`/`column` will mis-render them and `wc`/`tr` will lie about the dimensions.
 
 **If you must use Python** (CSV too messy for shell tools), reach for `csv.DictReader` + `tabulate`, not pandas - pandas has a ~1s import cost and is overkill for a preview.
 

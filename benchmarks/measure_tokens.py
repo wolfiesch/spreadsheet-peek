@@ -66,9 +66,14 @@ def benches_for(sample_path: Path, prefix: str) -> list[dict]:
     return [
         bench(f"{prefix} - Box-drawing (5 rows)",  ["xleak", s, "-n", "5"]),
         bench(f"{prefix} - Box-drawing (15 rows)", ["xleak", s, "-n", "15"]),
-        bench(f"{prefix} - Text export (head -5)",  ["bash", "-c", f"xleak {s} --export text | head -5"]),
-        bench(f"{prefix} - Text export (head -15)", ["bash", "-c", f"xleak {s} --export text | head -15"]),
-        bench(f"{prefix} - CSV export (head -5)",   ["bash", "-c", f"xleak {s} --export csv | head -5"]),
+        # Pass the path via bash's positional `$1` so paths containing spaces or
+        # shell metacharacters are never re-interpreted by the shell.
+        bench(f"{prefix} - Text export (head -5)",
+              ["bash", "-c", 'xleak "$1" --export text | head -5', "--", s]),
+        bench(f"{prefix} - Text export (head -15)",
+              ["bash", "-c", 'xleak "$1" --export text | head -15', "--", s]),
+        bench(f"{prefix} - CSV export (head -5)",
+              ["bash", "-c", 'xleak "$1" --export csv | head -5', "--", s]),
     ]
 
 

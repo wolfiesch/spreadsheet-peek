@@ -2,7 +2,7 @@
 
 This sample exists to stress-test the token-cost claims at the opposite
 end of the shape spectrum from `sample-financials.xlsx`. Wide tables
-(30+ columns) amplify box-drawing overhead because every row adds that
+(29 columns) amplify box-drawing overhead because every row adds that
 many column separators, so the per-row token cost of the default
 `xleak -n` output balloons relative to the `--export text` path.
 

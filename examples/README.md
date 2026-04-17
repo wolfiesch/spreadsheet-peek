@@ -7,7 +7,7 @@ This directory contains a reproducible demo and sample data for `spreadsheet-pee
 | File | Purpose |
 |------|---------|
 | `generate_sample.py` | Generates `sample-financials.xlsx` - a synthetic multi-sheet financial workbook (P&L, Balance Sheet, Revenue Breakdown). This is the "typical" shape benchmark. |
-| `sample-financials.xlsx` | The generated financial workbook. Commit regenerated to keep the demo reproducible. |
+| `sample-financials.xlsx` | The generated financial workbook. Regenerate and commit whenever the generator changes so the demo and benchmarks stay reproducible. |
 | `generate_wide_table.py` | Generates `wide-table.xlsx` - a 29-column × 24-row operations dashboard. Exists to stress-test the token-cost claims: wide tables amplify box-drawing overhead because every row adds that many column separators. |
 | `wide-table.xlsx` | The generated wide workbook. Fed into `benchmarks/measure_tokens.py` alongside the financial sample. |
 | `generate_messy_csv.py` | Generates `messy.csv` - a CSV designed to break naive previews (BOM, quoted commas, embedded newlines, escaped quotes, emoji, mixed decimal formats). |
