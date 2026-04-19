@@ -58,12 +58,14 @@ def load_font(candidates: list[tuple[str, int]], size: int) -> ImageFont.FreeTyp
 
 
 def capture_terminal_lines() -> list[str]:
-    """Run xleak against the sample file and keep the first few rendered
-    lines so the terminal mock mirrors real output. Falls back to a static
-    snippet if xleak is missing on PATH."""
-    # Static snippet, hand-tuned to fit the terminal panel width at 15pt
-    # Menlo. We intentionally don't use live xleak output - the real table
-    # has too many columns and gets clipped, hurting legibility at 600px.
+    """Return the rendered preview lines for the terminal mock.
+
+    Static snippet, hand-tuned to fit the terminal panel width at 15pt
+    Menlo. We intentionally don't shell out to live `wolfxl peek` here -
+    the real table has too many columns and gets clipped, hurting
+    legibility at 600px. Keeps the OG-card generator pure, with no
+    dependency on `wolfxl` being on PATH.
+    """
     return [
         "┌──────────────────────┬────────────┬────────────┐",
         "│ Metric               │    Q1 2026 │    Q2 2026 │",
@@ -111,7 +113,7 @@ def main() -> None:
     # Three-bullet feature strip
     bullets = [
         ("Proactive triggers.", CYAN),
-        ("5x cheaper previews.", GREEN),
+        ("~5x cheaper previews.", GREEN),
         ("Agent-agnostic.", ORANGE),
     ]
     by = 324
@@ -145,10 +147,10 @@ def main() -> None:
 
     # Prompt line
     draw.text((body_x, body_y), "$", font=prompt_font, fill=GREEN)
-    draw.text((body_x + 22, body_y), "xleak financials.xlsx -n 5", font=prompt_font, fill=FG)
+    draw.text((body_x + 22, body_y), "wolfxl peek financials.xlsx -n 5", font=prompt_font, fill=FG)
     body_y += 36
 
-    # Captured xleak output
+    # Captured wolfxl peek output
     for line in capture_terminal_lines():
         draw.text((body_x, body_y), line, font=term_font, fill=FG)
         body_y += 22

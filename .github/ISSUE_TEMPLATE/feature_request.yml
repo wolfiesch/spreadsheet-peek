@@ -41,5 +41,5 @@ body:
       label: Scope check
       options:
         - label: This works across multiple AI agents (not Claude Code-specific)
-        - label: This does not require replacing xleak with a different backend
+        - label: This does not require replacing `wolfxl peek` with a different backend (feature requests for the parser itself belong in the [wolfxl repo](https://github.com/SynthGL/wolfxl))
         - label: This does not add heavy dependencies to the skill
