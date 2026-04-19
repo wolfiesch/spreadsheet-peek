@@ -18,8 +18,8 @@ Sleep 1s
 Enter
 Sleep 500ms
 
-# Primary demo: the default box-drawing preview
-Type "xleak examples/sample-financials.xlsx -n 10"
+# Primary demo: the default box-drawing preview (style-aware)
+Type "wolfxl peek examples/sample-financials.xlsx -n 10"
 Sleep 800ms
 Enter
 Sleep 3500ms
@@ -32,7 +32,7 @@ Type "# Multi-sheet workbook? Pick the tab you want."
 Sleep 800ms
 Enter
 Sleep 500ms
-Type 'xleak examples/sample-financials.xlsx --sheet "Balance Sheet" -n 8'
+Type 'wolfxl peek examples/sample-financials.xlsx --sheet "Balance Sheet" -n 8'
 Sleep 800ms
 Enter
 Sleep 3500ms
@@ -41,11 +41,11 @@ Sleep 3500ms
 Type "clear"
 Enter
 Sleep 400ms
-Type "# Big file? Use text export - 13x cheaper on tokens."
+Type "# Big file? Use text export - ~5x cheaper on tokens."
 Sleep 800ms
 Enter
 Sleep 500ms
-Type "xleak examples/sample-financials.xlsx --export text | head -8"
+Type "wolfxl peek examples/sample-financials.xlsx --export text | head -8"
 Sleep 800ms
 Enter
 Sleep 3500ms

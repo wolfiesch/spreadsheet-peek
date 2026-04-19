@@ -42,21 +42,21 @@ The tape script uses the Dracula theme at 1200x720 with 14pt font to balance rea
 ## Try it yourself
 
 ```bash
-# Default preview
-xleak examples/sample-financials.xlsx -n 10
+# Default preview (style-aware: currency, %, dates render in their native form)
+wolfxl peek examples/sample-financials.xlsx -n 10
 
 # Switch sheets
-xleak examples/sample-financials.xlsx --sheet "Balance Sheet" -n 8
+wolfxl peek examples/sample-financials.xlsx --sheet "Balance Sheet" -n 8
 
-# Token-efficient mode (~5x cheaper for repeat views)
-xleak examples/sample-financials.xlsx --export text | head -15
+# Token-efficient mode (~4.9x cheaper for repeat views)
+wolfxl peek examples/sample-financials.xlsx --export text | head -15
 
 # Wide columns for long account names
-xleak examples/sample-financials.xlsx -n 15 -w 50
+wolfxl peek examples/sample-financials.xlsx -n 15 -w 50
 
 # Wide-table stress test - box-drawing mode on 29 columns is HUGE
-xleak examples/wide-table.xlsx -n 3
-xleak examples/wide-table.xlsx --export text | head -5
+wolfxl peek examples/wide-table.xlsx -n 3
+wolfxl peek examples/wide-table.xlsx --export text | head -5
 
 # Messy CSV: the skill's CSV fallback in action
 head -6 examples/messy.csv | column -s, -t     # naive, mis-renders

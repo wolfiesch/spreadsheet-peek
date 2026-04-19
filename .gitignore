@@ -17,3 +17,4 @@ __pycache__/
 
 # Claude Code session hook artifacts
 logs/
+.claude/

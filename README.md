@@ -2,13 +2,13 @@
 
 > **Stop letting AI agents write throwaway Python just to look at a spreadsheet.**
 
-An agent-agnostic skill that teaches AI coding agents (Claude Code, Codex, Cursor, etc.) to use [`xleak`](https://github.com/bgreenwell/xleak) for instant inline previews of Excel-family spreadsheets - with proactive triggers, token-efficiency rules, and a CSV fallback baked in.
+An agent-agnostic skill that teaches AI coding agents (Claude Code, Codex, Cursor, etc.) to use [`wolfxl peek`](https://crates.io/crates/wolfxl-cli) for instant inline previews of Excel-family spreadsheets - with proactive triggers, token-efficiency rules, style-aware rendering (currency / percent / dates), and a CSV fallback baked in.
 
-**Before vs after** - a naive agent writes throwaway Python every time; the same agent with `spreadsheet-peek` runs one `xleak` call:
+**Before vs after** - a naive agent writes throwaway Python every time; the same agent with `spreadsheet-peek` runs one `wolfxl peek` call:
 
 ![contrast demo](assets/contrast.gif)
 
-And here is the interactive TUI mode most users miss (run `xleak file.xlsx` with no flags):
+And here's the styled box-drawing output (run `wolfxl peek file.xlsx`):
 
 ![demo](examples/demo.gif)
 
@@ -27,10 +27,11 @@ for row in ws.iter_rows(max_row=10, values_only=True):
 
 That's ~250 generation tokens + ~0.5-1s of openpyxl startup + ugly tuple-dump output. Every. Single. Time.
 
-With `spreadsheet-peek`, the agent runs `xleak data.xlsx -n 15` instead:
+With `spreadsheet-peek`, the agent runs `wolfxl peek data.xlsx -n 15` instead:
 - **Zero generation tokens** for the command (it's a one-liner the agent already knows)
 - **Instant Rust-speed parsing** (no openpyxl cold start)
-- **Readable ASCII table output** the user can actually read
+- **Style-aware output** - currency renders as `$1,234.56`, percentages as `12.5%`, dates as ISO `YYYY-MM-DD`
+- **Readable ASCII table** the user can actually read
 - **Proactive triggers** - the agent previews before processing, after fixture generation, and when you mention a file path, without being asked
 
 ## Token efficiency (the part that's easy to miss)
@@ -39,12 +40,12 @@ Box-drawing output looks pretty but costs real tokens. The skill teaches the age
 
 | Sample | Mode | Command | Tokens (5 rows) | Tokens/row |
 |--------|------|---------|----------------:|-----------:|
-| Financials (7 cols) | Box-drawing | `xleak file -n 5` | 593 | 118.6 |
-| Financials (7 cols) | Text export | `xleak file --export text \| head -5` | 117 | 23.4 |
-| Wide (29 cols)      | Box-drawing | `xleak file -n 5` | 2,263 | 452.6 |
-| Wide (29 cols)      | Text export | `xleak file --export text \| head -5` | 632 | 126.4 |
+| Financials (7 cols) | Box-drawing | `wolfxl peek file -n 5` | 573 | 114.6 |
+| Financials (7 cols) | Text export | `wolfxl peek file --export text \| head -5` | 117 | 23.4 |
+| Wide (29 cols)      | Box-drawing | `wolfxl peek file -n 5` | 2,249 | 449.8 |
+| Wide (29 cols)      | Text export | `wolfxl peek file --export text \| head -5` | 632 | 126.4 |
 
-**~5x cheaper per row on typical shapes, ~3.6x on wide tables** - but the *absolute* per-row savings is far larger on wide tables (326 tokens/row vs 95). Measured with `cl100k_base` (GPT-4 tokenizer) against [`examples/sample-financials.xlsx`](examples/sample-financials.xlsx) and [`examples/wide-table.xlsx`](examples/wide-table.xlsx). Reproduce with:
+**~4.9x cheaper per row on typical shapes, ~3.6x on wide tables** - but the *absolute* per-row savings is far larger on wide tables (323 tokens/row saved vs 91). Measured with `cl100k_base` (GPT-4 tokenizer) against [`examples/sample-financials.xlsx`](examples/sample-financials.xlsx) and [`examples/wide-table.xlsx`](examples/wide-table.xlsx). Reproduce with:
 
 ```bash
 uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
@@ -54,7 +55,7 @@ A single naive 15-row preview of a 29-column workbook already costs ~5,600 token
 
 ## Quick start
 
-One-liner (installs `xleak` + the skill into `~/.claude/skills/spreadsheet-peek/`):
+One-liner (installs `wolfxl-cli` + the skill into `~/.claude/skills/spreadsheet-peek/`):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/wolfiesch/spreadsheet-peek/master/install.sh | sh
@@ -63,7 +64,7 @@ curl -fsSL https://raw.githubusercontent.com/wolfiesch/spreadsheet-peek/master/i
 Or manually:
 
 ```bash
-brew install bgreenwell/tap/xleak
+cargo install wolfxl-cli
 ```
 
 Then install the skill for your agent (see [Agent Setup](#agent-setup) below).
@@ -94,7 +95,7 @@ mkdir -p .claude/skills/spreadsheet-peek
 cp SKILL.md .claude/skills/spreadsheet-peek/
 ```
 
-Either way, Claude Code auto-invokes the skill based on the frontmatter `description` and `filePattern` triggers. You still need `xleak` on your `PATH` - either run the `install.sh` one-liner in Quick Start or `brew install bgreenwell/tap/xleak` separately.
+Either way, Claude Code auto-invokes the skill based on the frontmatter `description` and `filePattern` triggers. You still need `wolfxl` on your `PATH` - either run the `install.sh` one-liner in Quick Start or `cargo install wolfxl-cli` separately.
 
 ### Codex (AGENTS.md)
 
@@ -105,16 +106,16 @@ Codex reads `AGENTS.md` from the repo root. Paste the body of `SKILL.md` into yo
 
 When the user references a `.xlsx`, `.xls`, `.xlsm`, `.xlsb`, or `.ods`
 file, or when about to run a data pipeline that reads one, preview it
-first with xleak:
+first with `wolfxl peek`:
 
-    xleak <file> -n 15
+    wolfxl peek <file> -n 15
 
 For large files or repeat previews in the same conversation, use the
 token-efficient mode:
 
-    xleak <file> --export text | head -20
+    wolfxl peek <file> --export text | head -20
 
-For `.csv` files, xleak doesn't read them directly. For simple CSVs:
+For `.csv` files, `wolfxl peek` doesn't read them directly. For simple CSVs:
 
     head -15 file.csv | column -s, -t
 
@@ -136,34 +137,34 @@ See [docs/agent-setup.md](docs/agent-setup.md) for detailed per-agent instructio
 
 ```bash
 # Add to ~/.zshrc or ~/.bashrc
-alias peek='xleak -n 20 -w 40'
-alias peekall='xleak -n 0'
-alias peekwide='xleak -n 20 -w 60'
+alias peek='wolfxl peek -n 20 -w 40'
+alias peekall='wolfxl peek -n 0'
+alias peekwide='wolfxl peek -n 20 -w 60'
 ```
 
 ## Deep dive
 
-For the full technical rationale (why proactive triggers, how the token math works at scale, and how to extend the pattern to PDFs, SQL, and Parquet), read [`docs/how-it-works.md`](docs/how-it-works.md). The embedded screencast also walks through xleak's interactive TUI mode, which most users miss.
+For the full technical rationale (why proactive triggers, how the token math works at scale, and how to extend the pattern to PDFs, SQL, and Parquet), read [`docs/how-it-works.md`](docs/how-it-works.md).
 
 ## FAQ
 
 **Why a skill instead of an MCP server?**
-An MCP server is a long-running process with its own install, auth, and schema surface. The skill is one markdown file that teaches the agent a shell command it can already run. If `xleak` grows features that benefit from structured responses (pagination tokens, typed schema), an MCP wrapper becomes interesting. Today it would just be a layer of indirection over `xleak <file>`.
+An MCP server is a long-running process with its own install, auth, and schema surface. The skill is one markdown file that teaches the agent a shell command it can already run. As `wolfxl-cli` grows features (sprint 2 ships `--map`, `--schema`, `--agent --max-tokens N` for budget-aware previews), an MCP wrapper becomes interesting. Today it would just be a layer of indirection over `wolfxl peek <file>`.
 
 **Why not `pandas.read_excel()` or `openpyxl` directly?**
-Speed and tokens. `openpyxl` cold-start is 0.5-1s before it reads a byte; `xleak` is instantaneous. Tuple-dump output also costs 4-5x more tokens per row than `xleak --export text` for the same information, and is harder for the user to read. The skill includes a Python fallback for sandboxed agents that can't shell out, but it's the fallback, not the default.
+Speed and tokens. `openpyxl` cold-start is 0.5-1s before it reads a byte; `wolfxl peek` is instantaneous. Tuple-dump output also costs 4-5x more tokens per row than `wolfxl peek --export text` for the same information, and is harder for the user to read. The skill includes a Python fallback for sandboxed agents that can't shell out, but it's the fallback, not the default.
 
 **What about agents that can't execute shell commands?**
 The skill's "Python fallback" section (`SKILL.md`) covers this: `openpyxl` + `tabulate` produces a similar box-drawing table. Token costs are higher and startup is slower, but the output shape matches so the agent can keep its downstream reasoning identical.
 
 **Does this actually work with CSV?**
-`xleak 0.2.5` does not read CSV directly - it's Excel-family (`.xlsx`, `.xls`, `.xlsm`, `.xlsb`, `.ods`). The skill handles CSV through a shell fallback (`head`, `column -s, -t`, `mlr`, `csvlook`) and the frontmatter still triggers on `.csv` paths so the agent knows to reach for the right tool. See the [CSV Fallback](SKILL.md#csv-fallback) section.
+`wolfxl peek` does not read CSV directly - it's Excel-family (`.xlsx`, `.xls`, `.xlsm`, `.xlsb`, `.ods`). The skill handles CSV through a shell fallback (`head`, `column -s, -t`, `mlr`, `csvlook`) and the frontmatter still triggers on `.csv` paths so the agent knows to reach for the right tool. See the [CSV Fallback](SKILL.md#csv-fallback) section.
 
 **Windows support?**
-`xleak` is available on macOS, Linux, and Windows through two paths: prebuilt binaries from the [xleak GitHub releases page](https://github.com/bgreenwell/xleak/releases), or `cargo install xleak` for a source build (requires a Rust toolchain). Homebrew is the easiest path on macOS/Linux via the `bgreenwell/tap` tap; on Windows, grab the release binary and add it to `PATH`. The skill itself is platform-agnostic (it's a markdown file). The CSV fallback uses `head` and `column`, which are POSIX utilities - on Windows use WSL, Git Bash, or substitute PowerShell equivalents (`Get-Content -TotalCount 15`, `Import-Csv | Format-Table`, etc.) in your shell config.
+`wolfxl-cli` is available on macOS, Linux, and Windows via `cargo install wolfxl-cli` (requires a Rust toolchain). The skill itself is platform-agnostic (it's a markdown file). The CSV fallback uses `head` and `column`, which are POSIX utilities - on Windows use WSL, Git Bash, or substitute PowerShell equivalents (`Get-Content -TotalCount 15`, `Import-Csv | Format-Table`, etc.) in your shell config.
 
 **Will this bloat my context window with a giant system prompt?**
-`SKILL.md` is ~6.7 KB. Claude Code loads it on-demand only when a trigger fires (file pattern match, bash pattern match, or description relevance), so a session that never touches a spreadsheet pays zero cost. Other agents that paste it into a static system prompt pay the 6.7 KB once per conversation - a fraction of what a single naive box-drawing preview costs.
+`SKILL.md` is ~6.5 KB. Claude Code loads it on-demand only when a trigger fires (file pattern match, bash pattern match, or description relevance), so a session that never touches a spreadsheet pays zero cost. Other agents that paste it into a static system prompt pay the 6.5 KB once per conversation - a fraction of what a single naive box-drawing preview costs.
 
 ## What's in the skill
 
@@ -173,9 +174,9 @@ The skill's "Python fallback" section (`SKILL.md`) covers this: `openpyxl` + `ta
 - **Skip rules** - when *not* to preview (already shown, enormous files, user opted out)
 - **Token economy** - box-drawing vs text export tradeoff with measured numbers
 - **Multi-sheet workflow** - how to navigate workbooks with multiple tabs efficiently
-- **Command reference** - full xleak flag cheat sheet (sheets, columns, formulas, exports)
-- **Python fallback** - openpyxl + tabulate snippet for when xleak isn't available
-- **Output interpretation** - how to read xleak's header lines and truncation warnings
+- **Command reference** - full `wolfxl peek` flag cheat sheet (sheets, columns, exports)
+- **Python fallback** - openpyxl + tabulate snippet for when `wolfxl` isn't available
+- **Output interpretation** - how to read `wolfxl peek`'s header lines and truncation warnings
 
 ## Compatibility
 
@@ -189,22 +190,21 @@ The skill's "Python fallback" section (`SKILL.md`) covers this: `openpyxl` + `ta
 
 ## File formats supported
 
-**Excel-family (via xleak)**: `.xlsx` · `.xls` · `.xlsm` · `.xlsb` · `.ods`
+**Excel-family (via `wolfxl peek`)**: `.xlsx` · `.xls` · `.xlsm` · `.xlsb` · `.ods`
 
-**CSV**: Handled via a shell fallback (`head`, `column -s, -t`, `mlr`, `csvkit`) rather than xleak - xleak 0.2.5 doesn't read CSV directly. The skill teaches agents the right command to reach for. See the [CSV Fallback section of `SKILL.md`](SKILL.md#csv-fallback).
+**CSV**: Handled via a shell fallback (`head`, `column -s, -t`, `mlr`, `csvkit`) rather than `wolfxl peek` - it doesn't read CSV directly. The skill teaches agents the right command to reach for. See the [CSV Fallback section of `SKILL.md`](SKILL.md#csv-fallback).
 
 ## Try it
 
 ```bash
 git clone https://github.com/wolfiesch/spreadsheet-peek
 cd spreadsheet-peek
-xleak examples/sample-financials.xlsx -n 10
+wolfxl peek examples/sample-financials.xlsx -n 10
 ```
 
 ## Credits
 
-- [`xleak`](https://github.com/bgreenwell/xleak) by [@bgreenwell](https://github.com/bgreenwell) - the Rust binary that does the actual parsing. This skill is a behavioral wrapper; xleak does the hard work.
-- [`vex-tui`](https://github.com/CodeOne45/vex) - companion interactive TUI editor if you want to hand-edit spreadsheets (for humans, not agents).
+- [`wolfxl-cli`](https://crates.io/crates/wolfxl-cli) and [`wolfxl-core`](https://crates.io/crates/wolfxl-core) - the Rust crates that do the parsing and styled rendering. Source: [github.com/SynthGL/wolfxl](https://github.com/SynthGL/wolfxl). Built on [`calamine-styles`](https://crates.io/crates/calamine-styles) for number-format-aware cell extraction.
 
 ## Contributing
 

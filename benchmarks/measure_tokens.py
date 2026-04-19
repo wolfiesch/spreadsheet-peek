@@ -1,4 +1,4 @@
-"""Measure token costs for different xleak output modes.
+"""Measure token costs for different `wolfxl peek` output modes.
 
 This script produces the numbers cited in the README's token-efficiency table.
 We use tiktoken's cl100k_base encoding (GPT-4 tokenizer) as a reasonable proxy
@@ -36,8 +36,8 @@ def tokens(s: str) -> int:
 
 
 def row_count(output: str) -> int:
-    """Count data rows in xleak output (heuristic: lines starting with │ that
-    aren't separators or headers)."""
+    """Count data rows in `wolfxl peek` box output (heuristic: lines starting
+    with │ that aren't separators or headers)."""
     data_lines = [
         line for line in output.splitlines()
         if line.startswith("│") and "─" not in line
@@ -64,16 +64,16 @@ def benches_for(sample_path: Path, prefix: str) -> list[dict]:
     """Produce the same suite of benchmarks for a given sample file."""
     s = str(sample_path)
     return [
-        bench(f"{prefix} - Box-drawing (5 rows)",  ["xleak", s, "-n", "5"]),
-        bench(f"{prefix} - Box-drawing (15 rows)", ["xleak", s, "-n", "15"]),
+        bench(f"{prefix} - Box-drawing (5 rows)",  ["wolfxl", "peek", s, "-n", "5"]),
+        bench(f"{prefix} - Box-drawing (15 rows)", ["wolfxl", "peek", s, "-n", "15"]),
         # Pass the path via bash's positional `$1` so paths containing spaces or
         # shell metacharacters are never re-interpreted by the shell.
         bench(f"{prefix} - Text export (head -5)",
-              ["bash", "-c", 'xleak "$1" --export text | head -5', "--", s]),
+              ["bash", "-c", 'wolfxl peek "$1" --export text | head -5', "--", s]),
         bench(f"{prefix} - Text export (head -15)",
-              ["bash", "-c", 'xleak "$1" --export text | head -15', "--", s]),
+              ["bash", "-c", 'wolfxl peek "$1" --export text | head -15', "--", s]),
         bench(f"{prefix} - CSV export (head -5)",
-              ["bash", "-c", 'xleak "$1" --export csv | head -5', "--", s]),
+              ["bash", "-c", 'wolfxl peek "$1" --export csv | head -5', "--", s]),
     ]
 
 

@@ -20,9 +20,9 @@ permissions:
   contents: read
 
 env:
-  # Pin xleak version here. Bump when upstream releases changes affect output.
-  # Verified against crates.io on 2026-04-16; bump via `cargo search xleak`.
-  XLEAK_VERSION: "0.2.5"
+  # Pin wolfxl-cli version here. Bump when upstream releases changes affect output.
+  # Verified against crates.io on 2026-04-19; bump via `cargo search wolfxl-cli`.
+  WOLFXL_CLI_VERSION: "0.4.0"
 
 jobs:
   benchmark:
@@ -39,19 +39,19 @@ jobs:
           ref: master
           path: main
 
-      - name: Cache xleak binary
+      - name: Cache wolfxl binary
         id: cargo-cache
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cargo/bin/xleak
+            ~/.cargo/bin/wolfxl
             ~/.cargo/registry
             ~/.cargo/git
-          key: xleak-${{ runner.os }}-${{ env.XLEAK_VERSION }}
+          key: wolfxl-cli-${{ runner.os }}-${{ env.WOLFXL_CLI_VERSION }}
 
-      - name: Install xleak
+      - name: Install wolfxl-cli
         if: steps.cargo-cache.outputs.cache-hit != 'true'
-        run: cargo install xleak --version "$XLEAK_VERSION"
+        run: cargo install wolfxl-cli --version "$WOLFXL_CLI_VERSION"
 
       - name: Add cargo bin to PATH
         run: echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"

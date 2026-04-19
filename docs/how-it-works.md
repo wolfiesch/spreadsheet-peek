@@ -1,6 +1,6 @@
 # How spreadsheet-peek Works
 
-`spreadsheet-peek` is a small idea delivered as a single file (`SKILL.md`): teach an AI coding agent to use [`xleak`](https://github.com/bgreenwell/xleak) instead of improvising Python every time it touches a `.xlsx`. The payoff is two-sided. The agent gets faster, more readable previews. The user gets a context window that survives long sessions. This doc unpacks the mechanics behind that claim.
+`spreadsheet-peek` is a small idea delivered as a single file (`SKILL.md`): teach an AI coding agent to use [`wolfxl peek`](https://crates.io/crates/wolfxl-cli) instead of improvising Python every time it touches a `.xlsx`. The payoff is two-sided. The agent gets faster, more readable, *style-aware* previews. The user gets a context window that survives long sessions. This doc unpacks the mechanics behind that claim.
 
 The short version sits at three layers:
 
@@ -8,7 +8,7 @@ The short version sits at three layers:
 2. **Token-efficient output modes** change *how* it looks at one.
 3. **A reproducible pattern** means the same shape can wrap any opaque file format.
 
-Below is ~45 seconds of the interactive TUI mode the skill points agents at. If you only know `xleak` as a one-shot CLI, this is the part you missed.
+Below is ~45 seconds of `wolfxl peek` rendering the committed sample workbook. If you only know spreadsheets as `openpyxl` tuple dumps, this is the part you've been missing.
 
 https://github.com/wolfiesch/spreadsheet-peek/assets/screencast.mp4
 
@@ -22,9 +22,9 @@ Most agent integrations are *reactive*. The user asks "what does that file look 
 
 `spreadsheet-peek` inverts that. The `SKILL.md` body lists five specific conditions where the agent is expected to preview without being asked:
 
-1. **Before data processing.** Any pipeline, ETL, or script that reads a spreadsheet gets a preview of the input first. The cost is one `xleak` call (~0.1s, ~600 tokens). The benefit is the user sees what the pipeline is actually processing before the run, not after a silent misclassification buries the real question under hundreds of rows of output.
+1. **Before data processing.** Any pipeline, ETL, or script that reads a spreadsheet gets a preview of the input first. The cost is one `wolfxl peek` call (~0.05s, ~600 tokens). The benefit is the user sees what the pipeline is actually processing before the run, not after a silent misclassification buries the real question under hundreds of rows of output.
 2. **After generating a test fixture.** When the agent creates or modifies an `.xlsx` under `tests/`, it previews the result. Fixtures that look right on paper frequently render wrong (merged cells collapsed, numbers stored as strings, off-by-one header rows), and catching that before a test run saves a debugging round.
-3. **When the user references a spreadsheet by path.** "Look at `data/q3.xlsx`" becomes `xleak data/q3.xlsx -n 15` before anything else, rather than a conversational description of what's in the file from memory.
+3. **When the user references a spreadsheet by path.** "Look at `data/q3.xlsx`" becomes `wolfxl peek data/q3.xlsx -n 15` before anything else, rather than a conversational description of what's in the file from memory.
 4. **When debugging a parsing issue.** If a classifier flagged a sheet as the wrong archetype, the agent looks at what the parser actually got.
 5. **When comparing before/after.** Transformations show source and result side-by-side.
 
@@ -38,41 +38,41 @@ This is the part of the skill that pays the agent-level dividend. The technical 
 
 ## 2. The token-efficiency math
 
-The next layer is more mechanical. `xleak`'s default output uses Unicode box-drawing characters for borders. They look great in a terminal. They cost real tokens in an agent's context window.
+The next layer is more mechanical. `wolfxl peek`'s default output uses Unicode box-drawing characters for borders. They look great in a terminal. They cost real tokens in an agent's context window.
 
 From [`benchmarks/measure_tokens.py`](../benchmarks/measure_tokens.py), measured with `cl100k_base` (GPT-4 tokenizer, a reasonable proxy for Claude) against two sample shapes committed to `examples/`:
 
 | Sample | Mode | Command | Tokens (5 rows) | Tokens/row |
 |--------|------|---------|----------------:|-----------:|
-| [`sample-financials.xlsx`](../examples/sample-financials.xlsx) (7 cols) | Box-drawing | `xleak file -n 5` | **593** | 118.6 |
-| 〃 | Text export | `xleak file --export text \| head -5` | **117** | 23.4 |
-| 〃 | CSV export | `xleak file --export csv \| head -5` | 119 | 23.8 |
-| [`wide-table.xlsx`](../examples/wide-table.xlsx) (29 cols) | Box-drawing | `xleak file -n 5` | **2,263** | 452.6 |
-| 〃 | Text export | `xleak file --export text \| head -5` | **632** | 126.4 |
+| [`sample-financials.xlsx`](../examples/sample-financials.xlsx) (7 cols) | Box-drawing | `wolfxl peek file -n 5` | **573** | 114.6 |
+| 〃 | Text export | `wolfxl peek file --export text \| head -5` | **117** | 23.4 |
+| 〃 | CSV export | `wolfxl peek file --export csv \| head -5` | 119 | 23.8 |
+| [`wide-table.xlsx`](../examples/wide-table.xlsx) (29 cols) | Box-drawing | `wolfxl peek file -n 5` | **2,249** | 449.8 |
+| 〃 | Text export | `wolfxl peek file --export text \| head -5` | **632** | 126.4 |
 
 Two observations from the two-shape comparison:
 
-1. On the financial workbook, text export is **5.1x cheaper per row** than box-drawing. The overhead is mostly fixed (header lines, border runs), so the per-row cost improves with larger slices, but the ratio holds.
-2. On the wide workbook, the *ratio* drops to **3.6x** - because the text-export baseline is itself larger per row when a table has many columns. But the *absolute* per-row savings grows from ~95 tokens/row (financials) to ~326 tokens/row (wide). The wider the workbook, the more expensive naive usage gets in raw tokens, even if the ratio looks less dramatic.
+1. On the financial workbook, text export is **4.9x cheaper per row** than box-drawing. The overhead is mostly fixed (header lines, border runs), so the per-row cost improves with larger slices, but the ratio holds.
+2. On the wide workbook, the *ratio* drops to **3.6x** - because the text-export baseline is itself larger per row when a table has many columns. But the *absolute* per-row savings grows from ~91 tokens/row (financials) to ~323 tokens/row (wide). The wider the workbook, the more expensive naive usage gets in raw tokens, even if the ratio looks less dramatic.
 
 Here's the worked example the skill encodes implicitly. Imagine a 30-spreadsheet agent session (a realistic FDD or QoE engagement). Naive usage runs the box-drawing default on every file:
 
 ```
-30 spreadsheets x 15-row preview x 88.9 tokens/row = 40,005 tokens
+30 spreadsheets x 15-row preview x 87.5 tokens/row = 39,375 tokens
 ```
 
 That is ~20% of a 200K context window spent on box characters. Now apply the skill's rule: box-drawing for the first preview only, text export for every subsequent look:
 
 ```
-First previews:  30 x 1,333 tokens (15 rows, box) = 39,990 tokens
+First previews:  30 x 1,313 tokens (15 rows, box) = 39,390 tokens
 Re-previews:     60 x 328 tokens   (15 rows, text) = 19,680 tokens
-Total:                                              59,670 tokens
+Total:                                              59,070 tokens
 ```
 
 vs. naive (90 total previews, all box-drawing):
 
 ```
-90 x 1,333 = 119,970 tokens
+90 x 1,313 = 118,170 tokens
 ```
 
 Half the context saved. In a session that also has to hold a codebase, a plan, and a conversation, that difference is the gap between finishing and hitting a compaction.
@@ -110,12 +110,12 @@ The same logic applies to SKILL.md body size. The skill currently sits at ~6.7 K
 
 ## What this doc is not
 
-It is not a tutorial for `xleak`. Run `xleak --help` for that, or watch the screencast.
+It is not a tutorial for `wolfxl peek`. Run `wolfxl peek --help` for that, or read the [`wolfxl-cli` docs on crates.io](https://crates.io/crates/wolfxl-cli).
 
-It is not a rationale for a wrapper MCP server. The skill runs `xleak` as a plain shell command. If an MCP server would help, it would help the same way for every CLI tool an agent ever touches, and that is a separate problem.
+It is not a rationale for a wrapper MCP server. The skill runs `wolfxl peek` as a plain shell command. If an MCP server would help, it would help the same way for every CLI tool an agent ever touches, and that is a separate problem. (For what it's worth, `wolfxl serve --mcp` is on the sprint-2 backlog precisely so the same `wolfxl-core` logic is reachable from MCP without a wrapper layer.)
 
-It is not marketing. If the 5.1x ratio above is wrong on a larger file or a different tokenizer, the benchmark script is the arbiter. Open an issue with a repro.
+It is not marketing. If the 4.9x ratio above is wrong on a larger file or a different tokenizer, the benchmark script is the arbiter. Open an issue with a repro.
 
 ---
 
-*Last verified against `xleak 0.x` and `tiktoken cl100k_base`, 2026-04-16.*
+*Last verified against `wolfxl-cli 0.4.0` and `tiktoken cl100k_base`, 2026-04-19.*

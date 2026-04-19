@@ -2,7 +2,7 @@
 # spreadsheet-peek installer.
 #
 # Installs:
-#   1. The xleak CLI (via brew on macOS, cargo elsewhere)
+#   1. The wolfxl CLI (via cargo; homebrew tap planned)
 #   2. The spreadsheet-peek SKILL.md into ~/.claude/skills/spreadsheet-peek/
 #
 # Usage:
@@ -24,28 +24,25 @@ die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 say "Installing spreadsheet-peek..."
 
-# ---- Step 1: xleak ---------------------------------------------------------
+# ---- Step 1: wolfxl --------------------------------------------------------
 
-if command -v xleak >/dev/null 2>&1; then
-    xleak_path="$(command -v xleak)"
-    say "xleak already installed (${xleak_path})"
+if command -v wolfxl >/dev/null 2>&1; then
+    wolfxl_path="$(command -v wolfxl)"
+    say "wolfxl already installed (${wolfxl_path})"
 else
-    if command -v brew >/dev/null 2>&1; then
-        say "Installing xleak via Homebrew..."
-        brew install bgreenwell/tap/xleak
-    elif command -v cargo >/dev/null 2>&1; then
-        say "Installing xleak via cargo (this takes a few minutes)..."
-        cargo install xleak
+    if command -v cargo >/dev/null 2>&1; then
+        say "Installing wolfxl-cli via cargo (this takes a few minutes)..."
+        cargo install wolfxl-cli
     else
-        die "need Homebrew (macOS) or cargo (Linux) to install xleak.
-  - macOS:   /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"
+        die "need cargo to install wolfxl-cli.
+  - macOS:   brew install rust   (or install rustup from https://rustup.rs)
   - Linux:   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
     fi
 fi
 
 # Sanity check the install landed on PATH.
-if ! command -v xleak >/dev/null 2>&1; then
-    warn "xleak installed but not on PATH yet - open a new shell or source your profile."
+if ! command -v wolfxl >/dev/null 2>&1; then
+    warn "wolfxl installed but not on PATH yet - open a new shell or source your profile."
 fi
 
 # ---- Step 2: SKILL.md ------------------------------------------------------
@@ -88,7 +85,7 @@ cat <<'MSG'
 Done. Next steps:
 
   1. Start a new Claude Code session - the skill loads from ~/.claude/skills/.
-  2. Reference an .xlsx file; the agent should preview it with xleak automatically.
+  2. Reference an .xlsx file; the agent should preview it with `wolfxl peek` automatically.
   3. Other agents (Codex, Cursor, Continue, Aider): see
      https://github.com/wolfiesch/spreadsheet-peek/blob/master/docs/agent-setup.md
 

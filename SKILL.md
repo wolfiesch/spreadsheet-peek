@@ -1,7 +1,7 @@
 ---
 name: spreadsheet-peek
-description: Inline terminal preview of Excel spreadsheets using xleak. Use proactively when working with .xlsx, .xls, .xlsm, .xlsb, or .ods files - before data processing, after fixture generation, when debugging table parsing, or when the user references a spreadsheet. Also use when asked to "peek", "preview", "show me the file", or "what does this spreadsheet look like". For .csv files, see the CSV fallback section below.
-version: 1.4.0
+description: Inline terminal preview of Excel spreadsheets using `wolfxl peek`. Use proactively when working with .xlsx, .xls, .xlsm, .xlsb, or .ods files - before data processing, after fixture generation, when debugging table parsing, or when the user references a spreadsheet. Also use when asked to "peek", "preview", "show me the file", or "what does this spreadsheet look like". For .csv files, see the CSV fallback section below.
+version: 2.0.0
 metadata:
   author: wolfgangs
   filePattern:
@@ -12,19 +12,19 @@ metadata:
     - "**/*.ods"
     - "**/*.csv"
   bashPattern:
-    - "xleak"
+    - "wolfxl"
     - "peek\\b"
 ---
 
 # Spreadsheet Peek - Inline Terminal Preview
 
-Show inline ASCII table previews of spreadsheet files using `xleak`. This skill is **proactive** - invoke it automatically at the right moments without waiting for the user to ask.
+Show inline ASCII table previews of spreadsheet files using `wolfxl peek`. This skill is **proactive** - invoke it automatically at the right moments without waiting for the user to ask.
 
 ## Prerequisites
 
-- `xleak` must be installed: `brew install bgreenwell/tap/xleak`
+- `wolfxl` must be installed: `cargo install wolfxl-cli`
 - Supports Excel-family formats: `.xlsx`, `.xls`, `.xlsm`, `.xlsb`, `.ods`
-- `.csv` is **not** handled by `xleak` directly - see [CSV Fallback](#csv-fallback) below
+- `.csv` is **not** handled by `wolfxl peek` directly - see [CSV Fallback](#csv-fallback) below
 
 ## When to Invoke (Proactive Triggers)
 
@@ -38,7 +38,7 @@ Show inline ASCII table previews of spreadsheet files using `xleak`. This skill 
 
 4. **When debugging parsing issues**: If investigating why a table was misclassified or mis-parsed, preview the raw input to see what the parser actually received.
 
-5. **When comparing before/after**: Show both the input and any transformed output side-by-side (run xleak on the input, then show the processing results).
+5. **When comparing before/after**: Show both the input and any transformed output side-by-side (run `wolfxl peek` on the input, then show the processing results).
 
 ### Skip preview when:
 
@@ -49,16 +49,16 @@ Show inline ASCII table previews of spreadsheet files using `xleak`. This skill 
 
 ## Token Efficiency (IMPORTANT)
 
-xleak's box-drawing output uses Unicode border characters that cost real tokens. Choose the right mode based on context:
+`wolfxl peek`'s box-drawing output uses Unicode border characters that cost real tokens. Choose the right mode based on context:
 
 | Mode | When to use | Token cost (5 rows) |
 |------|-------------|---------------------|
-| **Box-drawing** (`xleak file -n 5`) | User is looking, readability matters | ~593 tokens (~119/row) |
-| **Text export** (`xleak file --export text \| head -5`) | Context-sensitive, large files, repeated previews | ~117 tokens (~23/row) |
+| **Box-drawing** (`wolfxl peek file -n 5`) | User is looking, readability matters | ~573 tokens (~115/row) |
+| **Text export** (`wolfxl peek file --export text \| head -5`) | Context-sensitive, large files, repeated previews | ~117 tokens (~23/row) |
 
 **Default rule**: Use box-drawing for the FIRST preview in a conversation (readability). Switch to `--export text | head` for subsequent previews or when context is getting long.
 
-**Measured ratio**: box-drawing is ~5x more expensive per row than text export. The overhead is mostly fixed (header/border lines), so the per-row cost improves with more rows - but text export is still cheaper at every size.
+**Measured ratio**: box-drawing is ~4.9x more expensive per row than text export on a 7-column workbook, ~3.6x on a 29-column wide-table. The overhead is mostly fixed (header/border lines), so the per-row cost improves with more rows - but text export is still cheaper at every size.
 
 **Note**: `--export text` ignores the `-n` flag and dumps ALL rows. Always pipe through `head -N` to limit output.
 
@@ -66,67 +66,47 @@ xleak's box-drawing output uses Unicode border characters that cost real tokens.
 
 ### Quick preview (default - 15 rows, readable)
 ```bash
-xleak <file> -n 15
+wolfxl peek <file> -n 15
 ```
 
 ### Token-efficient preview (large files or repeat views)
 ```bash
-xleak <file> --export text | head -20
+wolfxl peek <file> --export text | head -20
 ```
 
 ### Full dump (all rows, use sparingly)
 ```bash
-xleak <file> -n 0
+wolfxl peek <file> -n 0
 ```
 
 ### Specific sheet by name
 ```bash
-xleak <file> --sheet "Balance Sheet" -n 15
-```
-
-### Specific sheet by index (0-based)
-```bash
-xleak <file> --sheet 1 -n 15
+wolfxl peek <file> --sheet "Balance Sheet" -n 15
 ```
 
 ### Wide columns (for long text, descriptions)
 ```bash
-xleak <file> -n 15 -w 60
-```
-
-### Show formulas instead of values
-```bash
-xleak <file> --formulas -n 15
+wolfxl peek <file> -n 15 -w 60
 ```
 
 ### Export as clean text (for diffing, piping)
 ```bash
-xleak <file> --export text
+wolfxl peek <file> --export text
 ```
 
 ### Export as CSV
 ```bash
-xleak <file> --export csv
+wolfxl peek <file> --export csv
 ```
 
 ### Export as JSON
 ```bash
-xleak <file> --export json
-```
-
-### List Excel tables in a workbook (.xlsx only)
-```bash
-xleak <file> --list-tables
-```
-
-### Extract a specific Excel table by name (.xlsx only)
-```bash
-xleak <file> --table "SalesByRegion" -n 15
+wolfxl peek <file> --export json
 ```
 
 ## CSV Fallback
 
-`xleak` does **not** read `.csv` files as of 0.2.5 - passing a CSV produces `Error: Cannot detect file format`. For CSVs, use these token-efficient alternatives instead of writing disposable Python:
+`wolfxl peek` does **not** read `.csv` files - passing a CSV produces a parse error. For CSVs, use these token-efficient alternatives instead of writing disposable Python:
 
 ```bash
 # Quick peek - first 15 rows, raw
@@ -165,11 +145,11 @@ When previewing a multi-sheet workbook:
 
 ```bash
 # First sheet (readable, box-drawing)
-xleak file.xlsx -n 15
+wolfxl peek file.xlsx -n 15
 
 # Subsequent sheets (token-efficient)
-xleak file.xlsx --sheet "Balance Sheet" --export text | head -20
-xleak file.xlsx --sheet "Cash Flow" --export text | head -20
+wolfxl peek file.xlsx --sheet "Balance Sheet" --export text | head -20
+wolfxl peek file.xlsx --sheet "Cash Flow" --export text | head -20
 ```
 
 ## Shell Aliases
@@ -177,25 +157,14 @@ xleak file.xlsx --sheet "Cash Flow" --export text | head -20
 Add these to your `~/.zshrc` or `~/.bashrc`:
 
 ```bash
-alias peek='xleak -n 20 -w 40'
-alias peekall='xleak -n 0'
-alias peekwide='xleak -n 20 -w 60'
+alias peek='wolfxl peek -n 20 -w 40'
+alias peekall='wolfxl peek -n 0'
+alias peekwide='wolfxl peek -n 20 -w 60'
 ```
-
-## Companion Tool: vex-tui
-
-For **interactive terminal editing** of spreadsheet files (not for inline agent previews):
-- Install: `brew install CodeOne45/tap/vex`
-- Run: `vex <file>`
-- Vim keybindings: `h/j/k/l` navigate, `i` edit cell, `:w` save, `:q` quit, Tab switch sheets
-- Features: 15+ formula functions, inline charts, 10+ themes, auto-save
-- Use when you want to hand-edit fixtures without opening Excel
-
-**xleak is for viewing (agent + human), vex is for editing (human only).**
 
 ## Python Fallback
 
-If xleak is unavailable, use openpyxl + tabulate:
+If `wolfxl` is unavailable, use openpyxl + tabulate:
 
 ```python
 import openpyxl, tabulate
@@ -205,20 +174,22 @@ rows = [[cell.value for cell in row] for row in ws.iter_rows()]
 print(tabulate.tabulate(rows[1:], headers=rows[0] or [], tablefmt='grid'))
 ```
 
-## Why xleak Over Disposable Python Scripts
+## Why `wolfxl peek` Over Disposable Python Scripts
 
-xleak saves ~150-200 generation tokens per invocation (no Python code to write). The tradeoff:
-- **Box-drawing output** is ~7x larger than raw TSV (Unicode borders cost tokens on the context side)
-- **`--export text | head`** is the most token-efficient option overall (~54 tokens for 5 rows vs ~250 for Python approach)
-- **Reliability**: xleak never fails on import errors, env issues, or edge cases in ad-hoc parsing code
+`wolfxl peek` saves ~150-200 generation tokens per invocation (no Python code to write). The tradeoff:
+- **Box-drawing output** is ~5x larger than raw TSV (Unicode borders cost tokens on the context side)
+- **`--export text | head`** is the most token-efficient option overall (~117 tokens for 5 rows vs ~250 for Python approach)
+- **Reliability**: `wolfxl peek` never fails on import errors, env issues, or edge cases in ad-hoc parsing code
 - **Speed**: Rust binary parses instantly vs ~0.5-1s openpyxl startup
+- **Style-aware**: Excel number formats (currency, percentages, dates) render in their native form - `$1,234.56` instead of `1234.56`, `12.5%` instead of `0.125`
 
-**Never write disposable Python to view a spreadsheet. Use xleak.**
+**Never write disposable Python to view a spreadsheet. Use `wolfxl peek`.**
 
 ## Output Interpretation Notes
 
 - Empty cells show as blank (no value in the cell)
-- Numbers with commas (e.g., `1,200`) indicate xleak is preserving Excel number formatting
-- The header line `Sheet: SheetName (N rows x M columns)` tells you the full dimensions
+- Numbers with thousand separators (e.g., `1,200`) reflect Excel number formatting preserved by `wolfxl peek`
+- Currency cells render with their format (e.g., `$1,234.56`); percentages render as `12.5%`; dates as ISO `YYYY-MM-DD`
+- The header line `Sheet: SheetName (N rows × M columns)` tells you the full dimensions
 - `Available sheets:` line appears when the workbook has multiple tabs
-- `Showing N of M rows` warning appears when output is truncated by `-n`
+- The banner `wolfxl peek - Excel preview` confirms you're getting `wolfxl`'s styled output (vs a manual openpyxl dump)

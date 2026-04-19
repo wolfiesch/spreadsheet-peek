@@ -1,6 +1,6 @@
 # Agent Setup Guide
 
-Detailed installation for each AI coding agent. If your agent isn't listed, the pattern is the same: paste the content of `SKILL.md` into whatever mechanism your agent uses for persistent system instructions.
+Detailed installation for each AI coding agent. If your agent isn't listed, the pattern is the same: install `wolfxl-cli` and paste the content of `SKILL.md` into whatever mechanism your agent uses for persistent system instructions.
 
 ## Verification status
 
@@ -15,7 +15,7 @@ Badges get re-dated whenever the skill, the agent, or the agent's instruction-lo
 
 ## Table of contents
 
-- [Claude Code](#claude-code) ✅ Verified 2026-04-16
+- [Claude Code](#claude-code) ✅ Verified 2026-04-19
 - [Codex](#codex) 📖 Documented
 - [Cursor](#cursor) 📖 Documented
 - [Continue](#continue) 📖 Documented
@@ -26,9 +26,11 @@ Badges get re-dated whenever the skill, the agent, or the agent's instruction-lo
 
 ## Claude Code
 
-> ✅ **Verified 2026-04-16** - Skill loads from `~/.claude/skills/spreadsheet-peek/SKILL.md` in an active Claude Code session; frontmatter description and `filePattern`/`bashPattern` triggers are recognized by the skills index.
+> ✅ **Verified 2026-04-19** - Skill loads from `~/.claude/skills/spreadsheet-peek/SKILL.md` in an active Claude Code session; frontmatter description and `filePattern`/`bashPattern` triggers are recognized by the skills index. v2.0.0 plugin install verified end-to-end against the `wolfie-tools` marketplace.
 
 Claude Code has two install paths: a **plugin** (recommended, one command, versioned, easy to uninstall) and a **skill-only** install (no plugin machinery, just a SKILL.md in the skills directory). Both end up with the skill active; pick whichever fits your setup.
+
+**Prerequisites (both paths):** `wolfxl-cli` on `PATH`. Install with `cargo install wolfxl-cli` (requires a Rust toolchain). Verify with `wolfxl --version`.
 
 **Option A - Plugin install (recommended):**
 
@@ -95,24 +97,25 @@ cat >> AGENTS.md << 'EOF'
 
 ## Spreadsheet Previews (spreadsheet-peek)
 
-Prerequisites: `brew install bgreenwell/tap/xleak`
+Prerequisites: `cargo install wolfxl-cli`
 
 When the user references a `.xlsx`, `.xls`, `.xlsm`, `.xlsb`, or `.ods`
 file, or when about to run a data pipeline or script that reads a
-spreadsheet, preview the file first with xleak before doing anything else:
+spreadsheet, preview the file first with `wolfxl peek` before doing
+anything else:
 
-    xleak <file> -n 15
+    wolfxl peek <file> -n 15
 
 For large files or repeat previews in the same conversation, switch to the
 token-efficient mode:
 
-    xleak <file> --export text | head -20
+    wolfxl peek <file> --export text | head -20
 
 For multi-sheet workbooks, preview each relevant sheet:
 
-    xleak <file> --sheet "Balance Sheet" -n 15
+    wolfxl peek <file> --sheet "Balance Sheet" -n 15
 
-For `.csv` files (xleak doesn't read them directly), start with:
+For `.csv` files (`wolfxl peek` doesn't read them directly), start with:
 
     head -15 file.csv | column -s, -t
 
@@ -124,7 +127,9 @@ use a CSV-aware tool instead:
 
 See SKILL.md#csv-fallback for the full CSV decision tree.
 
-Never write disposable Python to view a spreadsheet. Use xleak.
+Never write disposable Python to view a spreadsheet. Use `wolfxl peek` -
+it renders Excel number formats natively (currency as `$1,234.56`,
+percentages as `12.5%`, dates as ISO `YYYY-MM-DD`).
 
 Full skill reference: https://github.com/wolfiesch/spreadsheet-peek
 EOF
@@ -166,8 +171,8 @@ Continue uses `~/.continue/config.json`. Add a `systemMessage` entry or append t
 
 ```json
 {
-  "models": [...],
-  "systemMessage": "When the user references an Excel file (.xlsx/.xls/.xlsm/.xlsb/.ods), preview it with `xleak <file> -n 15` before discussing it. For repeat previews, use `xleak <file> --export text | head -20` to save tokens. For .csv files (xleak does not read CSV) start with `head -15 file.csv | column -s, -t` on simple CSVs; for quoted commas, embedded newlines, or BOMs use a CSV-aware tool such as `mlr --icsv --opprint head -n 15 file.csv` or `csvlook file.csv`. See SKILL.md#csv-fallback for the full decision tree. Never write Python just to inspect a spreadsheet. Full reference: https://github.com/wolfiesch/spreadsheet-peek"
+  "models": ["..."],
+  "systemMessage": "When the user references an Excel file (.xlsx/.xls/.xlsm/.xlsb/.ods), preview it with `wolfxl peek <file> -n 15` before discussing it. For repeat previews, use `wolfxl peek <file> --export text | head -20` to save tokens. For .csv files (`wolfxl peek` does not read CSV) start with `head -15 file.csv | column -s, -t` on simple CSVs; for quoted commas, embedded newlines, or BOMs use a CSV-aware tool such as `mlr --icsv --opprint head -n 15 file.csv` or `csvlook file.csv`. See SKILL.md#csv-fallback for the full decision tree. Never write Python just to inspect a spreadsheet. Full reference: https://github.com/wolfiesch/spreadsheet-peek"
 }
 ```
 
@@ -193,9 +198,9 @@ Then copy `SKILL.md` to your repo root or reference the raw GitHub URL.
 
 For any agent that supports persistent system instructions (system prompt, rules file, custom instructions, etc.), the pattern is the same:
 
-1. Ensure xleak is installed: `brew install bgreenwell/tap/xleak`
+1. Ensure `wolfxl-cli` is installed: `cargo install wolfxl-cli`
 2. Copy the body of `SKILL.md` into your agent's persistent instruction mechanism
-3. Start a new session - the agent will now know to use xleak proactively
+3. Start a new session - the agent will now know to use `wolfxl peek` proactively
 
 The behavioral rules in `SKILL.md` are written in agent-neutral language. Any agent that can execute shell commands can apply them.
 
@@ -206,17 +211,17 @@ The behavioral rules in `SKILL.md` are written in agent-neutral language. Any ag
 ### The agent still writes Python to inspect spreadsheets
 
 - Verify the skill is actually loaded (in Claude Code: ask "what skills do you have?")
-- Check that `xleak` is in the agent's `PATH` - some agents run commands in a restricted shell
+- Check that `wolfxl` is in the agent's `PATH` - some agents run commands in a restricted shell
 - The proactive triggers in `SKILL.md` assume the agent reads the full skill body, not just the description - make sure you pasted the whole file, not just the frontmatter
 
-### xleak command not found
+### `wolfxl` command not found
 
 ```bash
-brew install bgreenwell/tap/xleak
-which xleak   # should print /opt/homebrew/bin/xleak on Apple Silicon
+cargo install wolfxl-cli
+which wolfxl   # should print ~/.cargo/bin/wolfxl
 ```
 
-If Homebrew isn't available, xleak has prebuilt binaries: https://github.com/bgreenwell/xleak/releases
+If you don't have a Rust toolchain, install it via [rustup.rs](https://rustup.rs) first. Prebuilt binaries are tracked in [the wolfxl repo](https://github.com/SynthGL/wolfxl/releases) once they ship; until then, `cargo install` is the canonical path on macOS, Linux, and Windows.
 
 ### The agent uses box-drawing mode everywhere and eats context
 

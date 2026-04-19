@@ -2,8 +2,9 @@
 #
 # Shows the pitch side-by-side: a naive agent writing throwaway Python
 # (slow openpyxl startup, ugly tuple output) vs the same agent running
-# xleak (instant, readable box-drawing). This is the "why the skill
-# exists" visual that the original examples/demo.gif doesn't convey.
+# `wolfxl peek` (instant, style-aware box-drawing). This is the "why
+# the skill exists" visual that the original examples/demo.gif doesn't
+# convey.
 #
 # Render with: vhs scripts/record_contrast.tape
 # Output:      assets/contrast.gif
@@ -43,10 +44,10 @@ Sleep 300ms
 Type "# With spreadsheet-peek: one line, instant, readable"
 Sleep 800ms
 Enter
-Type "xleak examples/sample-financials.xlsx -n 5"
+Type "wolfxl peek examples/sample-financials.xlsx -n 5"
 Sleep 400ms
 Enter
 Sleep 4000ms
 
-# Closing beat so the last frame is the clean xleak output
+# Closing beat so the last frame is the clean wolfxl peek output
 Sleep 1s

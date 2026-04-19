@@ -4,7 +4,7 @@ This sample exists to stress-test the token-cost claims at the opposite
 end of the shape spectrum from `sample-financials.xlsx`. Wide tables
 (29 columns) amplify box-drawing overhead because every row adds that
 many column separators, so the per-row token cost of the default
-`xleak -n` output balloons relative to the `--export text` path.
+`wolfxl peek -n` output balloons relative to the `--export text` path.
 
 The synthetic data is a trailing-12-month operations dashboard: one
 department per row, one metric per month (actual + plan), plus YoY
@@ -83,7 +83,7 @@ def main() -> None:
     for idx, dept in enumerate(DEPARTMENTS):
         ws.append(deterministic_row(dept, idx))
 
-    # Narrow columns so the file opens cleanly in Excel, but xleak's -w 30
+    # Narrow columns so the file opens cleanly in Excel, but wolfxl peek's -w 30
     # default will still truncate - which is exactly the point.
     ws.column_dimensions["A"].width = 26
     for col_idx in range(2, len(HEADERS) + 1):

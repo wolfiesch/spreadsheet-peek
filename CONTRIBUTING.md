@@ -4,7 +4,7 @@ Thanks for your interest. This project is small but takes contributions seriousl
 
 ## What kinds of contributions are welcome
 
-- **Bug reports** - Cases where xleak output is misleading, the skill misfires, or an agent doesn't invoke it when it should
+- **Bug reports** - Cases where `wolfxl peek` output is misleading, the skill misfires, or an agent doesn't invoke it when it should
 - **Agent compatibility** - Install instructions for agents not yet listed (Aider, Continue, etc.)
 - **Token benchmarks** - Additional workbook shapes (very wide, very tall, CSV, different locales) benchmarked with the existing methodology
 - **Proactive trigger refinements** - Heuristics for when the agent should or shouldn't preview
@@ -12,7 +12,7 @@ Thanks for your interest. This project is small but takes contributions seriousl
 
 ## What's probably out of scope
 
-- Replacing `xleak` with a different backend (the skill is intentionally a thin behavioral wrapper)
+- Replacing `wolfxl peek` with a different backend (the skill is intentionally a thin behavioral wrapper, and `wolfxl-cli` is part of the same author's stack so feature requests can move upstream)
 - Claude Code-specific features that wouldn't work in other agents (breaks the agent-agnostic design)
 - Adding heavy dependencies - the skill should stay a single-file `SKILL.md` with minimal tooling
 
@@ -25,8 +25,8 @@ You don't strictly need a dev environment to edit `SKILL.md` - it's just markdow
 git clone https://github.com/wolfiesch/spreadsheet-peek
 cd spreadsheet-peek
 
-# Install xleak (the only runtime dependency)
-brew install bgreenwell/tap/xleak
+# Install wolfxl-cli (the only runtime dependency; requires a Rust toolchain)
+cargo install wolfxl-cli
 
 # For benchmarks + sample regeneration
 # (uses uv, which spins up ephemeral envs)
@@ -43,8 +43,8 @@ There's no automated test suite because the skill is behavioral, not code. The r
 
 1. Copy your modified `SKILL.md` to `~/.claude/skills/spreadsheet-peek/` (or your agent's equivalent)
 2. Start a fresh agent session
-3. Reference a spreadsheet file and verify the agent invokes xleak correctly
-4. Try edge cases: multi-sheet workbooks, very large files, CSV vs XLSX, formulas
+3. Reference a spreadsheet file and verify the agent invokes `wolfxl peek` correctly
+4. Try edge cases: multi-sheet workbooks, very large files, CSV vs XLSX, style-aware rendering (currency, percent, dates)
 
 ## Pull request checklist
 
