@@ -9,6 +9,8 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - `install.sh` now treats old `wolfxl` binaries as incompatible unless they expose the full `peek` / `map` / `agent` / `schema` surface, and uses `cargo install --force wolfxl-cli` so reruns can upgrade them in place.
 - `.github/workflows/benchmark.yml` now resolves `WOLFXL_CLI_VERSION` from both the PR and master checkouts before installing branch-specific `wolfxl` binaries, so future CLI bump PRs compare the new PR binary against the old master baseline instead of masking CLI output drift.
 - `docs/how-it-works.md` now refers to the embedded recording as a screencast instead of pinning a stale duration.
+- `benchmarks/measure_tokens.py` now fails loudly when a measured command exits non-zero, including piped export commands via `bash -o pipefail`.
+- Benchmark provenance docs and the bug report template now cite `wolfxl-cli 0.7.0`, matching the current 2.x support contract.
 
 ## [2.0.0] - 2026-04-19
 

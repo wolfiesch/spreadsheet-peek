@@ -19,7 +19,7 @@ uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
 
 ## Results
 
-Last measured: 2026-04-19 · wolfxl-cli 0.4.0 · tiktoken `cl100k_base`
+Last measured: 2026-04-19 · wolfxl-cli 0.7.0 · tiktoken `cl100k_base`
 
 | Mode | Tokens | Bytes | Data rows | Tokens/row |
 |------|-------:|------:|----------:|-----------:|

@@ -14,6 +14,7 @@ Outputs a markdown table to stdout.
 from __future__ import annotations
 
 import subprocess
+import shlex
 from pathlib import Path
 
 import tiktoken
@@ -27,6 +28,11 @@ ENC = tiktoken.get_encoding("cl100k_base")
 def run(cmd: list[str]) -> str:
     """Run a shell command and return its stdout."""
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if result.returncode != 0:
+        details = result.stderr.strip() or result.stdout.strip() or "no output"
+        raise RuntimeError(
+            f"Command failed with exit code {result.returncode}: {shlex.join(cmd)}\n{details}"
+        )
     return result.stdout
 
 
@@ -69,11 +75,11 @@ def benches_for(sample_path: Path, prefix: str) -> list[dict]:
         # Pass the path via bash's positional `$1` so paths containing spaces or
         # shell metacharacters are never re-interpreted by the shell.
         bench(f"{prefix} - Text export (head -5)",
-              ["bash", "-c", 'wolfxl peek "$1" --export text | head -5', "--", s]),
+              ["bash", "-o", "pipefail", "-c", 'wolfxl peek "$1" --export text | head -5', "--", s]),
         bench(f"{prefix} - Text export (head -15)",
-              ["bash", "-c", 'wolfxl peek "$1" --export text | head -15', "--", s]),
+              ["bash", "-o", "pipefail", "-c", 'wolfxl peek "$1" --export text | head -15', "--", s]),
         bench(f"{prefix} - CSV export (head -5)",
-              ["bash", "-c", 'wolfxl peek "$1" --export csv | head -5', "--", s]),
+              ["bash", "-o", "pipefail", "-c", 'wolfxl peek "$1" --export csv | head -5', "--", s]),
     ]
 
 
