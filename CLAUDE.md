@@ -19,14 +19,14 @@ When you edit this repo, you are usually editing agent behavior. Treat `SKILL.md
 - **`scripts/record_contrast.tape`** + **`scripts/naive_preview.py`** - the "why this exists" contrast GIF (openpyxl tuple dump vs `wolfxl peek`). The naive script is a pedagogical artifact - it is *supposed* to look like throwaway agent code, so keep it minimal.
 - **`examples/demo.tape`** / **`scripts/record_screencast.tape`** - VHS tape scripts for reproducible GIF/screencast regeneration.
 - **`install.sh`** - POSIX `sh` installer. Runs `cargo install wolfxl-cli` (single path on macOS, Linux, and Windows in v2.0.0 - homebrew tap is sprint-2 backlog), then drops `SKILL.md` into `~/.claude/skills/spreadsheet-peek/`. Must stay clean under `shellcheck -o all`; uses `mktemp` + `trap` for atomic SKILL.md download.
-- **`.github/workflows/benchmark.yml`** - runs `measure_tokens.py` on PR branch and master, posts (or updates) a single drift comment if output differs. `WOLFXL_CLI_VERSION` is pinned in the workflow env (currently `0.4.0`).
+- **`.github/workflows/benchmark.yml`** - runs `measure_tokens.py` on PR branch and master, posts (or updates) a single drift comment if output differs. `WOLFXL_CLI_VERSION` is pinned in the workflow env (currently `0.7.0`).
 - **`docs/agent-setup.md`** - per-agent install instructions. Verification badges (✅ Verified vs 📖 Documented) distinguish personally round-tripped integrations from spec-only ones.
 
 ## The three load-bearing invariants
 
 1. **Agent-agnostic `SKILL.md`.** No Claude Code-only features in the body. Frontmatter is the only place Claude-specific triggers live. If you add a feature that only works in Claude Code, it belongs in a separate doc.
 2. **Numeric claims match the benchmark.** If you change `SKILL.md`, `README.md`, `benchmarks/README.md`, or `docs/how-it-works.md` in ways that touch the token-cost table (~4.9x ratio on financials, ~3.6x on wide; 114.6 tokens/row box-drawing, 23.4 tokens/row text export on the 7-column financials sample), rerun `measure_tokens.py` and update all four sources, or CI will flag drift.
-3. **`wolfxl-cli` version pin in CI.** The `WOLFXL_CLI_VERSION` env in `.github/workflows/benchmark.yml` must point at a real published crates.io version. Verified via `cargo search wolfxl-cli`. An unpinned or fictional version makes every CI run fail (precedent: an earlier `xleak 0.9.0` pin was fictional and broke every run; the current `0.4.0` matches the published `wolfxl-cli` crate).
+3. **`wolfxl-cli` version pin in CI.** The `WOLFXL_CLI_VERSION` env in `.github/workflows/benchmark.yml` must point at a real published crates.io version. Verified via `cargo search wolfxl-cli`. An unpinned or fictional version makes every CI run fail (precedent: an earlier `xleak 0.9.0` pin was fictional and broke every run; the current `0.7.0` matches the published `wolfxl-cli` crate).
 
 ## Commands
 
@@ -78,7 +78,7 @@ The one thing that *is* automated is the benchmark drift check (`.github/workflo
 
 The CLI this skill teaches agents to use is published from the [`SynthGL/wolfxl`](https://github.com/SynthGL/wolfxl) repo (same author). Anything that needs a parser-side change - new flags, new output formats, fixed style rendering - belongs upstream there, not here. This repo is intentionally a thin behavioral wrapper.
 
-The current version contract is: `spreadsheet-peek 2.x` requires `wolfxl-cli >= 0.4.0` (the first release with the `peek` subcommand at xleak parity plus style-aware rendering for currency / percent / date number formats).
+The current version contract is: `spreadsheet-peek 2.x` requires `wolfxl-cli >= 0.7.0` (the first release with the full `peek` / `map` / `agent` / `schema` subcommand surface plus style-aware rendering for currency / percent / date number formats).
 
 ## House style
 
