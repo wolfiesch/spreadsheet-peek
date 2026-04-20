@@ -8,7 +8,7 @@ The short version sits at three layers:
 2. **Token-efficient output modes** change *how* it looks at one.
 3. **A reproducible pattern** means the same shape can wrap any opaque file format.
 
-Below is ~45 seconds of `wolfxl peek` rendering the committed sample workbook. If you only know spreadsheets as `openpyxl` tuple dumps, this is the part you've been missing.
+Below is a screencast of `wolfxl peek` rendering the committed sample workbook. If you only know spreadsheets as `openpyxl` tuple dumps, this is the part you've been missing.
 
 https://github.com/wolfiesch/spreadsheet-peek/assets/screencast.mp4
 

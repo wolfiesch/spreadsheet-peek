@@ -21,6 +21,8 @@ permissions:
 
 env:
   # Pin wolfxl-cli version here. Bump when upstream releases changes affect output.
+  # The workflow reads this value from each checkout, so CLI bump PRs compare the
+  # proposed PR binary against master's current baseline binary.
   # Verified against crates.io on 2026-04-19; bump via `cargo search wolfxl-cli`.
   WOLFXL_CLI_VERSION: "0.7.0"
 
@@ -39,31 +41,59 @@ jobs:
           ref: master
           path: main
 
-      - name: Cache wolfxl binary
-        id: cargo-cache
+      - name: Resolve wolfxl-cli versions
+        id: wolfxl-versions
+        run: |
+          pr_version="$(awk -F'"' '/WOLFXL_CLI_VERSION:/ { print $2; exit }' pr/.github/workflows/benchmark.yml)"
+          main_version="$(awk -F'"' '/WOLFXL_CLI_VERSION:/ { print $2; exit }' main/.github/workflows/benchmark.yml)"
+
+          if [ -z "$pr_version" ] || [ -z "$main_version" ]; then
+            echo "Could not resolve WOLFXL_CLI_VERSION from workflow files" >&2
+            exit 1
+          fi
+
+          echo "pr=${pr_version}" >> "$GITHUB_OUTPUT"
+          echo "main=${main_version}" >> "$GITHUB_OUTPUT"
+          echo "PR wolfxl-cli: ${pr_version}"
+          echo "master wolfxl-cli: ${main_version}"
+
+      - name: Cache wolfxl binaries
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cargo/bin/wolfxl
+            ~/.cache/spreadsheet-peek/wolfxl-cli
             ~/.cargo/registry
             ~/.cargo/git
-          key: wolfxl-cli-${{ runner.os }}-${{ env.WOLFXL_CLI_VERSION }}
+          key: wolfxl-cli-${{ runner.os }}-${{ steps.wolfxl-versions.outputs.main }}-${{ steps.wolfxl-versions.outputs.pr }}
+          restore-keys: |
+            wolfxl-cli-${{ runner.os }}-
 
-      - name: Install wolfxl-cli
-        if: steps.cargo-cache.outputs.cache-hit != 'true'
-        run: cargo install wolfxl-cli --version "$WOLFXL_CLI_VERSION"
+      - name: Install wolfxl-cli versions
+        run: |
+          install_wolfxl() {
+            version="$1"
+            root="$HOME/.cache/spreadsheet-peek/wolfxl-cli/${version}"
+            wolfxl_bin="${root}/bin/wolfxl"
 
-      - name: Add cargo bin to PATH
-        run: echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+            if [ -x "$wolfxl_bin" ] && "$wolfxl_bin" --version | grep -F -q "$version"; then
+              "$wolfxl_bin" --version
+              return
+            fi
+
+            cargo install wolfxl-cli --version "$version" --root "$root" --force
+          }
+
+          install_wolfxl "${{ steps.wolfxl-versions.outputs.pr }}"
+          install_wolfxl "${{ steps.wolfxl-versions.outputs.main }}"
 
       - name: Install Python deps
         run: python3 -m pip install --quiet tiktoken openpyxl
 
       - name: Run benchmark on PR branch
-        run: python3 pr/benchmarks/measure_tokens.py | tee /tmp/pr.txt
+        run: PATH="$HOME/.cache/spreadsheet-peek/wolfxl-cli/${{ steps.wolfxl-versions.outputs.pr }}/bin:$PATH" python3 pr/benchmarks/measure_tokens.py | tee /tmp/pr.txt
 
       - name: Run benchmark on master
-        run: python3 main/benchmarks/measure_tokens.py | tee /tmp/main.txt
+        run: PATH="$HOME/.cache/spreadsheet-peek/wolfxl-cli/${{ steps.wolfxl-versions.outputs.main }}/bin:$PATH" python3 main/benchmarks/measure_tokens.py | tee /tmp/main.txt
 
       - name: Diff benchmarks
         id: diff

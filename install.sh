@@ -17,22 +17,47 @@ REPO="wolfiesch/spreadsheet-peek"
 BRANCH="master"
 RAW_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 SKILL_DIR="${HOME}/.claude/skills/spreadsheet-peek"
+MIN_WOLFXL_VERSION="0.7.0"
 
 say() { printf '==> %s\n' "$*"; }
 warn() { printf 'warning: %s\n' "$*" >&2; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
+wolfxl_compatibility() {
+    if ! command -v wolfxl >/dev/null 2>&1; then
+        printf 'false\n'
+        return 0
+    fi
+
+    wolfxl_help="$(wolfxl --help 2>/dev/null || true)"
+    case "${wolfxl_help}" in *peek*) ;; *) printf 'false\n'; return 0 ;; esac
+    case "${wolfxl_help}" in *map*) ;; *) printf 'false\n'; return 0 ;; esac
+    case "${wolfxl_help}" in *agent*) ;; *) printf 'false\n'; return 0 ;; esac
+    case "${wolfxl_help}" in *schema*) ;; *) printf 'false\n'; return 0 ;; esac
+
+    printf 'true\n'
+}
+
 say "Installing spreadsheet-peek..."
 
 # ---- Step 1: wolfxl --------------------------------------------------------
 
-if command -v wolfxl >/dev/null 2>&1; then
+wolfxl_compatible=false
+wolfxl_compatible="$(wolfxl_compatibility)"
+
+if [ "${wolfxl_compatible}" = true ]; then
     wolfxl_path="$(command -v wolfxl)"
     say "wolfxl already installed (${wolfxl_path})"
 else
+    if command -v wolfxl >/dev/null 2>&1; then
+        wolfxl_path="$(command -v wolfxl)"
+        wolfxl_version="$(wolfxl --version 2>/dev/null || printf 'unknown version')"
+        say "Upgrading incompatible wolfxl (${wolfxl_version}, ${wolfxl_path}); need wolfxl-cli >= ${MIN_WOLFXL_VERSION}"
+    fi
+
     if command -v cargo >/dev/null 2>&1; then
         say "Installing wolfxl-cli via cargo (this takes a few minutes)..."
-        cargo install wolfxl-cli
+        cargo install --force wolfxl-cli
     else
         die "need cargo to install wolfxl-cli.
   - macOS:   brew install rust   (or install rustup from https://rustup.rs)
@@ -41,7 +66,15 @@ else
 fi
 
 # Sanity check the install landed on PATH.
-if ! command -v wolfxl >/dev/null 2>&1; then
+wolfxl_compatible=false
+wolfxl_compatible="$(wolfxl_compatibility)"
+
+if [ "${wolfxl_compatible}" = true ]; then
+    wolfxl_ready="$(wolfxl --version 2>/dev/null)" || wolfxl_ready="$(command -v wolfxl)"
+    say "wolfxl ready: ${wolfxl_ready}"
+elif command -v wolfxl >/dev/null 2>&1; then
+    die "wolfxl is on PATH but does not expose the required peek/map/agent/schema commands. Ensure wolfxl-cli >= ${MIN_WOLFXL_VERSION} is first on PATH."
+else
     warn "wolfxl installed but not on PATH yet - open a new shell or source your profile."
 fi
 

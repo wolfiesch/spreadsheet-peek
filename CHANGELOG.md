@@ -2,6 +2,14 @@
 
 All notable changes to `spreadsheet-peek` are documented here. This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- `install.sh` now treats old `wolfxl` binaries as incompatible unless they expose the full `peek` / `map` / `agent` / `schema` surface, and uses `cargo install --force wolfxl-cli` so reruns can upgrade them in place.
+- `.github/workflows/benchmark.yml` now resolves `WOLFXL_CLI_VERSION` from both the PR and master checkouts before installing branch-specific `wolfxl` binaries, so future CLI bump PRs compare the new PR binary against the old master baseline instead of masking CLI output drift.
+- `docs/how-it-works.md` now refers to the embedded recording as a screencast instead of pinning a stale duration.
+
 ## [2.0.0] - 2026-04-19
 
 **Breaking change**: the skill now teaches agents to use `wolfxl peek` (from the [`wolfxl-cli`](https://crates.io/crates/wolfxl-cli) crate) instead of `xleak`. Any user with a working `1.x` install needs to install the new binary (`cargo install wolfxl-cli`) and either re-run `install.sh` or update their `/plugin install` to the v2.0.0 release. Existing shell aliases that hard-code `xleak` will silently keep working against the old binary; rebind them to `wolfxl peek` for the v2 experience.
