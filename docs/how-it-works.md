@@ -90,10 +90,12 @@ The ratios are reproducible. `uv run --with tiktoken --with openpyxl python benc
 
 The MCP App layer is deliberately additive. `SKILL.md` still teaches a shell-native behavior that works in any coding agent. The local MCP server under `mcp-app/` adds two read-only tools for richer hosts:
 
-- `preview_workbook` returns bounded structured workbook data plus text/SVG fallbacks.
+- `preview_workbook` returns bounded structured workbook data plus readable text fallback output.
 - `open_workbook_viewer` returns the same preview and links it to a `ui://spreadsheet-peek/viewer/index.html` resource for MCP Apps hosts.
 
 That split keeps terminal agents cheap and reliable while giving Claude Desktop a real inline grid with sheet tabs, sticky row/column headers, search, range selection, and selected-range handoff to the model.
+
+The viewer's host contract is intentionally small. It accepts initial `tool-input` from the host, preserves those arguments through the MCP Apps `ui/initialize` handshake, asks the same MCP server for `preview_workbook`, and renders the returned `structuredContent`. That flow is covered in browser tests so requested sheets, collapsed Claude Desktop embeds, and wide/tall/messy workbook shapes do not quietly regress.
 
 ## 4. Extending the pattern
 
@@ -126,7 +128,7 @@ The same logic applies to SKILL.md body size. The skill currently sits just unde
 
 It is not a tutorial for `wolfxl peek`. Run `wolfxl peek --help` for that, or read the [`wolfxl-cli` docs on crates.io](https://crates.io/crates/wolfxl-cli).
 
-It is not a claim that every host renders interactive MCP Apps. Hosts without MCP Apps support still receive text, structured data, and SVG fallback output from the MCP tools. The terminal `wolfxl peek` path remains the universal baseline.
+It is not a claim that every host renders interactive MCP Apps. Hosts without MCP Apps support still receive text and structured data from the MCP tools. The terminal `wolfxl peek` path remains the universal baseline.
 
 It is not marketing. If the 3.9x ratio above is wrong on a larger file or a different tokenizer, the benchmark script is the arbiter. Open an issue with a repro.
 

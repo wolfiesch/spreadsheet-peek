@@ -91,7 +91,13 @@ npm install
 npm run pack:mcpb
 ```
 
-The generated bundle lives at `mcp-app/dist/spreadsheet-peek.mcpb`. The same server also backs Claude Code and Codex plugin installs through `.mcp.json`; hosts that do not render MCP Apps still get a structured preview plus SVG image fallback from `preview_workbook` / `open_workbook_viewer`.
+The generated bundle lives at `mcp-app/dist/spreadsheet-peek.mcpb`. The same server also backs Claude Code and Codex plugin installs through `.mcp.json`; hosts that do not render MCP Apps still get a structured preview plus readable text from `preview_workbook` / `open_workbook_viewer`.
+
+Host behavior covered by the MCP app tests:
+
+- `open_workbook_viewer` returns structured preview data and a `ui://spreadsheet-peek/viewer/index.html` resource.
+- The inline viewer preserves initial host `tool-input` during the MCP Apps handshake, then calls `preview_workbook` so requested sheets and ranges hydrate into the grid.
+- The viewer reports a useful fixed content height to avoid collapsed Claude Desktop embeds, with spreadsheet overflow kept inside the grid scroller.
 
 ## Agent Setup
 
@@ -146,7 +152,7 @@ npm install
 npm run build
 ```
 
-The plugin points Codex at `skills/` and the same local MCP preview server. Codex hosts that do not render MCP Apps should still receive structured preview data and an SVG fallback.
+The plugin points Codex at `skills/` and the same local MCP preview server. Codex hosts that do not render MCP Apps should still receive structured preview data and readable text fallback output.
 
 **Option B - AGENTS.md skill-only path:**
 

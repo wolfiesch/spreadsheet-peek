@@ -8,7 +8,6 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod/v4";
 
-import { renderPreviewSvg, svgToBase64 } from "./renderSvg.js";
 import { loadWorkbookPreview, selectionToTsv } from "./workbook.js";
 import { APP_VERSION } from "./version.js";
 
@@ -88,7 +87,7 @@ registerAppTool(
   {
     title: "Open Workbook Viewer",
     description:
-      "Open an interactive inline spreadsheet viewer for a local workbook, with image and structured fallbacks.",
+      "Open an interactive inline spreadsheet viewer for a local workbook, with structured and text fallbacks.",
     inputSchema: previewInputSchema,
     annotations: {
       readOnlyHint: true,
@@ -129,7 +128,6 @@ async function previewResult(args: {
 }): Promise<CallToolResult> {
   try {
     const preview = await loadWorkbookPreview(args);
-    const svg = renderPreviewSvg(preview);
     const tsv = selectionToTsv(preview);
     return {
       content: [
@@ -138,11 +136,6 @@ async function previewResult(args: {
           text: `${preview.summary}\n\nRange: ${preview.range}\nSheets: ${preview.sheets
             .map((sheet) => sheet.name)
             .join(", ")}\n\n${tsv}`,
-        },
-        {
-          type: "image" as const,
-          data: svgToBase64(svg),
-          mimeType: "image/svg+xml",
         },
       ],
       structuredContent: preview as unknown as Record<string, unknown>,

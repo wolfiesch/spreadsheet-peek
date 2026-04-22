@@ -19,6 +19,9 @@ let isDragging = false;
 let searchTerm = "";
 let hostApp: App | null = null;
 let hostConnected = false;
+let pendingToolArgs: Record<string, unknown> | null = null;
+let loadingMessage = "";
+let errorMessage = "";
 
 const rootElement = document.querySelector<HTMLDivElement>("#app");
 if (!rootElement) throw new Error("missing #app");
@@ -34,9 +37,23 @@ async function connectHost() {
   if (window.parent === window) return;
   try {
     hostApp = new App({ name: "Spreadsheet Peek Viewer", version: APP_VERSION }, {});
+    hostApp.ontoolinputpartial = (params) => {
+      if (params.arguments) {
+        pendingToolArgs = params.arguments;
+        loadingMessage = loadingLabel(params.arguments);
+        errorMessage = "";
+        render();
+      }
+    };
     hostApp.ontoolinput = (params) => {
-      if (params.arguments && hostConnected) {
-        void refreshPreview(params.arguments);
+      if (params.arguments) {
+        pendingToolArgs = params.arguments;
+        loadingMessage = loadingLabel(params.arguments);
+        errorMessage = "";
+        render();
+        if (hostConnected) {
+          void refreshPreview(params.arguments);
+        }
       }
     };
     hostApp.ontoolresult = (params) => {
@@ -44,43 +61,77 @@ async function connectHost() {
       if (isPreview(structured)) {
         preview = structured;
         selection = null;
+        loadingMessage = "";
+        errorMessage = "";
+        render();
+      } else if (params.isError) {
+        loadingMessage = "";
+        errorMessage = "The workbook preview failed to load.";
         render();
       }
+    };
+    hostApp.ontoolcancelled = () => {
+      loadingMessage = "";
+      errorMessage = "The workbook preview was cancelled.";
+      render();
     };
     await hostApp.connect();
     hostConnected = true;
     render();
+    if (pendingToolArgs && !previewMatchesArgs(preview, pendingToolArgs)) {
+      void refreshPreview(pendingToolArgs);
+    }
   } catch {
     hostApp = null;
     hostConnected = false;
+    loadingMessage = "";
+    errorMessage = "";
     render();
   }
 }
 
 async function refreshPreview(args: Record<string, unknown>) {
   if (!hostApp) return;
-  const result = await hostApp.callServerTool({
-    name: "preview_workbook",
-    arguments: {
-      path: preview.filePath,
-      maxRows: preview.rowLimit,
-      maxColumns: preview.columnLimit,
-      ...args,
-    },
-  });
-  if (result.isError) {
-    setStatus("Unable to load sheet. The model can inspect the tool error.");
-    return;
-  }
-  if (isPreview(result.structuredContent)) {
-    preview = result.structuredContent;
-    selection = null;
+  loadingMessage = loadingLabel(args);
+  errorMessage = "";
+  render();
+  try {
+    const result = await hostApp.callServerTool({
+      name: "preview_workbook",
+      arguments: {
+        path: preview.filePath,
+        maxRows: preview.rowLimit,
+        maxColumns: preview.columnLimit,
+        ...args,
+      },
+    });
+    if (result.isError) {
+      loadingMessage = "";
+      errorMessage = firstTextContent(result.content) ?? "Unable to load sheet.";
+      render();
+      return;
+    }
+    if (isPreview(result.structuredContent)) {
+      preview = result.structuredContent;
+      selection = null;
+      loadingMessage = "";
+      errorMessage = "";
+      render();
+    }
+  } catch (error) {
+    loadingMessage = "";
+    errorMessage = error instanceof Error ? error.message : String(error);
     render();
   }
 }
 
 function render(focusSearch = false, searchCursor?: number) {
   const matches = countMatches(preview, searchTerm);
+  const hostStateLabel = hostConnected ? "Connected to MCP host" : "Local preview mode";
+  const statusDetail =
+    errorMessage || (loadingMessage ? `Loading ${loadingMessage}` : matches ? `${matches} search matches` : hostStateLabel);
+  const selectedLabel = selectionLabel();
+  const summarizeLabel = selection ? `Summarize ${selectedLabel}` : "Summarize selected range";
   root.innerHTML = `
     <main class="shell">
       <aside class="sidebar">
@@ -103,13 +154,19 @@ function render(focusSearch = false, searchCursor?: number) {
             )
             .join("")}
         </nav>
-        <div class="meta-block">
-          <span>Range</span>
-          <strong>${escapeHtml(preview.range)}</strong>
-        </div>
-        <div class="meta-block">
-          <span>Source</span>
-          <strong title="${escapeAttr(preview.filePath)}">${escapeHtml(preview.filePath)}</strong>
+        <div class="meta-grid">
+          <div class="meta-block">
+            <span>Range</span>
+            <strong>${escapeHtml(preview.range)}</strong>
+          </div>
+          <div class="meta-block">
+            <span>Rows</span>
+            <strong>${preview.totalRows}</strong>
+          </div>
+          <div class="meta-block source">
+            <span>Source</span>
+            <strong title="${escapeAttr(preview.filePath)}">${escapeHtml(preview.filePath)}</strong>
+          </div>
         </div>
       </aside>
 
@@ -124,16 +181,27 @@ function render(focusSearch = false, searchCursor?: number) {
               <span>Search</span>
               <input id="search" type="search" value="${escapeAttr(searchTerm)}" placeholder="Account, 2024, total" />
             </label>
-            <button id="summarize" class="action" ${selection ? "" : "disabled"}>Summarize range</button>
+            <button
+              id="summarize"
+              class="action"
+              aria-label="${escapeAttr(summarizeLabel)}"
+              title="${escapeAttr(summarizeLabel)}"
+              ${selection ? "" : "disabled"}
+            >
+              <span class="full-label">Summarize range</span>
+              <span class="short-label">Summarize</span>
+            </button>
           </div>
         </header>
 
-        <div class="status-row">
+        <div class="status-row ${errorMessage ? "error" : loadingMessage ? "loading" : ""}">
           <span>${escapeHtml(preview.summary)}</span>
-          <span>${matches ? `${matches} search matches` : hostConnected ? "Connected to MCP host" : "Local preview mode"}</span>
+          <span>${escapeHtml(statusDetail)}</span>
         </div>
 
-        <div class="grid-wrap" role="region" aria-label="Spreadsheet grid" tabindex="0">
+        <div class="grid-wrap" role="region" aria-label="Spreadsheet grid" tabindex="0" aria-busy="${loadingMessage ? "true" : "false"}">
+          ${loadingMessage ? `<div class="overlay state">Loading ${escapeHtml(loadingMessage)}</div>` : ""}
+          ${errorMessage ? `<div class="overlay state error-state">${escapeHtml(errorMessage)}</div>` : ""}
           <table class="grid">
             <thead>
               <tr>
@@ -156,9 +224,9 @@ function render(focusSearch = false, searchCursor?: number) {
           </table>
         </div>
 
-        <footer class="footer">
+        <footer class="footer ${selection ? "has-selection" : ""}">
           <code>${escapeHtml(preview.commands.textPreview)}</code>
-          <span id="status">${selectionLabel()}</span>
+          <span id="status" class="${selection ? "selected-range" : ""}">${selectedLabel}</span>
         </footer>
       </section>
     </main>
@@ -318,6 +386,42 @@ function setStatus(message: string) {
   if (status) status.textContent = message;
 }
 
+function previewMatchesArgs(data: WorkbookPreview, args: Record<string, unknown>) {
+  const requestedPath = normalizeText(args.path);
+  const requestedSheet = normalizeComparableText(args.sheet);
+  const requestedRange = normalizeComparableText(args.range);
+  const requestedMaxRows = normalizeNumber(args.maxRows);
+  const requestedMaxColumns = normalizeNumber(args.maxColumns);
+  const activeSheet = normalizeComparableText(data.activeSheet);
+  const activeRange = normalizeComparableText(data.range);
+  return (
+    (!requestedPath || requestedPath === data.filePath) &&
+    (!requestedSheet || requestedSheet === activeSheet) &&
+    (!requestedRange || requestedRange === activeRange) &&
+    (requestedMaxRows === undefined || requestedMaxRows === data.rowLimit) &&
+    (requestedMaxColumns === undefined || requestedMaxColumns === data.columnLimit)
+  );
+}
+
+function normalizeText(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function normalizeComparableText(value: unknown) {
+  return normalizeText(value)?.toLowerCase();
+}
+
+function normalizeNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function loadingLabel(args: Record<string, unknown>) {
+  const sheet = typeof args.sheet === "string" && args.sheet.trim() ? args.sheet.trim() : undefined;
+  const path = typeof args.path === "string" && args.path.trim() ? args.path.trim() : preview.filePath;
+  const filename = path.split(/[\\/]/).at(-1) ?? path;
+  return sheet ? `${filename} / ${sheet}` : filename;
+}
+
 function isPreview(value: unknown): value is WorkbookPreview {
   return Boolean(
     value &&
@@ -325,6 +429,10 @@ function isPreview(value: unknown): value is WorkbookPreview {
       (value as WorkbookPreview).kind === "spreadsheet-peek-preview" &&
       Array.isArray((value as WorkbookPreview).rows),
   );
+}
+
+function firstTextContent(content: Array<{ type: string; text?: string }> | undefined) {
+  return content?.find((item) => item.type === "text" && typeof item.text === "string")?.text;
 }
 
 function escapeHtml(value: string) {

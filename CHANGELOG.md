@@ -9,7 +9,7 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - Added `examples/sample-ledger.csv`, `examples/sample-ledger.tsv`, and `examples/generate_delimited_samples.py` so direct CSV/TSV input costs are benchmarked against committed fixtures.
 - `benchmarks/measure_tokens.py` now prints a separate direct-delimited-input cost table for `.csv` and `.tsv` previews without disturbing the existing workbook output-mode ratios.
 - Added `examples/sample-ledger.txt` and `examples/quoted-multiline.csv` so comma-delimited `.txt` and quoted multiline CSV inputs are benchmarked and smoke-tested from committed fixtures.
-- Added `mcp-app/`, a local Node/TypeScript MCP server and MCP App viewer that uses the installed `wolfxl` binary to return bounded structured previews, SVG image fallbacks, and a Claude Desktop-oriented inline grid with sheet tabs, sticky headers, search, range selection, and selected-range handoff.
+- Added `mcp-app/`, a local Node/TypeScript MCP server and MCP App viewer that uses the installed `wolfxl` binary to return bounded structured previews, readable text fallbacks, and a Claude Desktop-oriented inline grid with sheet tabs, sticky headers, search, range selection, and selected-range handoff.
 - Added root `.mcp.json` plus `.codex-plugin/` metadata so Claude Code and Codex plugin installs can expose the same `preview_workbook` and `open_workbook_viewer` tools after the bundled server is built.
 - Added `.github/workflows/mcp-app.yml` to install `wolfxl-cli`, run the MCP app tests, build the bundled server/viewer, and validate the MCPB manifest on relevant PRs.
 
@@ -18,6 +18,7 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - `SKILL.md`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and the new MCP package metadata are bumped to 2.2.0 for the inline-viewer release.
 - README, `SKILL.md`, and `docs/how-it-works.md` now cite the direct-delimited benchmark rows surfaced by the drift workflow.
 - The MCP app now sources its runtime app version from `package.json` and drops the unused Vite basic SSL dev dependency.
+- README, `docs/how-it-works.md`, `docs/agent-setup.md`, and `mcp-app/README.md` now document the verified Claude Desktop inline-viewer path and the tested MCP Apps host-hydration contract.
 
 ### Fixed
 
@@ -26,6 +27,12 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - The MCP TSV handoff now escapes tabs, newlines, carriage returns, and backslashes so multiline CSV cells cannot shift table rows or columns in model-facing text.
 - The MCP app build and root `.mcp.json` launcher now avoid POSIX-only shell assumptions for Windows plugin hosts.
 - The viewer no longer abandons host connection after a fixed 1.5 second timeout.
+- The MCP preview tools no longer return SVG image content blocks, avoiding unsupported-image warnings in Claude Desktop while keeping structured preview data and readable text output.
+- The MCP viewer now preserves host tool input through the app handshake, shows loading/error states, and fits narrow Claude Desktop embeds by keeping horizontal scrolling inside the spreadsheet grid.
+- The Claude embed now reports a fixed useful content height instead of sizing itself from the initially collapsed iframe viewport.
+- The MCP viewer tests now simulate host `tool-input` and `tool-result` hydration, including requested-sheet loading and representative wide, tall, and messy preview shapes.
+- The inline viewer now gives selected ranges, search hits, focus, and enabled summarize actions clearer visual affordances.
+- The viewer now compares requested ranges and preview caps before skipping host-input hydration, and keeps loading/error status visible even when a search term has matches.
 
 ## [2.1.0] - 2026-04-22
 
