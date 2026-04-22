@@ -128,6 +128,8 @@ async function refreshPreview(args: Record<string, unknown>) {
 function render(focusSearch = false, searchCursor?: number) {
   const matches = countMatches(preview, searchTerm);
   const stateLabel = errorMessage || loadingMessage || (hostConnected ? "Connected to MCP host" : "Local preview mode");
+  const selectedLabel = selectionLabel();
+  const summarizeLabel = selection ? `Summarize ${selectedLabel}` : "Summarize selected range";
   root.innerHTML = `
     <main class="shell">
       <aside class="sidebar">
@@ -177,7 +179,13 @@ function render(focusSearch = false, searchCursor?: number) {
               <span>Search</span>
               <input id="search" type="search" value="${escapeAttr(searchTerm)}" placeholder="Account, 2024, total" />
             </label>
-            <button id="summarize" class="action" ${selection ? "" : "disabled"}>
+            <button
+              id="summarize"
+              class="action"
+              aria-label="${escapeAttr(summarizeLabel)}"
+              title="${escapeAttr(summarizeLabel)}"
+              ${selection ? "" : "disabled"}
+            >
               <span class="full-label">Summarize range</span>
               <span class="short-label">Summarize</span>
             </button>
@@ -214,9 +222,9 @@ function render(focusSearch = false, searchCursor?: number) {
           </table>
         </div>
 
-        <footer class="footer">
+        <footer class="footer ${selection ? "has-selection" : ""}">
           <code>${escapeHtml(preview.commands.textPreview)}</code>
-          <span id="status">${selectionLabel()}</span>
+          <span id="status" class="${selection ? "selected-range" : ""}">${selectedLabel}</span>
         </footer>
       </section>
     </main>

@@ -228,6 +228,16 @@ h2 {
   font-weight: 700;
 }
 
+.action:not(:disabled):hover {
+  border-color: #246f4f;
+  background: #246f4f;
+}
+
+.action:not(:disabled):focus-visible {
+  outline: 3px solid #bce0cc;
+  outline-offset: 2px;
+}
+
 .short-label {
   display: none;
 }
@@ -278,6 +288,10 @@ h2 {
   outline: none;
   overscroll-behavior: contain;
   scrollbar-gutter: stable both-edges;
+}
+
+.grid-wrap:focus-visible {
+  box-shadow: inset 0 0 0 2px #2d8c61;
 }
 
 .grid {
@@ -333,6 +347,11 @@ h2 {
 
 .grid td {
   background: #ffffff;
+  cursor: cell;
+}
+
+.grid td:not(.selected):not(.found):hover {
+  background: #f7fbf8;
 }
 
 .grid td.number {
@@ -353,6 +372,7 @@ h2 {
 
 .grid td.found {
   background: #fff3c4;
+  box-shadow: inset 0 0 0 1px #d6b43d;
 }
 
 .grid td.selected.found {
@@ -370,6 +390,10 @@ h2 {
   color: #61716a;
 }
 
+.footer.has-selection {
+  background: #f5fbf7;
+}
+
 .footer code {
   overflow: hidden;
   color: #40534b;
@@ -383,6 +407,16 @@ h2 {
   text-align: right;
   font-size: 12px;
   font-weight: 700;
+}
+
+#status.selected-range {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 76px;
+  padding: 4px 8px;
+  border: 1px solid #8fc8ac;
+  background: #d7eee1;
+  color: #124a34;
 }
 
 .overlay {

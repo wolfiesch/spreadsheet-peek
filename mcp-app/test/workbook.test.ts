@@ -46,7 +46,37 @@ describe("loadWorkbookPreview", () => {
     });
 
     assert.equal(preview.activeSheet, "messy");
+    assert.equal(preview.fileName, "messy.csv");
+    assert.equal(preview.rows.length, 3);
     assert.match(preview.rows.flat().map((cell) => cell.display).join(" "), /Acme, Inc\./);
+  });
+
+  it("caps wide workbook columns while preserving an internal scroll shape", async () => {
+    const preview = await loadWorkbookPreview({
+      path: join(root, "examples", "wide-table.xlsx"),
+      maxRows: 3,
+      maxColumns: 8,
+    });
+
+    assert.equal(preview.fileName, "wide-table.xlsx");
+    assert.ok(preview.totalColumns >= 20);
+    assert.equal(preview.rows.length, 4);
+    assert.equal(preview.rows[0].length, 8);
+    assert.equal(preview.truncatedColumns, true);
+  });
+
+  it("caps tall ledger rows without hiding the table shape", async () => {
+    const preview = await loadWorkbookPreview({
+      path: join(root, "examples", "tall-ledger.xlsx"),
+      maxRows: 5,
+      maxColumns: 8,
+    });
+
+    assert.equal(preview.fileName, "tall-ledger.xlsx");
+    assert.ok(preview.totalRows > 20);
+    assert.equal(preview.rows.length, 6);
+    assert.equal(preview.rows[0].length, 8);
+    assert.equal(preview.truncatedRows, true);
   });
 
   it("honors explicit wolfxl binary overrides", async () => {

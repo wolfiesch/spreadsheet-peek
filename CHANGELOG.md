@@ -29,6 +29,8 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - The MCP preview tools no longer return SVG image content blocks, avoiding unsupported-image warnings in Claude Desktop while keeping structured preview data and readable text output.
 - The MCP viewer now preserves host tool input through the app handshake, shows loading/error states, and fits narrow Claude Desktop embeds by keeping horizontal scrolling inside the spreadsheet grid.
 - The Claude embed now reports a fixed useful content height instead of sizing itself from the initially collapsed iframe viewport.
+- The MCP viewer tests now simulate host `tool-input` and `tool-result` hydration, including requested-sheet loading and representative wide, tall, and messy preview shapes.
+- The inline viewer now gives selected ranges, search hits, focus, and enabled summarize actions clearer visual affordances.
 
 ## [2.1.0] - 2026-04-22
 
