@@ -1,8 +1,8 @@
 # VHS tape for the spreadsheet-peek long-form screencast.
 #
-# Demonstrates `wolfxl peek` rendering an Excel workbook with style-aware
-# output (currency, percent, dates) - the capability most agent integrations
-# miss when they fall back to ad-hoc openpyxl tuple dumps. Renders both MP4
+# Demonstrates `wolfxl peek` rendering an Excel workbook as a readable table -
+# the capability most agent integrations miss when they fall back to ad-hoc
+# openpyxl tuple dumps. Renders both MP4
 # (for embedded docs) and GIF (for social shares) from a single recording
 # via two Output directives.
 #
@@ -27,7 +27,7 @@ Set PlaybackSpeed 1.0
 
 # ---- Intro ----------------------------------------------------------------
 
-Type "# wolfxl peek: instant style-aware Excel previews from the shell."
+Type "# wolfxl peek: instant Excel previews from the shell."
 Sleep 3s
 Enter
 Sleep 1s
@@ -62,7 +62,7 @@ Type "# In long agent sessions, switch to text export for repeat views."
 Sleep 1500ms
 Enter
 Sleep 500ms
-Type "wolfxl peek examples/sample-financials.xlsx --export text | head -10"
+Type "wolfxl peek examples/sample-financials.xlsx --export text | sed -n '1,10p'"
 Sleep 1500ms
 Enter
 Sleep 5s
@@ -76,7 +76,7 @@ Type "# Wide tables? --export text scales linearly; box-drawing does not."
 Sleep 1500ms
 Enter
 Sleep 500ms
-Type "wolfxl peek examples/wide-table.xlsx --export text | head -6"
+Type "wolfxl peek examples/wide-table.xlsx --export text | sed -n '1,6p'"
 Sleep 1500ms
 Enter
 Sleep 5s

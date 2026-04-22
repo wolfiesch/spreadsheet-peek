@@ -2,7 +2,7 @@
 #
 # Shows the pitch side-by-side: a naive agent writing throwaway Python
 # (slow openpyxl startup, ugly tuple output) vs the same agent running
-# `wolfxl peek` (instant, style-aware box-drawing). This is the "why
+# `wolfxl peek` (instant, readable box-drawing). This is the "why
 # the skill exists" visual that the original examples/demo.gif doesn't
 # convey.
 #

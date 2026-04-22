@@ -18,7 +18,7 @@ Sleep 1s
 Enter
 Sleep 500ms
 
-# Primary demo: the default box-drawing preview (style-aware)
+# Primary demo: the default box-drawing preview
 Type "wolfxl peek examples/sample-financials.xlsx -n 10"
 Sleep 800ms
 Enter
@@ -41,11 +41,11 @@ Sleep 3500ms
 Type "clear"
 Enter
 Sleep 400ms
-Type "# Big file? Use text export - ~5x cheaper on tokens."
+Type "# Big file? Use text export - ~4x cheaper on tokens."
 Sleep 800ms
 Enter
 Sleep 500ms
-Type "wolfxl peek examples/sample-financials.xlsx --export text | head -8"
+Type "wolfxl peek examples/sample-financials.xlsx --export text | sed -n '1,8p'"
 Sleep 800ms
 Enter
 Sleep 3500ms

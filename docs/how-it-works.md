@@ -1,6 +1,6 @@
 # How spreadsheet-peek Works
 
-`spreadsheet-peek` is a small idea delivered as a single file (`SKILL.md`): teach an AI coding agent to use [`wolfxl peek`](https://crates.io/crates/wolfxl-cli) instead of improvising Python every time it touches a `.xlsx`. The payoff is two-sided. The agent gets faster, more readable, *style-aware* previews. The user gets a context window that survives long sessions. This doc unpacks the mechanics behind that claim.
+`spreadsheet-peek` is a small idea delivered as a single file (`SKILL.md`): teach an AI coding agent to use [`wolfxl peek`](https://crates.io/crates/wolfxl-cli) instead of improvising Python every time it touches a spreadsheet or delimited table. The payoff is two-sided. The agent gets faster, more readable previews with date/number rendering that is easier to scan than tuple dumps. The user gets a context window that survives long sessions. This doc unpacks the mechanics behind that claim.
 
 The short version sits at three layers:
 
@@ -23,8 +23,8 @@ Most agent integrations are *reactive*. The user asks "what does that file look 
 `spreadsheet-peek` inverts that. The `SKILL.md` body lists five specific conditions where the agent is expected to preview without being asked:
 
 1. **Before data processing.** Any pipeline, ETL, or script that reads a spreadsheet gets a preview of the input first. The cost is one `wolfxl peek` call (~0.05s, ~600 tokens). The benefit is the user sees what the pipeline is actually processing before the run, not after a silent misclassification buries the real question under hundreds of rows of output.
-2. **After generating a test fixture.** When the agent creates or modifies an `.xlsx` under `tests/`, it previews the result. Fixtures that look right on paper frequently render wrong (merged cells collapsed, numbers stored as strings, off-by-one header rows), and catching that before a test run saves a debugging round.
-3. **When the user references a spreadsheet by path.** "Look at `data/q3.xlsx`" becomes `wolfxl peek data/q3.xlsx -n 15` before anything else, rather than a conversational description of what's in the file from memory.
+2. **After generating a test fixture.** When the agent creates or modifies a spreadsheet or delimited fixture under `tests/`, it previews the result. Fixtures that look right on paper frequently render wrong (merged cells collapsed, numbers stored as strings, off-by-one header rows), and catching that before a test run saves a debugging round.
+3. **When the user references a spreadsheet by path.** "Look at `data/q3.xlsx`" or "check `exports/customers.csv`" becomes `wolfxl peek <file> -n 15` before anything else, rather than a conversational description of what's in the file from memory.
 4. **When debugging a parsing issue.** If a classifier flagged a sheet as the wrong archetype, the agent looks at what the parser actually got.
 5. **When comparing before/after.** Transformations show source and result side-by-side.
 
@@ -40,20 +40,22 @@ This is the part of the skill that pays the agent-level dividend. The technical 
 
 The next layer is more mechanical. `wolfxl peek`'s default output uses Unicode box-drawing characters for borders. They look great in a terminal. They cost real tokens in an agent's context window.
 
-From [`benchmarks/measure_tokens.py`](../benchmarks/measure_tokens.py), measured with `cl100k_base` (GPT-4 tokenizer, a reasonable proxy for Claude) against two sample shapes committed to `examples/`:
+From [`benchmarks/measure_tokens.py`](../benchmarks/measure_tokens.py), measured with `cl100k_base` (GPT-4 tokenizer, a reasonable proxy for Claude) against three sample shapes committed to `examples/`:
 
-| Sample | Mode | Command | Tokens (5 rows) | Tokens/row |
+| Sample | Mode | Command | Tokens (5 data rows) | Tokens/row |
 |--------|------|---------|----------------:|-----------:|
 | [`sample-financials.xlsx`](../examples/sample-financials.xlsx) (7 cols) | Box-drawing | `wolfxl peek file -n 5` | **573** | 114.6 |
-| 〃 | Text export | `wolfxl peek file --export text \| head -5` | **117** | 23.4 |
-| 〃 | CSV export | `wolfxl peek file --export csv \| head -5` | 119 | 23.8 |
+| 〃 | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | **148** | 29.6 |
+| 〃 | CSV export | `wolfxl peek file --export csv \| sed -n '1,6p'` | 150 | 30.0 |
+| [`tall-ledger.xlsx`](../examples/tall-ledger.xlsx) (8 cols) | Box-drawing | `wolfxl peek file -n 5` | **624** | 124.8 |
+| 〃 | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | **173** | 34.6 |
 | [`wide-table.xlsx`](../examples/wide-table.xlsx) (29 cols) | Box-drawing | `wolfxl peek file -n 5` | **2,249** | 449.8 |
-| 〃 | Text export | `wolfxl peek file --export text \| head -5` | **632** | 126.4 |
+| 〃 | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | **754** | 150.8 |
 
-Two observations from the two-shape comparison:
+Two observations from the shape comparison:
 
-1. On the financial workbook, text export is **4.9x cheaper per row** than box-drawing. The overhead is mostly fixed (header lines, border runs), so the per-row cost improves with larger slices, but the ratio holds.
-2. On the wide workbook, the *ratio* drops to **3.6x** - because the text-export baseline is itself larger per row when a table has many columns. But the *absolute* per-row savings grows from ~91 tokens/row (financials) to ~323 tokens/row (wide). The wider the workbook, the more expensive naive usage gets in raw tokens, even if the ratio looks less dramatic.
+1. On the financial workbook, text export is **3.9x cheaper per row** than box-drawing. The tall ledger lands nearby at **3.6x**, which is useful because it is closer to GL-detail work than a statement package.
+2. On the wide workbook, the *ratio* drops to **3.0x** - because the text-export baseline is itself larger per row when a table has many columns. But the *absolute* per-row savings grows from ~85-90 tokens/row on the narrower samples to ~299 tokens/row on the wide sample. The wider the workbook, the more expensive naive usage gets in raw tokens, even if the ratio looks less dramatic.
 
 Here's the worked example the skill encodes implicitly. Imagine a 30-spreadsheet agent session (a realistic FDD or QoE engagement). Naive usage runs the box-drawing default on every file:
 
@@ -65,8 +67,8 @@ That is ~20% of a 200K context window spent on box characters. Now apply the ski
 
 ```
 First previews:  30 x 1,313 tokens (15 rows, box) = 39,390 tokens
-Re-previews:     60 x 328 tokens   (15 rows, text) = 19,680 tokens
-Total:                                              59,070 tokens
+Re-previews:     60 x 357 tokens   (15 rows, text) = 21,420 tokens
+Total:                                              60,810 tokens
 ```
 
 vs. naive (90 total previews, all box-drawing):
@@ -77,7 +79,7 @@ vs. naive (90 total previews, all box-drawing):
 
 Half the context saved. In a session that also has to hold a codebase, a plan, and a conversation, that difference is the gap between finishing and hitting a compaction.
 
-The skill's actual rule is compressed to one sentence: *"Use box-drawing for the FIRST preview in a conversation, switch to `--export text | head` for subsequent previews or when context is getting long."* That sentence is load-bearing. Without it, agents default to the prettiest output and burn the runway.
+The skill's actual rule is compressed to one sentence: *"Use box-drawing for the FIRST preview in a conversation, switch to `--export text | sed -n '1,Np'` for subsequent previews or when context is getting long."* That sentence is load-bearing. Without it, agents default to the prettiest output and burn the runway. The `sed` limit also avoids the broken-pipe warning current stable `wolfxl-cli` releases can print when `head` closes the pipe early.
 
 The ratios are reproducible. `uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py` prints them against the committed sample file; a CI workflow (see [`.github/workflows/benchmark.yml`](../.github/workflows/benchmark.yml)) re-measures them on every PR that touches the skill so the numbers in this doc can't drift silently.
 
@@ -102,9 +104,9 @@ The frontmatter is the only agent-specific piece, and even that is portable. Cla
 
 **None of these siblings exist yet.** That is deliberate. Shipping one skill end-to-end (benchmarks, CI, OG card, install script, compat matrix) and letting it settle before forking the pattern is faster than building four half-finished skills. If you want to build one, the shape above is the blueprint.
 
-A note on the YAML frontmatter, because it is easy to under-think. The `description` field is the *retrieval hook* Claude Code uses to decide whether to load the skill at all. It has to be pointed enough that "work with an `.xlsx`" pulls it in and general enough that "preview this file" does too. The `filePattern` globs catch path mentions the description might miss; the `bashPattern` entries catch cases where the agent is about to shell out to something spreadsheet-shaped without having said the word "xlsx" in the turn. Each of those is cheap to add and expensive to notice is missing, so when you fork the pattern, err on the side of more frontmatter triggers, not fewer.
+A note on the YAML frontmatter, because it is easy to under-think. The `description` field is the *retrieval hook* Claude Code uses to decide whether to load the skill at all. It has to be pointed enough that "work with an `.xlsx`" or "preview this CSV" pulls it in and general enough that "preview this file" does too. The `filePattern` globs catch path mentions the description might miss; the `bashPattern` entries catch cases where the agent is about to shell out to something spreadsheet-shaped without having said the word "xlsx" in the turn. Each of those is cheap to add and expensive to notice is missing, so when you fork the pattern, err on the side of more frontmatter triggers, not fewer.
 
-The same logic applies to SKILL.md body size. The skill currently sits at ~6.7 KB. That is comfortably small enough to paste into any other agent's system-prompt mechanism without crowding out real instructions. If a sibling skill grows past ~10 KB of prose, split it: keep the triggers and the one-paragraph rationale in the body, move the command reference to a linked doc. Agents do not skim; every line in the skill body is loaded into context verbatim when the skill fires.
+The same logic applies to SKILL.md body size. The skill currently sits just under ~10 KB. That is still small enough to paste into another agent's system-prompt mechanism without crowding out real instructions. If a sibling skill grows past ~10 KB of prose, split it: keep the triggers and the one-paragraph rationale in the body, move the command reference to a linked doc. Agents do not skim; every line in the skill body is loaded into context verbatim when the skill fires.
 
 ---
 
@@ -114,8 +116,8 @@ It is not a tutorial for `wolfxl peek`. Run `wolfxl peek --help` for that, or re
 
 It is not a rationale for a wrapper MCP server. The skill runs `wolfxl peek` as a plain shell command. If an MCP server would help, it would help the same way for every CLI tool an agent ever touches, and that is a separate problem. (For what it's worth, `wolfxl serve --mcp` is on the sprint-2 backlog precisely so the same `wolfxl-core` logic is reachable from MCP without a wrapper layer.)
 
-It is not marketing. If the 4.9x ratio above is wrong on a larger file or a different tokenizer, the benchmark script is the arbiter. Open an issue with a repro.
+It is not marketing. If the 3.9x ratio above is wrong on a larger file or a different tokenizer, the benchmark script is the arbiter. Open an issue with a repro.
 
 ---
 
-*Last verified against `wolfxl-cli 0.7.0` and `tiktoken cl100k_base`, 2026-04-19.*
+*Last verified against `wolfxl-cli 0.8.0` and `tiktoken cl100k_base`, 2026-04-22.*

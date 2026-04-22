@@ -7,10 +7,14 @@ structured like a real small-business financial package.
 Regenerate with:
     python examples/generate_sample.py
 """
+from datetime import date
 from pathlib import Path
+
 from openpyxl import Workbook
 
 OUT_PATH = Path(__file__).parent / "sample-financials.xlsx"
+
+DATE_FORMAT = "yyyy-mm-dd"
 
 # ---- P&L -------------------------------------------------------------------
 PNL_HEADERS = ["Account", "Jan 2024", "Feb 2024", "Mar 2024", "Q1 Total", "Q1 2023", "YoY %"]
@@ -38,7 +42,7 @@ PNL_ROWS = [
 ]
 
 # ---- Balance Sheet ---------------------------------------------------------
-BS_HEADERS = ["Account", "Mar 31 2024", "Dec 31 2023", "Change $", "Change %"]
+BS_HEADERS = ["Account", date(2024, 3, 31), date(2023, 12, 31), "Change $", "Change %"]
 BS_ROWS = [
     ["ASSETS"],
     ["Current Assets"],
@@ -86,10 +90,21 @@ REV_ROWS = [
 ]
 
 
-def write_sheet(ws, headers, rows):
+def write_sheet(ws, headers, rows, *, date_header_cols=()):
     ws.append(headers)
     for row in rows:
         ws.append(row)
+
+    for row in ws.iter_rows():
+        for cell in row:
+            if cell.value is None or cell.value == "":
+                continue
+            if isinstance(cell.value, date):
+                cell.number_format = DATE_FORMAT
+
+    for col_idx in date_header_cols:
+        ws.cell(row=1, column=col_idx).number_format = DATE_FORMAT
+
     # Rough column widths for readability in Excel
     widths = {1: 28, 2: 14, 3: 14, 4: 14, 5: 14, 6: 14, 7: 12}
     for col_idx, width in widths.items():
@@ -105,7 +120,7 @@ def main():
     write_sheet(pnl, PNL_HEADERS, PNL_ROWS)
 
     bs = wb.create_sheet("Balance Sheet")
-    write_sheet(bs, BS_HEADERS, BS_ROWS)
+    write_sheet(bs, BS_HEADERS, BS_ROWS, date_header_cols=(2, 3))
 
     rev = wb.create_sheet("Revenue Breakdown")
     write_sheet(rev, REV_HEADERS, REV_ROWS)

@@ -21,7 +21,7 @@ body:
     attributes:
       label: wolfxl-cli version
       description: Output of `wolfxl --version`
-      placeholder: e.g. wolfxl 0.7.0
+      placeholder: e.g. wolfxl 0.8.0
     validations:
       required: true
 

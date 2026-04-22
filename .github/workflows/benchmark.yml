@@ -11,8 +11,12 @@ on:
   pull_request:
     paths:
       - "SKILL.md"
+      - "README.md"
       - "benchmarks/**"
+      - "docs/**"
       - "examples/**"
+      - "CLAUDE.md"
+      - ".claude-plugin/**"
       - ".github/workflows/benchmark.yml"
 
 permissions:
@@ -23,8 +27,8 @@ env:
   # Pin wolfxl-cli version here. Bump when upstream releases changes affect output.
   # The workflow reads this value from each checkout, so CLI bump PRs compare the
   # proposed PR binary against master's current baseline binary.
-  # Verified against crates.io on 2026-04-19; bump via `cargo search wolfxl-cli`.
-  WOLFXL_CLI_VERSION: "0.7.0"
+  # Verified against crates.io on 2026-04-22; bump via `cargo search wolfxl-cli`.
+  WOLFXL_CLI_VERSION: "0.8.0"
 
 jobs:
   benchmark:
@@ -89,11 +93,34 @@ jobs:
       - name: Install Python deps
         run: python3 -m pip install --quiet tiktoken openpyxl
 
+      - name: Make master benchmark pipe-safe
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          path = Path("main/benchmarks/measure_tokens.py")
+          text = path.read_text()
+          patched = re.sub(r"\| head -([0-9]+)", r'| sed -n "1,\1p"', text)
+          if patched != text:
+              path.write_text(patched)
+              print("Patched master benchmark line limiting from head to sed.")
+          else:
+              print("Master benchmark already pipe-safe.")
+          PY
+
+      - name: Verify PR branch claims
+        run: PATH="$HOME/.cache/spreadsheet-peek/wolfxl-cli/${{ steps.wolfxl-versions.outputs.pr }}/bin:$PATH" python3 pr/benchmarks/verify_claims.py
+
       - name: Run benchmark on PR branch
-        run: PATH="$HOME/.cache/spreadsheet-peek/wolfxl-cli/${{ steps.wolfxl-versions.outputs.pr }}/bin:$PATH" python3 pr/benchmarks/measure_tokens.py | tee /tmp/pr.txt
+        run: |
+          set -o pipefail
+          PATH="$HOME/.cache/spreadsheet-peek/wolfxl-cli/${{ steps.wolfxl-versions.outputs.pr }}/bin:$PATH" python3 pr/benchmarks/measure_tokens.py | tee /tmp/pr.txt
 
       - name: Run benchmark on master
-        run: PATH="$HOME/.cache/spreadsheet-peek/wolfxl-cli/${{ steps.wolfxl-versions.outputs.main }}/bin:$PATH" python3 main/benchmarks/measure_tokens.py | tee /tmp/main.txt
+        run: |
+          set -o pipefail
+          PATH="$HOME/.cache/spreadsheet-peek/wolfxl-cli/${{ steps.wolfxl-versions.outputs.main }}/bin:$PATH" python3 main/benchmarks/measure_tokens.py | tee /tmp/main.txt
 
       - name: Diff benchmarks
         id: diff
@@ -111,11 +138,14 @@ jobs:
         if: steps.diff.outputs.changed == 'true'
         run: |
           {
+            echo '<!-- spreadsheet-peek-benchmark-drift -->'
+            echo
             echo '### Benchmark drift detected'
             echo
             echo 'The token-cost numbers changed between `master` and this PR.'
             echo 'If this is expected (e.g. sample file grew), update `README.md`,'
-            echo '`docs/how-it-works.md`, and `SKILL.md` so the cited numbers match.'
+            echo '`docs/how-it-works.md`, `benchmarks/README.md`, and `SKILL.md`'
+            echo 'so the cited numbers match.'
             echo
             echo '<details><summary>master output</summary>'
             echo
@@ -139,10 +169,20 @@ jobs:
             echo '</details>'
           } > /tmp/comment.md
 
+      - name: Find existing benchmark comment
+        if: steps.diff.outputs.changed == 'true'
+        id: benchmark-comment
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '<!-- spreadsheet-peek-benchmark-drift -->'
+
       - name: Post or update PR comment
         if: steps.diff.outputs.changed == 'true'
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.benchmark-comment.outputs.comment-id }}
           body-path: /tmp/comment.md
           edit-mode: replace

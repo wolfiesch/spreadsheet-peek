@@ -99,37 +99,33 @@ cat >> AGENTS.md << 'EOF'
 
 Prerequisites: `cargo install wolfxl-cli`
 
-When the user references a `.xlsx`, `.xls`, `.xlsm`, `.xlsb`, or `.ods`
-file, or when about to run a data pipeline or script that reads a
-spreadsheet, preview the file first with `wolfxl peek` before doing
-anything else:
+When the user references a spreadsheet or delimited table file, or when about
+to run a data pipeline or script that reads one, preview the file first with
+`wolfxl peek` before doing anything else:
 
     wolfxl peek <file> -n 15
 
 For large files or repeat previews in the same conversation, switch to the
 token-efficient mode:
 
-    wolfxl peek <file> --export text | head -20
+    wolfxl peek <file> --export text | sed -n '1,20p'
 
 For multi-sheet workbooks, preview each relevant sheet:
 
     wolfxl peek <file> --sheet "Balance Sheet" -n 15
 
-For `.csv` files (`wolfxl peek` doesn't read them directly), start with:
+Direct preview works for `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`,
+`.tsv`, and comma-delimited `.txt` files with `wolfxl-cli >= 0.8.0`:
 
-    head -15 file.csv | column -s, -t
+    wolfxl peek data.csv -n 15
+    wolfxl peek workbook.xlsb -n 15
 
-If `column` mis-renders quoted commas, embedded newlines, or a UTF-8 BOM,
-use a CSV-aware tool instead:
+For custom delimiters, non-UTF-8 encodings, raw dimension checks, or older
+installed `wolfxl` binaries, use SKILL.md#delimited-file-notes and
+SKILL.md#legacy-workbook-notes for the full decision tree.
 
-    mlr --icsv --opprint head -n 15 file.csv
-    csvlook file.csv
-
-See SKILL.md#csv-fallback for the full CSV decision tree.
-
-Never write disposable Python to view a spreadsheet. Use `wolfxl peek` -
-it renders Excel number formats natively (currency as `$1,234.56`,
-percentages as `12.5%`, dates as ISO `YYYY-MM-DD`).
+Never write disposable Python just to view a supported spreadsheet or
+delimited table. Use `wolfxl peek` for a readable preview first.
 
 Full skill reference: https://github.com/wolfiesch/spreadsheet-peek
 EOF
@@ -172,7 +168,7 @@ Continue uses `~/.continue/config.json`. Add a `systemMessage` entry or append t
 ```json
 {
   "models": ["..."],
-  "systemMessage": "When the user references an Excel file (.xlsx/.xls/.xlsm/.xlsb/.ods), preview it with `wolfxl peek <file> -n 15` before discussing it. For repeat previews, use `wolfxl peek <file> --export text | head -20` to save tokens. For .csv files (`wolfxl peek` does not read CSV) start with `head -15 file.csv | column -s, -t` on simple CSVs; for quoted commas, embedded newlines, or BOMs use a CSV-aware tool such as `mlr --icsv --opprint head -n 15 file.csv` or `csvlook file.csv`. See SKILL.md#csv-fallback for the full decision tree. Never write Python just to inspect a spreadsheet. Full reference: https://github.com/wolfiesch/spreadsheet-peek"
+  "systemMessage": "When the user references a spreadsheet or delimited table file (.xlsx, .xlsm, .xls, .xlsb, .ods, .csv, .tsv, or comma-delimited .txt), preview it with `wolfxl peek <file> -n 15` before discussing it. For repeat previews, use `wolfxl peek <file> --export text | sed -n '1,20p'` to save tokens and avoid broken-pipe warnings. Use the documented fallbacks only for custom delimiters, non-UTF-8 encodings, raw dimension checks, high-fidelity legacy styling, or older installed wolfxl binaries. Never write Python just to inspect a supported spreadsheet or delimited table. Full reference: https://github.com/wolfiesch/spreadsheet-peek"
 }
 ```
 
@@ -225,4 +221,4 @@ If you don't have a Rust toolchain, install it via [rustup.rs](https://rustup.rs
 
 ### The agent uses box-drawing mode everywhere and eats context
 
-The token-efficiency rule in `SKILL.md` instructs the agent to switch to `--export text | head` after the first preview. If this isn't happening, your agent may be using only the description/frontmatter of the skill, not the full body. Re-check the install - the full SKILL.md content needs to be in the agent's context.
+The token-efficiency rule in `SKILL.md` instructs the agent to switch to `--export text | sed -n '1,Np'` after the first preview. If this isn't happening, your agent may be using only the description/frontmatter of the skill, not the full body. Re-check the install - the full SKILL.md content needs to be in the agent's context.

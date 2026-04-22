@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import subprocess
 import shlex
+from dataclasses import dataclass
 from pathlib import Path
 
 import tiktoken
@@ -22,7 +23,22 @@ import tiktoken
 EXAMPLES = Path(__file__).parent.parent / "examples"
 FINANCIALS = EXAMPLES / "sample-financials.xlsx"
 WIDE = EXAMPLES / "wide-table.xlsx"
+TALL_LEDGER = EXAMPLES / "tall-ledger.xlsx"
 ENC = tiktoken.get_encoding("cl100k_base")
+
+
+@dataclass(frozen=True)
+class Sample:
+    path: Path
+    label: str
+    generator: str
+
+
+SAMPLES = [
+    Sample(FINANCIALS, "Financials (7 cols)", "examples/generate_sample.py"),
+    Sample(TALL_LEDGER, "Tall ledger (8 cols)", "examples/generate_tall_ledger.py"),
+    Sample(WIDE, "Wide (29 cols)", "examples/generate_wide_table.py"),
+]
 
 
 def run(cmd: list[str]) -> str:
@@ -52,10 +68,23 @@ def row_count(output: str) -> int:
     return max(0, len(data_lines) - 1)
 
 
-def bench(label: str, cmd: list[str]) -> dict:
+def first_lines(output: str, limit: int) -> str:
+    """Return the first ``limit`` lines while preserving line endings."""
+    return "".join(output.splitlines(keepends=True)[:limit])
+
+
+def bench(
+    label: str,
+    cmd: list[str],
+    *,
+    max_lines: int | None = None,
+    data_rows: int | None = None,
+) -> dict:
     output = run(cmd)
+    if max_lines is not None:
+        output = first_lines(output, max_lines)
     t = tokens(output)
-    rows = row_count(output) or output.count("\n")  # fall back to line count for text export
+    rows = data_rows or row_count(output) or len(output.splitlines())
     return {
         "label": label,
         "command": " ".join(cmd),
@@ -72,29 +101,26 @@ def benches_for(sample_path: Path, prefix: str) -> list[dict]:
     return [
         bench(f"{prefix} - Box-drawing (5 rows)",  ["wolfxl", "peek", s, "-n", "5"]),
         bench(f"{prefix} - Box-drawing (15 rows)", ["wolfxl", "peek", s, "-n", "15"]),
-        # Pass the path via bash's positional `$1` so paths containing spaces or
-        # shell metacharacters are never re-interpreted by the shell.
-        bench(f"{prefix} - Text export (head -5)",
-              ["bash", "-o", "pipefail", "-c", 'wolfxl peek "$1" --export text | head -5', "--", s]),
-        bench(f"{prefix} - Text export (head -15)",
-              ["bash", "-o", "pipefail", "-c", 'wolfxl peek "$1" --export text | head -15', "--", s]),
-        bench(f"{prefix} - CSV export (head -5)",
-              ["bash", "-o", "pipefail", "-c", 'wolfxl peek "$1" --export csv | head -5', "--", s]),
+        bench(f"{prefix} - Text export (5 data rows)",
+              ["wolfxl", "peek", s, "--export", "text"], max_lines=6, data_rows=5),
+        bench(f"{prefix} - Text export (15 data rows)",
+              ["wolfxl", "peek", s, "--export", "text"], max_lines=16, data_rows=15),
+        bench(f"{prefix} - CSV export (5 data rows)",
+              ["wolfxl", "peek", s, "--export", "csv"], max_lines=6, data_rows=5),
     ]
 
 
 def main() -> None:
-    for sample in (FINANCIALS, WIDE):
-        if not sample.exists():
+    for sample in SAMPLES:
+        if not sample.path.exists():
             raise SystemExit(
-                f"Sample file not found: {sample}\n"
-                f"Run examples/generate_sample.py and examples/generate_wide_table.py first."
+                f"Sample file not found: {sample.path}\n"
+                f"Run {sample.generator} first."
             )
 
-    results = (
-        benches_for(FINANCIALS, "Financials (7 cols)")
-        + benches_for(WIDE,       "Wide (29 cols)")
-    )
+    results = []
+    for sample in SAMPLES:
+        results.extend(benches_for(sample.path, sample.label))
 
     # Print markdown table
     print("| Mode | Tokens | Bytes | Data rows | Tokens/row |")
@@ -107,9 +133,10 @@ def main() -> None:
 
     print()
     print("## Ratios (box-drawing vs text export, normalized per row)")
-    for prefix in ("Financials (7 cols)", "Wide (29 cols)"):
+    for sample in SAMPLES:
+        prefix = sample.label
         box = next(r for r in results if r["label"] == f"{prefix} - Box-drawing (5 rows)")
-        text = next(r for r in results if r["label"] == f"{prefix} - Text export (head -5)")
+        text = next(r for r in results if r["label"] == f"{prefix} - Text export (5 data rows)")
         ratio = box["tokens_per_row"] / max(1, text["tokens_per_row"])
         print(f"- **{prefix}**: box-drawing is **{ratio:.1f}x** more expensive per row than text export.")
 
