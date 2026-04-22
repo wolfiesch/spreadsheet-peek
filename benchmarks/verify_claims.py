@@ -21,6 +21,9 @@ ROOT = Path(__file__).parent.parent
 EXAMPLES = ROOT / "examples"
 FINANCIALS = EXAMPLES / "sample-financials.xlsx"
 MESSY_CSV = EXAMPLES / "messy.csv"
+SAMPLE_LEDGER_TSV = EXAMPLES / "sample-ledger.tsv"
+SAMPLE_LEDGER_TXT = EXAMPLES / "sample-ledger.txt"
+QUOTED_MULTILINE_CSV = EXAMPLES / "quoted-multiline.csv"
 SAMPLE_XLS = EXAMPLES / "sample-minimal.xls"
 SAMPLE_XLSB = EXAMPLES / "sample-date.xlsb"
 SAMPLE_ODS = EXAMPLES / "sample-minimal.ods"
@@ -117,18 +120,20 @@ def check_direct_delimited_previews() -> None:
     assert_contains(csv_out, "Sheet: messy", "csv preview sheet")
     assert_contains(csv_out, "Acme, Inc.", "csv quoted comma")
 
-    with tempfile.TemporaryDirectory() as tmp:
-        tsv = Path(tmp) / "sample.tsv"
-        tsv.write_text("name\tamount\nAlice\t10\nBob\t20\n", encoding="utf-8")
-        tsv_out = run(["wolfxl", "peek", str(tsv), "-n", "1"]).stdout
-        assert_contains(tsv_out, "Sheet: sample", "tsv preview sheet")
-        assert_contains(tsv_out, "Alice", "tsv preview row")
+    tsv_out = run(["wolfxl", "peek", str(SAMPLE_LEDGER_TSV), "-n", "1"]).stdout
+    assert_contains(tsv_out, "Sheet: sample-ledger", "tsv preview sheet")
+    assert_contains(tsv_out, "Subscription invoice", "tsv preview row")
 
-        txt = Path(tmp) / "sample.txt"
-        txt.write_text("name,amount\nAlice,10\nBob,20\n", encoding="utf-8")
-        txt_out = run(["wolfxl", "peek", str(txt), "-n", "1"]).stdout
-        assert_contains(txt_out, "Sheet: sample", "txt preview sheet")
-        assert_contains(txt_out, "Alice", "txt preview row")
+    txt_out = run(["wolfxl", "peek", str(SAMPLE_LEDGER_TXT), "-n", "1"]).stdout
+    assert_contains(txt_out, "Sheet: sample-ledger", "txt preview sheet")
+    assert_contains(txt_out, "Subscription invoice", "txt preview row")
+
+    quoted_out = run(["wolfxl", "peek", str(QUOTED_MULTILINE_CSV), "-n", "5"]).stdout
+    assert_contains(quoted_out, "Sheet: quoted-multiline", "quoted multiline csv sheet")
+    assert_contains(quoted_out, "Acme, Inc.", "quoted multiline csv quoted comma")
+    assert_contains(quoted_out, 'Controller said "reclass next', "quoted multiline csv escaped quote")
+    assert_contains(quoted_out, "Two-line note", "quoted multiline csv embedded newline")
+    assert_contains(quoted_out, "with covenant", "quoted multiline csv embedded newline")
 
 
 def check_date_rendering() -> None:

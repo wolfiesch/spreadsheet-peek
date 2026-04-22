@@ -1,0 +1,8 @@
+id,customer,notes,amount,status
+1,"Acme, Inc.",Renewal includes expansion seats,1250.00,approved
+2,O'Brien LLC,"Controller said ""reclass next quarter""
+Needs follow-up",725.50,review
+3,Globex,"Memo includes commas, quotes, and tabs	inside one cell",0.00,hold
+4,Initech,"Two-line note
+with covenant support attached",420.69,approved
+5,Umbrella Finance,Requires board approval before release,9999.99,pending

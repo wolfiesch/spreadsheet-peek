@@ -53,6 +53,8 @@ Box-drawing output looks pretty but costs real tokens. The skill teaches the age
 uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
 ```
 
+The same benchmark now measures direct delimited inputs separately. A 7-column ledger costs 524 tokens in box mode and 145 tokens as text export for 5 rows across `.csv`, `.tsv`, and comma-delimited `.txt`; the quoted multiline CSV fixture costs 401 and 116 tokens. Those rows live in [`benchmarks/README.md`](benchmarks/README.md#direct-delimited-input-costs) so workbook ratios stay comparable.
+
 Behavioral claims are smoke-tested separately with:
 
 ```bash
@@ -77,7 +79,34 @@ cargo install wolfxl-cli
 
 Then install the skill for your agent (see [Agent Setup](#agent-setup) below).
 
+## Inline MCP viewer
+
+`spreadsheet-peek` now includes an optional local MCP server and MCP App viewer under [`mcp-app/`](mcp-app/). The viewer is read-only and local-first: it calls the installed `wolfxl` binary, returns structured workbook data, and renders an inline grid with sheet tabs, sticky headers, search, range selection, and a "summarize selected range" action in MCP Apps hosts such as Claude Desktop.
+
+Build and pack the Claude Desktop bundle:
+
+```bash
+cd mcp-app
+npm install
+npm run pack:mcpb
+```
+
+The generated bundle lives at `mcp-app/dist/spreadsheet-peek.mcpb`. The same server also backs Claude Code and Codex plugin installs through `.mcp.json`; hosts that do not render MCP Apps still get a structured preview plus SVG image fallback from `preview_workbook` / `open_workbook_viewer`.
+
 ## Agent Setup
+
+### Claude Desktop
+
+For the full inline grid, install the MCP Bundle after building it:
+
+```bash
+cd mcp-app
+npm install
+npm run pack:mcpb
+open dist/spreadsheet-peek.mcpb
+```
+
+Claude Desktop needs `wolfxl` installed; the server checks `SPREADSHEET_PEEK_WOLFXL_BIN`, `WOLFXL_BIN`, `~/.cargo/bin/wolfxl`, Homebrew paths, and then `PATH`. Install it with `cargo install wolfxl-cli`.
 
 ### Claude Code
 
@@ -105,7 +134,21 @@ cp SKILL.md .claude/skills/spreadsheet-peek/
 
 Either way, Claude Code auto-invokes the skill based on the frontmatter `description` and `filePattern` triggers. You still need `wolfxl` on your `PATH` - either run the `install.sh` one-liner in Quick Start or `cargo install wolfxl-cli` separately.
 
-### Codex (AGENTS.md)
+### Codex
+
+**Option A - Plugin path:**
+
+Use the bundled `.codex-plugin/` metadata with the root `.mcp.json` when testing or installing as a Codex plugin. Build the server first:
+
+```bash
+cd mcp-app
+npm install
+npm run build
+```
+
+The plugin points Codex at `skills/` and the same local MCP preview server. Codex hosts that do not render MCP Apps should still receive structured preview data and an SVG fallback.
+
+**Option B - AGENTS.md skill-only path:**
 
 Codex reads `AGENTS.md` from the repo root. Paste the body of `SKILL.md` into your `AGENTS.md` under a `## Spreadsheet Previews` heading, or add:
 
@@ -155,7 +198,7 @@ For the full technical rationale (why proactive triggers, how the token math wor
 ## FAQ
 
 **Why a skill instead of an MCP server?**
-An MCP server is a long-running process with its own install, auth, and schema surface. The skill is one markdown file that teaches the agent a shell command it can already run. `wolfxl-cli 0.8.0` ships `peek`, `map`, `schema`, and `agent --max-tokens N` across spreadsheet and delimited inputs; those are useful shell-native surfaces for orientation and budgeted previews. An MCP wrapper becomes interesting only when it adds workflow value beyond those commands.
+The skill remains the portable behavior layer: it teaches agents when to preview and how to control token cost. The MCP server is now the richer UI layer for hosts that can render MCP Apps. Use the viewer when available; use terminal `wolfxl peek` everywhere else.
 
 **Why not `pandas.read_excel()` or `openpyxl` directly?**
 Speed and tokens. `openpyxl` cold-start is 0.5-1s before it reads a byte; `wolfxl peek` is instantaneous. Box-drawing output costs about 3-4x more tokens per row than `wolfxl peek --export text` for the same preview slice, while tuple dumps are harder for the user to read. The skill includes a Python fallback for sandboxed agents that can't shell out, but it's the fallback, not the default.
@@ -179,6 +222,7 @@ Yes. `wolfxl-cli 0.8.0` reads `.csv`, `.tsv`, and comma-delimited `.txt` files d
 - **Proactive triggers** - the 5 moments when the agent should preview without being asked
 - **Skip rules** - when *not* to preview (already shown, enormous files, user opted out)
 - **Token economy** - box-drawing vs text export tradeoff with measured numbers
+- **MCP viewer preference** - when to call the richer local viewer tools before falling back to terminal output
 - **Multi-sheet workflow** - how to navigate workbooks with multiple tabs efficiently
 - **Command reference** - full `wolfxl peek` flag cheat sheet (sheets, columns, exports)
 - **Format caveats** - direct support boundaries plus fallback recipes for custom CSVs, old `wolfxl` binaries, or high-fidelity legacy styling
@@ -189,8 +233,9 @@ Yes. `wolfxl-cli 0.8.0` reads `.csv`, `.tsv`, and comma-delimited `.txt` files d
 
 | Agent | Support | Install path |
 |-------|---------|--------------|
+| Claude Desktop | MCPB + MCP App viewer | `mcp-app/dist/spreadsheet-peek.mcpb` |
 | Claude Code | Native (SKILL.md format) | `~/.claude/skills/spreadsheet-peek/` |
-| Codex | Via AGENTS.md | Paste content into `AGENTS.md` |
+| Codex | Plugin / AGENTS.md | `.codex-plugin/` or paste content into `AGENTS.md` |
 | Cursor | Via system prompt | Paste into custom instructions |
 | Continue | Via system prompt | Paste into custom instructions |
 | Any CLI agent | Via system prompt | Any markdown-readable config |

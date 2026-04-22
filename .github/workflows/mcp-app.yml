@@ -1,0 +1,50 @@
+name: MCP App
+
+on:
+  pull_request:
+    paths:
+      - "mcp-app/**"
+      - ".mcp.json"
+      - ".codex-plugin/**"
+      - ".claude-plugin/**"
+      - ".github/workflows/mcp-app.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  mcp-app:
+    runs-on: ubuntu-latest
+    env:
+      WOLFXL_CLI_VERSION: "0.8.0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "mcp-app/package-lock.json"
+
+      - name: Install wolfxl-cli
+        run: cargo install wolfxl-cli --version "$WOLFXL_CLI_VERSION" --force
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: mcp-app
+
+      - name: Install browser for viewer tests
+        run: npx playwright install --with-deps chromium
+        working-directory: mcp-app
+
+      - name: Test MCP app
+        run: npm test
+        working-directory: mcp-app
+
+      - name: Build MCP app
+        run: npm run build
+        working-directory: mcp-app
+
+      - name: Validate MCPB manifest
+        run: npx mcpb validate manifest.json
+        working-directory: mcp-app

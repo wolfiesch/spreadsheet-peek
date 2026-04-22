@@ -1,7 +1,7 @@
 {
   "name": "spreadsheet-peek",
-  "version": "2.1.0",
-  "description": "Teaches AI coding agents to use `wolfxl peek` for instant inline previews of spreadsheets and delimited tables, with proactive triggers, token-efficiency rules, readable date/number rendering, and format caveats baked in.",
+  "version": "2.2.0",
+  "description": "Adds proactive spreadsheet previews plus a local MCP server for structured and visual inline workbook inspection.",
   "author": {
     "name": "Wolfgang Schoenberger",
     "url": "https://github.com/wolfiesch"
@@ -18,6 +18,8 @@
     "preview",
     "agent",
     "skill",
-    "token-efficiency"
+    "token-efficiency",
+    "mcp",
+    "viewer"
   ]
 }

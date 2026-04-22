@@ -16,6 +16,7 @@ Badges get re-dated whenever the skill, the agent, or the agent's instruction-lo
 ## Table of contents
 
 - [Claude Code](#claude-code) ✅ Verified 2026-04-19
+- [Claude Desktop](#claude-desktop-mcp-viewer) 📖 Documented
 - [Codex](#codex) 📖 Documented
 - [Cursor](#cursor) 📖 Documented
 - [Continue](#continue) 📖 Documented
@@ -24,9 +25,37 @@ Badges get re-dated whenever the skill, the agent, or the agent's instruction-lo
 
 ---
 
+## Claude Desktop MCP Viewer
+
+> 📖 **Documented** - The local MCP Bundle follows Anthropic's MCPB manifest and stdio-server packaging model. Host installation should be round-tripped before marking this verified.
+
+Claude Desktop is the recommended path for the full inline spreadsheet grid. Build the bundled MCP server and viewer:
+
+```bash
+cd mcp-app
+npm install
+npm run pack:mcpb
+open dist/spreadsheet-peek.mcpb
+```
+
+The bundle exposes two tools:
+
+- `preview_workbook` returns a bounded structured preview plus text/SVG fallback.
+- `open_workbook_viewer` opens the MCP App grid with sheet tabs, sticky headers, search, range selection, and a selected-range handoff to the model.
+
+Prerequisite: `wolfxl` must be on `PATH`:
+
+```bash
+cargo install wolfxl-cli --version 0.8.0 --force
+```
+
+Use absolute file paths when calling the tools from Claude Desktop so the local server resolves the same file the conversation references.
+
+---
+
 ## Claude Code
 
-> ✅ **Verified 2026-04-19** - Skill loads from `~/.claude/skills/spreadsheet-peek/SKILL.md` in an active Claude Code session; frontmatter description and `filePattern`/`bashPattern` triggers are recognized by the skills index. v2.0.0 plugin install verified end-to-end against the `wolfie-tools` marketplace.
+> ✅ **Verified 2026-04-22** - Skill loads from `~/.claude/skills/spreadsheet-peek/SKILL.md` in an active Claude Code session; frontmatter description and `filePattern`/`bashPattern` triggers are recognized by the skills index. The plugin install was round-tripped against the `wolfie-tools` marketplace in a clean temp home without GitHub SSH keys; the v2.2.0 MCP server path is documented here and should be round-tripped before marking it verified.
 
 Claude Code has two install paths: a **plugin** (recommended, one command, versioned, easy to uninstall) and a **skill-only** install (no plugin machinery, just a SKILL.md in the skills directory). Both end up with the skill active; pick whichever fits your setup.
 
@@ -39,7 +68,7 @@ Claude Code has two install paths: a **plugin** (recommended, one command, versi
 /plugin install spreadsheet-peek@wolfie-tools
 ```
 
-The first command registers the `wolfie-tools` marketplace defined in `.claude-plugin/marketplace.json`. The second installs the `spreadsheet-peek` plugin from it - which in turn reads `.claude-plugin/plugin.json` and loads the skill from `skills/spreadsheet-peek/SKILL.md` (a symlink back to the canonical root `SKILL.md`, so there's one source of truth).
+The first command registers the `wolfie-tools` marketplace defined in `.claude-plugin/marketplace.json`. The second installs the `spreadsheet-peek` plugin from it - which in turn reads `.claude-plugin/plugin.json`, loads the skill from `skills/spreadsheet-peek/SKILL.md`, and can start the local MCP server declared in `.mcp.json` after `mcp-app` has been built.
 
 Uninstall:
 
@@ -87,7 +116,21 @@ Plugin installs update via `/plugin update spreadsheet-peek`.
 
 ## Codex
 
-> 📖 **Documented** - Install steps below follow Codex's published `AGENTS.md` convention. Not yet round-tripped in a live Codex session. If the agent fails to pick up the skill, please open an issue.
+> 📖 **Documented** - The skill-only path follows Codex's published `AGENTS.md` convention. The plugin path is included under `.codex-plugin/` but should be round-tripped before marking it verified.
+
+**Option A - Codex plugin path:**
+
+Use `.codex-plugin/plugin.json` plus the root `.mcp.json` to package the skill and MCP preview server together. Build the server before installing or testing the plugin locally:
+
+```bash
+cd mcp-app
+npm install
+npm run build
+```
+
+Codex hosts that do not render MCP Apps should still receive the structured preview and SVG image fallback from `open_workbook_viewer`.
+
+**Option B - AGENTS.md skill-only path:**
 
 Codex reads `AGENTS.md` from the repo root as its persistent instructions. Add a section for spreadsheet-peek:
 

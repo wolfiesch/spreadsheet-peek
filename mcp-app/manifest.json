@@ -1,0 +1,46 @@
+{
+  "manifest_version": "0.3",
+  "name": "spreadsheet-peek",
+  "display_name": "Spreadsheet Peek",
+  "version": "2.2.0",
+  "description": "Inline local spreadsheet viewer for Claude Desktop, powered by wolfxl.",
+  "long_description": "Spreadsheet Peek adds read-only MCP tools and an interactive MCP App grid for local .xlsx, .xlsm, .xls, .xlsb, .ods, .csv, .tsv, and comma-delimited .txt files. It uses the installed wolfxl binary for parsing and keeps workbook contents local.",
+  "author": {
+    "name": "Wolfgang Schoenberger",
+    "email": "wolfgangs2000@gmail.com",
+    "url": "https://github.com/wolfiesch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wolfiesch/spreadsheet-peek"
+  },
+  "homepage": "https://github.com/wolfiesch/spreadsheet-peek",
+  "documentation": "https://github.com/wolfiesch/spreadsheet-peek/blob/master/mcp-app/README.md",
+  "server": {
+    "type": "node",
+    "entry_point": "dist/server.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/server.js"]
+    }
+  },
+  "tools": [
+    {
+      "name": "preview_workbook",
+      "description": "Return a bounded structured preview of a local spreadsheet."
+    },
+    {
+      "name": "open_workbook_viewer",
+      "description": "Open an interactive inline spreadsheet viewer with image and structured fallbacks."
+    }
+  ],
+  "keywords": ["spreadsheet", "excel", "csv", "mcp", "viewer", "wolfxl"],
+  "license": "MIT",
+  "compatibility": {
+    "claude_desktop": ">=0.13.0",
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=20"
+    }
+  }
+}

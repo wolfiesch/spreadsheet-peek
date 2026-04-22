@@ -4,6 +4,29 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 ## [Unreleased]
 
+### Added
+
+- Added `examples/sample-ledger.csv`, `examples/sample-ledger.tsv`, and `examples/generate_delimited_samples.py` so direct CSV/TSV input costs are benchmarked against committed fixtures.
+- `benchmarks/measure_tokens.py` now prints a separate direct-delimited-input cost table for `.csv` and `.tsv` previews without disturbing the existing workbook output-mode ratios.
+- Added `examples/sample-ledger.txt` and `examples/quoted-multiline.csv` so comma-delimited `.txt` and quoted multiline CSV inputs are benchmarked and smoke-tested from committed fixtures.
+- Added `mcp-app/`, a local Node/TypeScript MCP server and MCP App viewer that uses the installed `wolfxl` binary to return bounded structured previews, SVG image fallbacks, and a Claude Desktop-oriented inline grid with sheet tabs, sticky headers, search, range selection, and selected-range handoff.
+- Added root `.mcp.json` plus `.codex-plugin/` metadata so Claude Code and Codex plugin installs can expose the same `preview_workbook` and `open_workbook_viewer` tools after the bundled server is built.
+- Added `.github/workflows/mcp-app.yml` to install `wolfxl-cli`, run the MCP app tests, build the bundled server/viewer, and validate the MCPB manifest on relevant PRs.
+
+### Changed
+
+- `SKILL.md`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and the new MCP package metadata are bumped to 2.2.0 for the inline-viewer release.
+- README, `SKILL.md`, and `docs/how-it-works.md` now cite the direct-delimited benchmark rows surfaced by the drift workflow.
+- The MCP app now sources its runtime app version from `package.json` and drops the unused Vite basic SSL dev dependency.
+
+### Fixed
+
+- `.claude-plugin/marketplace.json` now uses an HTTPS git URL source so clean Claude Code plugin installs do not require GitHub SSH keys.
+- The MCP server now resolves `wolfxl` from explicit environment overrides, Cargo, Homebrew, common system paths, and finally `PATH`, which helps desktop hosts launched with a thin environment find `cargo install` binaries.
+- The MCP TSV handoff now escapes tabs, newlines, carriage returns, and backslashes so multiline CSV cells cannot shift table rows or columns in model-facing text.
+- The MCP app build and root `.mcp.json` launcher now avoid POSIX-only shell assumptions for Windows plugin hosts.
+- The viewer no longer abandons host connection after a fixed 1.5 second timeout.
+
 ## [2.1.0] - 2026-04-22
 
 ### Changed

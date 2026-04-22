@@ -1,0 +1,36 @@
+{
+  "name": "@wolfie-tools/spreadsheet-peek-mcp",
+  "version": "2.2.0",
+  "private": true,
+  "description": "Local MCP server and MCP App viewer for inline spreadsheet previews.",
+  "type": "module",
+  "bin": {
+    "spreadsheet-peek-mcp": "./dist/server.js"
+  },
+  "scripts": {
+    "build": "npm run build:ui && npm run build:server && npm run clean:dist-whitespace",
+    "build:ui": "vite build --outDir dist/viewer --emptyOutDir",
+    "build:server": "esbuild src/server.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/server.js --banner:js='#!/usr/bin/env node' && node scripts/chmod-server.mjs",
+    "clean:dist-whitespace": "node scripts/strip-dist-whitespace.mjs",
+    "dev": "vite --host 127.0.0.1",
+    "test": "node --test --import tsx test/*.test.ts",
+    "pack:mcpb": "npm run build && mcpb validate manifest.json && mcpb pack . dist/spreadsheet-peek.mcpb"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.7.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.2.0"
+  },
+  "devDependencies": {
+    "@anthropic-ai/mcpb": "^2.1.2",
+    "esbuild": "^0.27.0",
+    "playwright": "^1.59.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.0",
+    "vite-plugin-singlefile": "^2.3.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

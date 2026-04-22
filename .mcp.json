@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "spreadsheet-peek": {
+      "command": "node",
+      "args": [
+        "-e",
+        "const fs=require('node:fs');const path=require('node:path');const {pathToFileURL}=require('node:url');const roots=[process.env.CLAUDE_PLUGIN_ROOT,process.env.CODEX_PLUGIN_ROOT,process.cwd(),__dirname].filter(Boolean);let launcher;for(const root of roots){const candidate=path.resolve(root,'mcp-app','bin','run-server.mjs');if(fs.existsSync(candidate)){launcher=candidate;break;}}if(!launcher){console.error('Unable to locate spreadsheet-peek MCP launcher under mcp-app/bin');process.exit(1);}import(pathToFileURL(launcher).href).catch((error)=>{console.error(error);process.exit(1);});"
+      ]
+    }
+  }
+}

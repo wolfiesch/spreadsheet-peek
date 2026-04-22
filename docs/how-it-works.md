@@ -2,11 +2,12 @@
 
 `spreadsheet-peek` is a small idea delivered as a single file (`SKILL.md`): teach an AI coding agent to use [`wolfxl peek`](https://crates.io/crates/wolfxl-cli) instead of improvising Python every time it touches a spreadsheet or delimited table. The payoff is two-sided. The agent gets faster, more readable previews with date/number rendering that is easier to scan than tuple dumps. The user gets a context window that survives long sessions. This doc unpacks the mechanics behind that claim.
 
-The short version sits at three layers:
+The short version now sits at four layers:
 
 1. **Proactive triggers** change *when* the agent looks at a spreadsheet.
 2. **Token-efficient output modes** change *how* it looks at one.
-3. **A reproducible pattern** means the same shape can wrap any opaque file format.
+3. **Optional MCP Apps rendering** changes *where* the user sees the preview.
+4. **A reproducible pattern** means the same shape can wrap any opaque file format.
 
 Below is a screencast of `wolfxl peek` rendering the committed sample workbook. If you only know spreadsheets as `openpyxl` tuple dumps, this is the part you've been missing.
 
@@ -57,6 +58,8 @@ Two observations from the shape comparison:
 1. On the financial workbook, text export is **3.9x cheaper per row** than box-drawing. The tall ledger lands nearby at **3.6x**, which is useful because it is closer to GL-detail work than a statement package.
 2. On the wide workbook, the *ratio* drops to **3.0x** - because the text-export baseline is itself larger per row when a table has many columns. But the *absolute* per-row savings grows from ~85-90 tokens/row on the narrower samples to ~299 tokens/row on the wide sample. The wider the workbook, the more expensive naive usage gets in raw tokens, even if the ratio looks less dramatic.
 
+Direct delimited inputs are measured separately so the workbook ratios stay stable. The committed 7-column ledger costs 524 tokens in box mode and 145 tokens as text export for 5 rows across `.csv`, `.tsv`, and comma-delimited `.txt`; the quoted multiline CSV fixture costs 401 and 116 tokens. See the direct-delimited table in [`benchmarks/README.md`](../benchmarks/README.md#direct-delimited-input-costs).
+
 Here's the worked example the skill encodes implicitly. Imagine a 30-spreadsheet agent session (a realistic FDD or QoE engagement). Naive usage runs the box-drawing default on every file:
 
 ```
@@ -83,7 +86,16 @@ The skill's actual rule is compressed to one sentence: *"Use box-drawing for the
 
 The ratios are reproducible. `uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py` prints them against the committed sample file; a CI workflow (see [`.github/workflows/benchmark.yml`](../.github/workflows/benchmark.yml)) re-measures them on every PR that touches the skill so the numbers in this doc can't drift silently.
 
-## 3. Extending the pattern
+## 3. MCP Apps rendering
+
+The MCP App layer is deliberately additive. `SKILL.md` still teaches a shell-native behavior that works in any coding agent. The local MCP server under `mcp-app/` adds two read-only tools for richer hosts:
+
+- `preview_workbook` returns bounded structured workbook data plus text/SVG fallbacks.
+- `open_workbook_viewer` returns the same preview and links it to a `ui://spreadsheet-peek/viewer/index.html` resource for MCP Apps hosts.
+
+That split keeps terminal agents cheap and reliable while giving Claude Desktop a real inline grid with sheet tabs, sticky row/column headers, search, range selection, and selected-range handoff to the model.
+
+## 4. Extending the pattern
 
 `spreadsheet-peek` is a template more than a tool. The shape generalizes cleanly to any opaque binary format an agent might touch:
 
@@ -114,7 +126,7 @@ The same logic applies to SKILL.md body size. The skill currently sits just unde
 
 It is not a tutorial for `wolfxl peek`. Run `wolfxl peek --help` for that, or read the [`wolfxl-cli` docs on crates.io](https://crates.io/crates/wolfxl-cli).
 
-It is not a rationale for a wrapper MCP server. The skill runs `wolfxl peek` as a plain shell command. If an MCP server would help, it would help the same way for every CLI tool an agent ever touches, and that is a separate problem. (For what it's worth, `wolfxl serve --mcp` is on the sprint-2 backlog precisely so the same `wolfxl-core` logic is reachable from MCP without a wrapper layer.)
+It is not a claim that every host renders interactive MCP Apps. Hosts without MCP Apps support still receive text, structured data, and SVG fallback output from the MCP tools. The terminal `wolfxl peek` path remains the universal baseline.
 
 It is not marketing. If the 3.9x ratio above is wrong on a larger file or a different tokenizer, the benchmark script is the arbiter. Open an issue with a repro.
 
