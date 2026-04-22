@@ -48,7 +48,7 @@ npm run pack:mcpb
 
 The bundle is written to `mcp-app/dist/spreadsheet-peek.mcpb`.
 
-The bundle expects `wolfxl` to be available on `PATH`:
+The bundle expects `wolfxl` to be installed. It resolves the binary from `SPREADSHEET_PEEK_WOLFXL_BIN`, `WOLFXL_BIN`, `~/.cargo/bin/wolfxl`, common Homebrew paths, and then `PATH`:
 
 ```bash
 cargo install wolfxl-cli --version 0.8.0 --force

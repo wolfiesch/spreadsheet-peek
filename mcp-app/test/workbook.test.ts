@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { constants } from "node:fs";
+import { access, mkdtemp, writeFile } from "node:fs/promises";
+import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { loadWorkbookPreview, resolveWorkbookPath } from "../src/workbook.js";
+import { loadWorkbookPreview, resolveWolfxlBinary, resolveWorkbookPath } from "../src/workbook.js";
 
 const root = resolve(import.meta.dirname, "..", "..");
 
@@ -47,6 +48,51 @@ describe("loadWorkbookPreview", () => {
     assert.match(preview.rows.flat().map((cell) => cell.display).join(" "), /Acme, Inc\./);
   });
 
+  it("honors explicit wolfxl binary overrides", async () => {
+    const originalOverride = process.env.SPREADSHEET_PEEK_WOLFXL_BIN;
+    const originalWolfxlBin = process.env.WOLFXL_BIN;
+    process.env.SPREADSHEET_PEEK_WOLFXL_BIN = "  /opt/custom/wolfxl  ";
+    process.env.WOLFXL_BIN = "/fallback/wolfxl";
+    try {
+      assert.equal(await resolveWolfxlBinary(), "/opt/custom/wolfxl");
+    } finally {
+      restoreEnv("SPREADSHEET_PEEK_WOLFXL_BIN", originalOverride);
+      restoreEnv("WOLFXL_BIN", originalWolfxlBin);
+    }
+  });
+
+  it("finds wolfxl when Claude Desktop starts with a thin PATH", async () => {
+    const cargoWolfxl = join(
+      homedir(),
+      ".cargo",
+      "bin",
+      process.platform === "win32" ? "wolfxl.exe" : "wolfxl",
+    );
+    try {
+      await access(cargoWolfxl, constants.X_OK);
+    } catch {
+      return;
+    }
+
+    const originalPath = process.env.PATH;
+    const originalOverride = process.env.SPREADSHEET_PEEK_WOLFXL_BIN;
+    const originalWolfxlBin = process.env.WOLFXL_BIN;
+    process.env.PATH = "/usr/bin:/bin";
+    delete process.env.SPREADSHEET_PEEK_WOLFXL_BIN;
+    delete process.env.WOLFXL_BIN;
+    try {
+      const preview = await loadWorkbookPreview({
+        path: join(root, "examples", "sample-financials.xlsx"),
+        maxRows: 1,
+      });
+      assert.equal(preview.activeSheet, "P&L");
+    } finally {
+      restoreEnv("PATH", originalPath);
+      restoreEnv("SPREADSHEET_PEEK_WOLFXL_BIN", originalOverride);
+      restoreEnv("WOLFXL_BIN", originalWolfxlBin);
+    }
+  });
+
   it("rejects unsupported file extensions", async () => {
     const dir = await mkdtemp(join(tmpdir(), "spreadsheet-peek-"));
     const file = join(dir, "notes.pdf");
@@ -65,3 +111,11 @@ describe("loadWorkbookPreview", () => {
     );
   });
 });
+
+function restoreEnv(name: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[name];
+  } else {
+    process.env[name] = value;
+  }
+}

@@ -10843,7 +10843,7 @@ function initializeContext(params) {
     external: params?.external ?? void 0
   };
 }
-function process(schema, ctx, _params = { path: [], schemaPath: [] }) {
+function process2(schema, ctx, _params = { path: [], schemaPath: [] }) {
   var _a2;
   const def = schema._zod.def;
   const seen = ctx.seen.get(schema);
@@ -10880,7 +10880,7 @@ function process(schema, ctx, _params = { path: [], schemaPath: [] }) {
     if (parent) {
       if (!result.ref)
         result.ref = parent;
-      process(parent, ctx, params);
+      process2(parent, ctx, params);
       ctx.seen.get(parent).isParent = true;
     }
   }
@@ -11165,14 +11165,14 @@ var init_to_json_schema = __esm({
     init_registries();
     createToJSONSchemaMethod = (schema, processors = {}) => (params) => {
       const ctx = initializeContext({ ...params, processors });
-      process(schema, ctx);
+      process2(schema, ctx);
       extractDefs(ctx, schema);
       return finalize(ctx, schema);
     };
     createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params) => {
       const { libraryOptions, target } = params ?? {};
       const ctx = initializeContext({ ...libraryOptions ?? {}, target, io, processors });
-      process(schema, ctx);
+      process2(schema, ctx);
       extractDefs(ctx, schema);
       return finalize(ctx, schema);
     };
@@ -11187,7 +11187,7 @@ function toJSONSchema(input, params) {
     const defs = {};
     for (const entry of registry2._idmap.entries()) {
       const [_2, schema] = entry;
-      process(schema, ctx2);
+      process2(schema, ctx2);
     }
     const schemas = {};
     const external = {
@@ -11210,7 +11210,7 @@ function toJSONSchema(input, params) {
     return { schemas };
   }
   const ctx = initializeContext({ ...params, processors: allProcessors });
-  process(input, ctx);
+  process2(input, ctx);
   extractDefs(ctx, input);
   return finalize(ctx, input);
 }
@@ -11470,7 +11470,7 @@ var init_json_schema_processors = __esm({
       if (typeof maximum === "number")
         json2.maxItems = maximum;
       json2.type = "array";
-      json2.items = process(def.element, ctx, { ...params, path: [...params.path, "items"] });
+      json2.items = process2(def.element, ctx, { ...params, path: [...params.path, "items"] });
     };
     objectProcessor = (schema, ctx, _json, params) => {
       const json2 = _json;
@@ -11479,7 +11479,7 @@ var init_json_schema_processors = __esm({
       json2.properties = {};
       const shape = def.shape;
       for (const key in shape) {
-        json2.properties[key] = process(shape[key], ctx, {
+        json2.properties[key] = process2(shape[key], ctx, {
           ...params,
           path: [...params.path, "properties", key]
         });
@@ -11502,7 +11502,7 @@ var init_json_schema_processors = __esm({
         if (ctx.io === "output")
           json2.additionalProperties = false;
       } else if (def.catchall) {
-        json2.additionalProperties = process(def.catchall, ctx, {
+        json2.additionalProperties = process2(def.catchall, ctx, {
           ...params,
           path: [...params.path, "additionalProperties"]
         });
@@ -11511,7 +11511,7 @@ var init_json_schema_processors = __esm({
     unionProcessor = (schema, ctx, json2, params) => {
       const def = schema._zod.def;
       const isExclusive = def.inclusive === false;
-      const options = def.options.map((x, i) => process(x, ctx, {
+      const options = def.options.map((x, i) => process2(x, ctx, {
         ...params,
         path: [...params.path, isExclusive ? "oneOf" : "anyOf", i]
       }));
@@ -11523,11 +11523,11 @@ var init_json_schema_processors = __esm({
     };
     intersectionProcessor = (schema, ctx, json2, params) => {
       const def = schema._zod.def;
-      const a = process(def.left, ctx, {
+      const a = process2(def.left, ctx, {
         ...params,
         path: [...params.path, "allOf", 0]
       });
-      const b = process(def.right, ctx, {
+      const b = process2(def.right, ctx, {
         ...params,
         path: [...params.path, "allOf", 1]
       });
@@ -11544,11 +11544,11 @@ var init_json_schema_processors = __esm({
       json2.type = "array";
       const prefixPath = ctx.target === "draft-2020-12" ? "prefixItems" : "items";
       const restPath = ctx.target === "draft-2020-12" ? "items" : ctx.target === "openapi-3.0" ? "items" : "additionalItems";
-      const prefixItems = def.items.map((x, i) => process(x, ctx, {
+      const prefixItems = def.items.map((x, i) => process2(x, ctx, {
         ...params,
         path: [...params.path, prefixPath, i]
       }));
-      const rest = def.rest ? process(def.rest, ctx, {
+      const rest = def.rest ? process2(def.rest, ctx, {
         ...params,
         path: [...params.path, restPath, ...ctx.target === "openapi-3.0" ? [def.items.length] : []]
       }) : null;
@@ -11588,7 +11588,7 @@ var init_json_schema_processors = __esm({
       const keyBag = keyType._zod.bag;
       const patterns = keyBag?.patterns;
       if (def.mode === "loose" && patterns && patterns.size > 0) {
-        const valueSchema = process(def.valueType, ctx, {
+        const valueSchema = process2(def.valueType, ctx, {
           ...params,
           path: [...params.path, "patternProperties", "*"]
         });
@@ -11598,12 +11598,12 @@ var init_json_schema_processors = __esm({
         }
       } else {
         if (ctx.target === "draft-07" || ctx.target === "draft-2020-12") {
-          json2.propertyNames = process(def.keyType, ctx, {
+          json2.propertyNames = process2(def.keyType, ctx, {
             ...params,
             path: [...params.path, "propertyNames"]
           });
         }
-        json2.additionalProperties = process(def.valueType, ctx, {
+        json2.additionalProperties = process2(def.valueType, ctx, {
           ...params,
           path: [...params.path, "additionalProperties"]
         });
@@ -11618,7 +11618,7 @@ var init_json_schema_processors = __esm({
     };
     nullableProcessor = (schema, ctx, json2, params) => {
       const def = schema._zod.def;
-      const inner = process(def.innerType, ctx, params);
+      const inner = process2(def.innerType, ctx, params);
       const seen = ctx.seen.get(schema);
       if (ctx.target === "openapi-3.0") {
         seen.ref = def.innerType;
@@ -11629,20 +11629,20 @@ var init_json_schema_processors = __esm({
     };
     nonoptionalProcessor = (schema, ctx, _json, params) => {
       const def = schema._zod.def;
-      process(def.innerType, ctx, params);
+      process2(def.innerType, ctx, params);
       const seen = ctx.seen.get(schema);
       seen.ref = def.innerType;
     };
     defaultProcessor = (schema, ctx, json2, params) => {
       const def = schema._zod.def;
-      process(def.innerType, ctx, params);
+      process2(def.innerType, ctx, params);
       const seen = ctx.seen.get(schema);
       seen.ref = def.innerType;
       json2.default = JSON.parse(JSON.stringify(def.defaultValue));
     };
     prefaultProcessor = (schema, ctx, json2, params) => {
       const def = schema._zod.def;
-      process(def.innerType, ctx, params);
+      process2(def.innerType, ctx, params);
       const seen = ctx.seen.get(schema);
       seen.ref = def.innerType;
       if (ctx.io === "input")
@@ -11650,7 +11650,7 @@ var init_json_schema_processors = __esm({
     };
     catchProcessor = (schema, ctx, json2, params) => {
       const def = schema._zod.def;
-      process(def.innerType, ctx, params);
+      process2(def.innerType, ctx, params);
       const seen = ctx.seen.get(schema);
       seen.ref = def.innerType;
       let catchValue;
@@ -11664,32 +11664,32 @@ var init_json_schema_processors = __esm({
     pipeProcessor = (schema, ctx, _json, params) => {
       const def = schema._zod.def;
       const innerType = ctx.io === "input" ? def.in._zod.def.type === "transform" ? def.out : def.in : def.out;
-      process(innerType, ctx, params);
+      process2(innerType, ctx, params);
       const seen = ctx.seen.get(schema);
       seen.ref = innerType;
     };
     readonlyProcessor = (schema, ctx, json2, params) => {
       const def = schema._zod.def;
-      process(def.innerType, ctx, params);
+      process2(def.innerType, ctx, params);
       const seen = ctx.seen.get(schema);
       seen.ref = def.innerType;
       json2.readOnly = true;
     };
     promiseProcessor = (schema, ctx, _json, params) => {
       const def = schema._zod.def;
-      process(def.innerType, ctx, params);
+      process2(def.innerType, ctx, params);
       const seen = ctx.seen.get(schema);
       seen.ref = def.innerType;
     };
     optionalProcessor = (schema, ctx, _json, params) => {
       const def = schema._zod.def;
-      process(def.innerType, ctx, params);
+      process2(def.innerType, ctx, params);
       const seen = ctx.seen.get(schema);
       seen.ref = def.innerType;
     };
     lazyProcessor = (schema, ctx, _json, params) => {
       const innerType = schema._zod.innerType;
-      process(innerType, ctx, params);
+      process2(innerType, ctx, params);
       const seen = ctx.seen.get(schema);
       seen.ref = innerType;
     };
@@ -11795,7 +11795,7 @@ var init_json_schema_generator = __esm({
        * This must be called before emit().
        */
       process(schema, _params = { path: [], schemaPath: [] }) {
-        return process(schema, this.ctx, _params);
+        return process2(schema, this.ctx, _params);
       }
       /**
        * Emit the final JSON Schema after processing.
@@ -12088,7 +12088,7 @@ __export(core_exports2, {
   parse: () => parse,
   parseAsync: () => parseAsync,
   prettifyError: () => prettifyError,
-  process: () => process,
+  process: () => process2,
   regexes: () => regexes_exports,
   registry: () => registry,
   safeDecode: () => safeDecode,
@@ -14738,11 +14738,11 @@ var require_codegen = __commonJS({
         const rhs = this.rhs === void 0 ? "" : ` = ${this.rhs}`;
         return `${varKind} ${this.name}${rhs};` + _n;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         if (!names[this.name.str])
           return;
         if (this.rhs)
-          this.rhs = optimizeExpr(this.rhs, names, constants);
+          this.rhs = optimizeExpr(this.rhs, names, constants2);
         return this;
       }
       get names() {
@@ -14759,10 +14759,10 @@ var require_codegen = __commonJS({
       render({ _n }) {
         return `${this.lhs} = ${this.rhs};` + _n;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         if (this.lhs instanceof code_1.Name && !names[this.lhs.str] && !this.sideEffects)
           return;
-        this.rhs = optimizeExpr(this.rhs, names, constants);
+        this.rhs = optimizeExpr(this.rhs, names, constants2);
         return this;
       }
       get names() {
@@ -14823,8 +14823,8 @@ var require_codegen = __commonJS({
       optimizeNodes() {
         return `${this.code}` ? this : void 0;
       }
-      optimizeNames(names, constants) {
-        this.code = optimizeExpr(this.code, names, constants);
+      optimizeNames(names, constants2) {
+        this.code = optimizeExpr(this.code, names, constants2);
         return this;
       }
       get names() {
@@ -14853,12 +14853,12 @@ var require_codegen = __commonJS({
         }
         return nodes.length > 0 ? this : void 0;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         const { nodes } = this;
         let i = nodes.length;
         while (i--) {
           const n = nodes[i];
-          if (n.optimizeNames(names, constants))
+          if (n.optimizeNames(names, constants2))
             continue;
           subtractNames(names, n.names);
           nodes.splice(i, 1);
@@ -14911,12 +14911,12 @@ var require_codegen = __commonJS({
           return void 0;
         return this;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         var _a2;
-        this.else = (_a2 = this.else) === null || _a2 === void 0 ? void 0 : _a2.optimizeNames(names, constants);
-        if (!(super.optimizeNames(names, constants) || this.else))
+        this.else = (_a2 = this.else) === null || _a2 === void 0 ? void 0 : _a2.optimizeNames(names, constants2);
+        if (!(super.optimizeNames(names, constants2) || this.else))
           return;
-        this.condition = optimizeExpr(this.condition, names, constants);
+        this.condition = optimizeExpr(this.condition, names, constants2);
         return this;
       }
       get names() {
@@ -14939,10 +14939,10 @@ var require_codegen = __commonJS({
       render(opts) {
         return `for(${this.iteration})` + super.render(opts);
       }
-      optimizeNames(names, constants) {
-        if (!super.optimizeNames(names, constants))
+      optimizeNames(names, constants2) {
+        if (!super.optimizeNames(names, constants2))
           return;
-        this.iteration = optimizeExpr(this.iteration, names, constants);
+        this.iteration = optimizeExpr(this.iteration, names, constants2);
         return this;
       }
       get names() {
@@ -14978,10 +14978,10 @@ var require_codegen = __commonJS({
       render(opts) {
         return `for(${this.varKind} ${this.name} ${this.loop} ${this.iterable})` + super.render(opts);
       }
-      optimizeNames(names, constants) {
-        if (!super.optimizeNames(names, constants))
+      optimizeNames(names, constants2) {
+        if (!super.optimizeNames(names, constants2))
           return;
-        this.iterable = optimizeExpr(this.iterable, names, constants);
+        this.iterable = optimizeExpr(this.iterable, names, constants2);
         return this;
       }
       get names() {
@@ -15023,11 +15023,11 @@ var require_codegen = __commonJS({
         (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNodes();
         return this;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         var _a2, _b;
-        super.optimizeNames(names, constants);
-        (_a2 = this.catch) === null || _a2 === void 0 ? void 0 : _a2.optimizeNames(names, constants);
-        (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants);
+        super.optimizeNames(names, constants2);
+        (_a2 = this.catch) === null || _a2 === void 0 ? void 0 : _a2.optimizeNames(names, constants2);
+        (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants2);
         return this;
       }
       get names() {
@@ -15328,7 +15328,7 @@ var require_codegen = __commonJS({
     function addExprNames(names, from) {
       return from instanceof code_1._CodeOrName ? addNames(names, from.names) : names;
     }
-    function optimizeExpr(expr, names, constants) {
+    function optimizeExpr(expr, names, constants2) {
       if (expr instanceof code_1.Name)
         return replaceName(expr);
       if (!canOptimize(expr))
@@ -15343,14 +15343,14 @@ var require_codegen = __commonJS({
         return items;
       }, []));
       function replaceName(n) {
-        const c = constants[n.str];
+        const c = constants2[n.str];
         if (c === void 0 || names[n.str] !== 1)
           return n;
         delete names[n.str];
         return c;
       }
       function canOptimize(e) {
-        return e instanceof code_1._Code && e._items.some((c) => c instanceof code_1.Name && names[c.str] === 1 && constants[c.str] !== void 0);
+        return e instanceof code_1._Code && e._items.some((c) => c instanceof code_1.Name && names[c.str] === 1 && constants2[c.str] !== void 0);
       }
     }
     function subtractNames(names, from) {
@@ -21132,7 +21132,7 @@ var require_dist = __commonJS({
 
 // src/server.ts
 import { readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, join as join2 } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // node_modules/zod/v3/helpers/util.js
@@ -30710,7 +30710,7 @@ var EMPTY_COMPLETION_RESULT = {
 };
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js
-import process2 from "node:process";
+import process3 from "node:process";
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js
 var ReadBuffer = class {
@@ -30742,7 +30742,7 @@ function serializeMessage(message) {
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js
 var StdioServerTransport = class {
-  constructor(_stdin = process2.stdin, _stdout = process2.stdout) {
+  constructor(_stdin = process3.stdin, _stdout = process3.stdout) {
     this._stdin = _stdin;
     this._stdout = _stdout;
     this._readBuffer = new ReadBuffer();
@@ -30864,8 +30864,10 @@ function truncate(value, maxLength) {
 
 // src/workbook.ts
 import { execFile } from "node:child_process";
+import { constants } from "node:fs";
 import { access, realpath, stat } from "node:fs/promises";
-import { basename, extname, resolve } from "node:path";
+import { homedir } from "node:os";
+import { basename, extname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 var execFileAsync = promisify(execFile);
 var DEFAULT_MAX_ROWS = 50;
@@ -30884,11 +30886,42 @@ var ALLOWED_EXTENSIONS = /* @__PURE__ */ new Set([
 ]);
 async function loadWorkbookPreview(options) {
   const filePath = await resolveWorkbookPath(options.path);
-  const wolfxlBin = options.wolfxlBin ?? "wolfxl";
+  const wolfxlBin = options.wolfxlBin ?? await resolveWolfxlBinary();
   const workbookMap = await readWorkbookMap(wolfxlBin, filePath);
   const activeSheet = selectSheet(workbookMap, options.sheet);
   const peek = await readSheetJson(wolfxlBin, filePath, activeSheet.name);
   return buildPreview(filePath, workbookMap, peek, options);
+}
+async function resolveWolfxlBinary() {
+  const configured = process.env.SPREADSHEET_PEEK_WOLFXL_BIN ?? process.env.WOLFXL_BIN;
+  if (configured?.trim()) {
+    return configured.trim();
+  }
+  const executableNames = process.platform === "win32" ? ["wolfxl.exe", "wolfxl"] : ["wolfxl"];
+  const candidates = /* @__PURE__ */ new Set();
+  const home = homedir();
+  if (home) {
+    for (const name of executableNames) {
+      candidates.add(join(home, ".cargo", "bin", name));
+    }
+  }
+  if (process.platform === "darwin") {
+    for (const name of executableNames) {
+      candidates.add(join("/opt/homebrew/bin", name));
+      candidates.add(join("/usr/local/bin", name));
+    }
+  } else if (process.platform !== "win32") {
+    for (const name of executableNames) {
+      candidates.add(join("/usr/local/bin", name));
+      candidates.add(join("/usr/bin", name));
+    }
+  }
+  for (const candidate of candidates) {
+    if (await canExecute(candidate)) {
+      return candidate;
+    }
+  }
+  return executableNames[0];
 }
 async function resolveWorkbookPath(inputPath) {
   if (!inputPath || !inputPath.trim()) {
@@ -31007,6 +31040,14 @@ async function runWolfxl(binary, args) {
     throw error48;
   }
 }
+async function canExecute(filePath) {
+  try {
+    await access(filePath, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
 function parseJson(stdout, context) {
   try {
     return JSON.parse(stdout);
@@ -31112,7 +31153,7 @@ var VERSION = "2.2.0";
 var APP_URI = "ui://spreadsheet-peek/viewer/index.html";
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
-var viewerHtmlPath = join(__dirname, "viewer", "index.html");
+var viewerHtmlPath = join2(__dirname, "viewer", "index.html");
 var previewInputSchema = {
   path: external_exports3.string().describe("Absolute path to a local spreadsheet or delimited table file."),
   sheet: external_exports3.string().optional().describe("Optional sheet name. Defaults to the first sheet."),

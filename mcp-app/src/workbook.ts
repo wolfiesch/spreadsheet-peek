@@ -1,6 +1,8 @@
 import { execFile } from "node:child_process";
+import { constants } from "node:fs";
 import { access, realpath, stat } from "node:fs/promises";
-import { basename, extname, resolve } from "node:path";
+import { homedir } from "node:os";
+import { basename, extname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 
 import type {
@@ -31,11 +33,48 @@ const ALLOWED_EXTENSIONS = new Set([
 
 export async function loadWorkbookPreview(options: PreviewOptions): Promise<WorkbookPreview> {
   const filePath = await resolveWorkbookPath(options.path);
-  const wolfxlBin = options.wolfxlBin ?? "wolfxl";
+  const wolfxlBin = options.wolfxlBin ?? (await resolveWolfxlBinary());
   const workbookMap = await readWorkbookMap(wolfxlBin, filePath);
   const activeSheet = selectSheet(workbookMap, options.sheet);
   const peek = await readSheetJson(wolfxlBin, filePath, activeSheet.name);
   return buildPreview(filePath, workbookMap, peek, options);
+}
+
+export async function resolveWolfxlBinary(): Promise<string> {
+  const configured = process.env.SPREADSHEET_PEEK_WOLFXL_BIN ?? process.env.WOLFXL_BIN;
+  if (configured?.trim()) {
+    return configured.trim();
+  }
+
+  const executableNames = process.platform === "win32" ? ["wolfxl.exe", "wolfxl"] : ["wolfxl"];
+  const candidates = new Set<string>();
+  const home = homedir();
+
+  if (home) {
+    for (const name of executableNames) {
+      candidates.add(join(home, ".cargo", "bin", name));
+    }
+  }
+
+  if (process.platform === "darwin") {
+    for (const name of executableNames) {
+      candidates.add(join("/opt/homebrew/bin", name));
+      candidates.add(join("/usr/local/bin", name));
+    }
+  } else if (process.platform !== "win32") {
+    for (const name of executableNames) {
+      candidates.add(join("/usr/local/bin", name));
+      candidates.add(join("/usr/bin", name));
+    }
+  }
+
+  for (const candidate of candidates) {
+    if (await canExecute(candidate)) {
+      return candidate;
+    }
+  }
+
+  return executableNames[0];
 }
 
 export async function resolveWorkbookPath(inputPath: string): Promise<string> {
@@ -173,6 +212,15 @@ async function runWolfxl(binary: string, args: string[]): Promise<string> {
       throw new Error(`failed to run ${binary} ${args.join(" ")}: ${error.message}`);
     }
     throw error;
+  }
+}
+
+async function canExecute(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath, constants.X_OK);
+    return true;
+  } catch {
+    return false;
   }
 }
 
