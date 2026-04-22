@@ -118,7 +118,7 @@ registerAppTool(
       content: [
         {
           type: "text" as const,
-          text: `Opening ${fileName}${sheetSuffix} in the Spreadsheet Peek inline viewer.`,
+          text: `If supported by your client, open ${fileName}${sheetSuffix} in the Spreadsheet Peek inline viewer using the link below.`,
         },
         {
           type: "resource_link",

@@ -37,9 +37,11 @@ type ToolResult = {
 type PendingRequest = {
   resolve: (value: unknown) => void;
   reject: (error: Error) => void;
+  timeoutId: ReturnType<typeof setTimeout>;
 };
 
 const MCP_APPS_PROTOCOL_VERSION = "2026-01-26";
+const REQUEST_TIMEOUT_MS = 30_000;
 
 export class HostBridge {
   ontoolinputpartial?: (params: ToolInputParams) => void;
@@ -62,17 +64,22 @@ export class HostBridge {
 
   async connect(): Promise<void> {
     window.addEventListener("message", this.handleMessage);
-    const result = await this.request("ui/initialize", {
-      appInfo: this.appInfo,
-      appCapabilities: {},
-      protocolVersion: MCP_APPS_PROTOCOL_VERSION,
-    });
-    if (!result || typeof result !== "object") {
-      throw new Error("MCP host did not complete the app handshake.");
+    try {
+      const result = await this.request("ui/initialize", {
+        appInfo: this.appInfo,
+        appCapabilities: {},
+        protocolVersion: MCP_APPS_PROTOCOL_VERSION,
+      });
+      if (!result || typeof result !== "object") {
+        throw new Error("MCP host did not complete the app handshake.");
+      }
+      this.connected = true;
+      this.notify("ui/notifications/initialized");
+      this.startResizeNotifications();
+    } catch (error) {
+      this.close();
+      throw error;
     }
-    this.connected = true;
-    this.notify("ui/notifications/initialized");
-    this.startResizeNotifications();
   }
 
   close(): void {
@@ -81,6 +88,7 @@ export class HostBridge {
     this.resizeObserver = undefined;
     window.removeEventListener("message", this.handleMessage);
     for (const pending of this.pending.values()) {
+      clearTimeout(pending.timeoutId);
       pending.reject(new Error("MCP host connection closed."));
     }
     this.pending.clear();
@@ -111,7 +119,11 @@ export class HostBridge {
     const id = this.nextId++;
     const message: JsonRpcRequest = { jsonrpc: "2.0", id, method, params };
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
+      const timeoutId = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`MCP host request timed out: ${method}`));
+      }, REQUEST_TIMEOUT_MS);
+      this.pending.set(id, { resolve, reject, timeoutId });
       this.target.postMessage(message, this.targetOrigin);
     });
   }
@@ -161,6 +173,7 @@ export class HostBridge {
     const pending = this.pending.get(message.id);
     if (!pending) return;
     this.pending.delete(message.id);
+    clearTimeout(pending.timeoutId);
     if (message.error) {
       pending.reject(new Error(message.error.message ?? "MCP host request failed."));
       return;

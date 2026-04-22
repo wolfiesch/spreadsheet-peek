@@ -38,6 +38,7 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - MCPB tool descriptions and docs now favor natural spreadsheet preview requests over exact-tool-call prompts, improving Claude Desktop discovery and avoiding prompt-shape false alarms during manual smoke tests.
 - Codex setup docs now record the local marketplace round trip, CLI fallback smoke, and the remaining Codex CLI MCP-tool exposure boundary.
 - The MCP host bridge now pins post-handshake messages to the first concrete host origin it receives, and viewer/server status labels handle trailing slashes in requested paths.
+- The MCP host bridge now cleans up failed handshakes and times out unanswered host requests so pending JSON-RPC calls cannot hang forever.
 
 ## [2.1.0] - 2026-04-22
 
