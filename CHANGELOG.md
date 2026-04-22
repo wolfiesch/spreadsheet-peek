@@ -27,6 +27,7 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - The MCP app build and root `.mcp.json` launcher now avoid POSIX-only shell assumptions for Windows plugin hosts.
 - The viewer no longer abandons host connection after a fixed 1.5 second timeout.
 - The MCP preview tools no longer return SVG image content blocks, avoiding unsupported-image warnings in Claude Desktop while keeping structured preview data and readable text output.
+- The MCP viewer now preserves host tool input through the app handshake, shows loading/error states, and fits narrow Claude Desktop embeds by keeping horizontal scrolling inside the spreadsheet grid.
 
 ## [2.1.0] - 2026-04-22
 

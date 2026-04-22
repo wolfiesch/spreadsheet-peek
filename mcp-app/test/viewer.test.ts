@@ -35,6 +35,21 @@ test("viewer renders workbook chrome, search, and range selection", async () => 
     await page.locator('td[data-row="3"][data-column="2"]').click();
     await assertText(page.locator("#status"), /B3:B3/);
     assert.equal(await page.locator("#summarize").isEnabled(), true);
+
+    await page.setViewportSize({ width: 640, height: 680 });
+    assert.equal(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      true,
+      "viewer chrome should fit narrow Claude embeds without document-level horizontal overflow",
+    );
+    assert.equal(
+      await page.evaluate(() => {
+        const grid = document.querySelector(".grid-wrap");
+        return grid ? grid.scrollWidth > grid.clientWidth : false;
+      }),
+      true,
+      "wide spreadsheet columns should scroll inside the grid region",
+    );
   } finally {
     await browser?.close();
     await server.close();

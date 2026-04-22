@@ -40,7 +40,7 @@ open dist/spreadsheet-peek.mcpb
 
 The bundle exposes two tools:
 
-- `preview_workbook` returns a bounded structured preview plus text/SVG fallback.
+- `preview_workbook` returns a bounded structured preview plus readable text fallback output.
 - `open_workbook_viewer` opens the MCP App grid with sheet tabs, sticky headers, search, range selection, and a selected-range handoff to the model.
 
 Prerequisite: `wolfxl` must be on `PATH`:
