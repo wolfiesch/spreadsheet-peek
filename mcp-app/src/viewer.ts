@@ -2,7 +2,9 @@ import { App } from "@modelcontextprotocol/ext-apps";
 
 import "./viewer.css";
 import { samplePreview } from "./sampleData.js";
+import { cellsToTsv } from "./tsv.js";
 import type { PreviewCell, WorkbookPreview } from "./types.js";
+import { APP_VERSION } from "./version.js";
 
 type Selection = {
   startRow: number;
@@ -31,7 +33,7 @@ render();
 async function connectHost() {
   if (window.parent === window) return;
   try {
-    hostApp = new App({ name: "Spreadsheet Peek Viewer", version: "2.2.0" }, {});
+    hostApp = new App({ name: "Spreadsheet Peek Viewer", version: APP_VERSION }, {});
     hostApp.ontoolinput = (params) => {
       if (params.arguments && hostConnected) {
         void refreshPreview(params.arguments);
@@ -45,10 +47,7 @@ async function connectHost() {
         render();
       }
     };
-    await Promise.race([
-      hostApp.connect(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("host connection timed out")), 1500)),
-    ]);
+    await hostApp.connect();
     hostConnected = true;
     render();
   } catch {
@@ -233,9 +232,7 @@ function stopDragging() {
 
 async function summarizeSelectedRange() {
   if (!selection) return;
-  const tsv = selectedCells()
-    .map((row) => row.map((cell) => cell.display).join("\t"))
-    .join("\n");
+  const tsv = cellsToTsv(selectedCells());
   const label = selectionLabel();
   const prompt = `Summarize the selected spreadsheet range ${label} from ${preview.fileName} / ${preview.activeSheet}.`;
   if (!hostApp || !hostConnected) {

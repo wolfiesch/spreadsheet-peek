@@ -10,8 +10,8 @@ import { z } from "zod/v4";
 
 import { renderPreviewSvg, svgToBase64 } from "./renderSvg.js";
 import { loadWorkbookPreview, selectionToTsv } from "./workbook.js";
+import { APP_VERSION } from "./version.js";
 
-const VERSION = "2.2.0";
 const APP_URI = "ui://spreadsheet-peek/viewer/index.html";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,7 +27,7 @@ const previewInputSchema = {
 
 const server = new McpServer({
   name: "spreadsheet-peek",
-  version: VERSION,
+  version: APP_VERSION,
 });
 
 registerAppResource(

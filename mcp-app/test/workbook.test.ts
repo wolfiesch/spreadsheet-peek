@@ -3,11 +3,12 @@ import { describe, it } from "node:test";
 import { constants } from "node:fs";
 import { access, mkdtemp, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { loadWorkbookPreview, resolveWolfxlBinary, resolveWorkbookPath } from "../src/workbook.js";
+import { loadWorkbookPreview, resolveWolfxlBinary, resolveWorkbookPath, selectionToTsv } from "../src/workbook.js";
 
-const root = resolve(import.meta.dirname, "..", "..");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 describe("loadWorkbookPreview", () => {
   it("loads a bounded preview from the sample workbook", async () => {
@@ -59,6 +60,19 @@ describe("loadWorkbookPreview", () => {
       restoreEnv("SPREADSHEET_PEEK_WOLFXL_BIN", originalOverride);
       restoreEnv("WOLFXL_BIN", originalWolfxlBin);
     }
+  });
+
+  it("escapes control characters in TSV handoff text", () => {
+    const preview = {
+      rows: [
+        [
+          { display: "line one\nline two\tshifted" },
+          { display: "back\\slash" },
+        ],
+      ],
+    } as Parameters<typeof selectionToTsv>[0];
+
+    assert.equal(selectionToTsv(preview), "line one\\nline two\\tshifted\tback\\\\slash");
   });
 
   it("finds wolfxl when Claude Desktop starts with a thin PATH", async () => {

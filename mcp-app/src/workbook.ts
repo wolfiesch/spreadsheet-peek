@@ -14,6 +14,7 @@ import type {
   WorkbookPreview,
   WorkbookSheetSummary,
 } from "./types.js";
+import { cellsToTsv } from "./tsv.js";
 
 const execFileAsync = promisify(execFile);
 const DEFAULT_MAX_ROWS = 50;
@@ -188,16 +189,14 @@ export function buildPreview(
     rows,
     summary,
     commands: {
-      terminalPreview: `wolfxl peek ${shellQuote(filePath)} --sheet ${shellQuote(peek.sheet)} -n 15`,
-      textPreview: `wolfxl peek ${shellQuote(filePath)} --sheet ${shellQuote(peek.sheet)} --export text | sed -n '1,20p'`,
+      terminalPreview: `wolfxl peek ${commandQuote(filePath)} --sheet ${commandQuote(peek.sheet)} -n 15`,
+      textPreview: `wolfxl peek ${commandQuote(filePath)} --sheet ${commandQuote(peek.sheet)} --export text | ${lineLimitCommand()}`,
     },
   };
 }
 
 export function selectionToTsv(preview: WorkbookPreview): string {
-  return preview.rows
-    .map((row) => row.map((cell) => cell.display).join("\t"))
-    .join("\n");
+  return cellsToTsv(preview.rows);
 }
 
 async function runWolfxl(binary: string, args: string[]): Promise<string> {
@@ -209,7 +208,7 @@ async function runWolfxl(binary: string, args: string[]): Promise<string> {
     return result.stdout;
   } catch (error) {
     if (error instanceof Error) {
-      throw new Error(`failed to run ${binary} ${args.join(" ")}: ${error.message}`);
+      throw new Error(`failed to run ${formatCommand(binary, args)}: ${error.message}`);
     }
     throw error;
   }
@@ -342,6 +341,25 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function shellQuote(value: string): string {
+function formatCommand(binary: string, args: string[]): string {
+  return [binary, ...args].map(commandQuote).join(" ");
+}
+
+function commandQuote(value: string): string {
+  if (process.platform === "win32") {
+    return powerShellQuote(value);
+  }
+  return posixShellQuote(value);
+}
+
+function lineLimitCommand(): string {
+  return process.platform === "win32" ? "Select-Object -First 20" : "sed -n '1,20p'";
+}
+
+function posixShellQuote(value: string): string {
   return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
+function powerShellQuote(value: string): string {
+  return `'${value.replaceAll("'", "''")}'`;
 }

@@ -56,7 +56,7 @@ cargo install wolfxl-cli --version 0.8.0 --force
 
 ## Plugin Development
 
-The root `.mcp.json` points Claude Code and Codex plugin installs at `mcp-app/bin/run-server.sh`, which runs the committed `mcp-app/dist/server.js`. Rebuild the bundle after TypeScript or viewer changes:
+The root `.mcp.json` points Claude Code and Codex plugin installs at the Node launcher in `mcp-app/bin/run-server.mjs`, which runs the committed `mcp-app/dist/server.js`. Rebuild the bundle after TypeScript or viewer changes:
 
 ```bash
 cd mcp-app

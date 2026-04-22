@@ -17,11 +17,15 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 - `SKILL.md`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and the new MCP package metadata are bumped to 2.2.0 for the inline-viewer release.
 - README, `SKILL.md`, and `docs/how-it-works.md` now cite the direct-delimited benchmark rows surfaced by the drift workflow.
+- The MCP app now sources its runtime app version from `package.json` and drops the unused Vite basic SSL dev dependency.
 
 ### Fixed
 
 - `.claude-plugin/marketplace.json` now uses an HTTPS git URL source so clean Claude Code plugin installs do not require GitHub SSH keys.
 - The MCP server now resolves `wolfxl` from explicit environment overrides, Cargo, Homebrew, common system paths, and finally `PATH`, which helps desktop hosts launched with a thin environment find `cargo install` binaries.
+- The MCP TSV handoff now escapes tabs, newlines, carriage returns, and backslashes so multiline CSV cells cannot shift table rows or columns in model-facing text.
+- The MCP app build and root `.mcp.json` launcher now avoid POSIX-only shell assumptions for Windows plugin hosts.
+- The viewer no longer abandons host connection after a fixed 1.5 second timeout.
 
 ## [2.1.0] - 2026-04-22
 

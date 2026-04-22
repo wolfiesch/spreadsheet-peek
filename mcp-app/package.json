@@ -10,7 +10,7 @@
   "scripts": {
     "build": "npm run build:ui && npm run build:server && npm run clean:dist-whitespace",
     "build:ui": "vite build --outDir dist/viewer --emptyOutDir",
-    "build:server": "esbuild src/server.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/server.js --banner:js='#!/usr/bin/env node' && chmod +x dist/server.js",
+    "build:server": "esbuild src/server.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/server.js --banner:js='#!/usr/bin/env node' && node scripts/chmod-server.mjs",
     "clean:dist-whitespace": "node scripts/strip-dist-whitespace.mjs",
     "dev": "vite --host 127.0.0.1",
     "test": "node --test --import tsx test/*.test.ts",
@@ -23,7 +23,6 @@
   },
   "devDependencies": {
     "@anthropic-ai/mcpb": "^2.1.2",
-    "@vitejs/plugin-basic-ssl": "^2.1.0",
     "esbuild": "^0.27.0",
     "playwright": "^1.59.1",
     "tsx": "^4.21.0",

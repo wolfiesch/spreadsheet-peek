@@ -30869,6 +30869,16 @@ import { access, realpath, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, extname, join, resolve } from "node:path";
 import { promisify } from "node:util";
+
+// src/tsv.ts
+function cellsToTsv(rows) {
+  return rows.map((row) => row.map((cell) => escapeTsvCell(cell.display)).join("	")).join("\n");
+}
+function escapeTsvCell(value) {
+  return value.replaceAll("\\", "\\\\").replaceAll("\r", "\\r").replaceAll("\n", "\\n").replaceAll("	", "\\t");
+}
+
+// src/workbook.ts
 var execFileAsync = promisify(execFile);
 var DEFAULT_MAX_ROWS = 50;
 var DEFAULT_MAX_COLUMNS = 40;
@@ -31018,13 +31028,13 @@ function buildPreview(filePath, workbookMap, peek, options) {
     rows,
     summary,
     commands: {
-      terminalPreview: `wolfxl peek ${shellQuote(filePath)} --sheet ${shellQuote(peek.sheet)} -n 15`,
-      textPreview: `wolfxl peek ${shellQuote(filePath)} --sheet ${shellQuote(peek.sheet)} --export text | sed -n '1,20p'`
+      terminalPreview: `wolfxl peek ${commandQuote(filePath)} --sheet ${commandQuote(peek.sheet)} -n 15`,
+      textPreview: `wolfxl peek ${commandQuote(filePath)} --sheet ${commandQuote(peek.sheet)} --export text | ${lineLimitCommand()}`
     }
   };
 }
 function selectionToTsv(preview) {
-  return preview.rows.map((row) => row.map((cell) => cell.display).join("	")).join("\n");
+  return cellsToTsv(preview.rows);
 }
 async function runWolfxl(binary, args) {
   try {
@@ -31035,7 +31045,7 @@ async function runWolfxl(binary, args) {
     return result.stdout;
   } catch (error48) {
     if (error48 instanceof Error) {
-      throw new Error(`failed to run ${binary} ${args.join(" ")}: ${error48.message}`);
+      throw new Error(`failed to run ${formatCommand(binary, args)}: ${error48.message}`);
     }
     throw error48;
   }
@@ -31144,12 +31154,67 @@ function clampInteger(value, fallback, min, max) {
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
-function shellQuote(value) {
+function formatCommand(binary, args) {
+  return [binary, ...args].map(commandQuote).join(" ");
+}
+function commandQuote(value) {
+  if (process.platform === "win32") {
+    return powerShellQuote(value);
+  }
+  return posixShellQuote(value);
+}
+function lineLimitCommand() {
+  return process.platform === "win32" ? "Select-Object -First 20" : "sed -n '1,20p'";
+}
+function posixShellQuote(value) {
   return `'${value.replaceAll("'", "'\\''")}'`;
 }
+function powerShellQuote(value) {
+  return `'${value.replaceAll("'", "''")}'`;
+}
+
+// package.json
+var package_default = {
+  name: "@wolfie-tools/spreadsheet-peek-mcp",
+  version: "2.2.0",
+  private: true,
+  description: "Local MCP server and MCP App viewer for inline spreadsheet previews.",
+  type: "module",
+  bin: {
+    "spreadsheet-peek-mcp": "./dist/server.js"
+  },
+  scripts: {
+    build: "npm run build:ui && npm run build:server && npm run clean:dist-whitespace",
+    "build:ui": "vite build --outDir dist/viewer --emptyOutDir",
+    "build:server": "esbuild src/server.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/server.js --banner:js='#!/usr/bin/env node' && node scripts/chmod-server.mjs",
+    "clean:dist-whitespace": "node scripts/strip-dist-whitespace.mjs",
+    dev: "vite --host 127.0.0.1",
+    test: "node --test --import tsx test/*.test.ts",
+    "pack:mcpb": "npm run build && mcpb validate manifest.json && mcpb pack . dist/spreadsheet-peek.mcpb"
+  },
+  dependencies: {
+    "@modelcontextprotocol/ext-apps": "^1.7.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    zod: "^4.2.0"
+  },
+  devDependencies: {
+    "@anthropic-ai/mcpb": "^2.1.2",
+    esbuild: "^0.27.0",
+    playwright: "^1.59.1",
+    tsx: "^4.21.0",
+    typescript: "^5.9.3",
+    vite: "^7.3.0",
+    "vite-plugin-singlefile": "^2.3.0"
+  },
+  engines: {
+    node: ">=20"
+  }
+};
+
+// src/version.ts
+var APP_VERSION = package_default.version;
 
 // src/server.ts
-var VERSION = "2.2.0";
 var APP_URI = "ui://spreadsheet-peek/viewer/index.html";
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
@@ -31163,7 +31228,7 @@ var previewInputSchema = {
 };
 var server = new McpServer({
   name: "spreadsheet-peek",
-  version: VERSION
+  version: APP_VERSION
 });
 N3(
   server,
