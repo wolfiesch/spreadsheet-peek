@@ -22,6 +22,9 @@ const rootElement = document.querySelector<HTMLDivElement>("#app");
 if (!rootElement) throw new Error("missing #app");
 const root: HTMLDivElement = rootElement;
 
+window.addEventListener("pointerup", stopDragging);
+window.addEventListener("pointercancel", stopDragging);
+
 void connectHost();
 render();
 
@@ -222,9 +225,10 @@ function bindEvents() {
       render();
     });
   });
-  window.addEventListener("pointerup", () => {
-    isDragging = false;
-  }, { once: true });
+}
+
+function stopDragging() {
+  isDragging = false;
 }
 
 async function summarizeSelectedRange() {
