@@ -169,7 +169,7 @@ test("viewer prioritizes loading and error states over active search matches", a
       await frame.locator("#search").fill("gross");
       await assertText(frame.locator(".status-row"), /search matches/);
 
-      await sendToolInputPartial(hostPage, { path: "/fixtures/sample-financials.xlsx", sheet: "Balance Sheet" });
+      await sendToolInputPartial(hostPage, { path: "/fixtures/sample-financials.xlsx/", sheet: "Balance Sheet" });
       await assertText(frame.locator(".status-row span").nth(1), /Loading sample-financials\.xlsx \/ Balance Sheet/);
 
       await sendToolError(hostPage);

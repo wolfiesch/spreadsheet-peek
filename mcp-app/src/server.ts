@@ -112,7 +112,7 @@ registerAppTool(
     },
   },
   async (args) => {
-    const fileName = typeof args.path === "string" ? args.path.split(/[\\/]/).at(-1) : "workbook";
+    const fileName = displayFileName(args.path);
     const sheetSuffix = typeof args.sheet === "string" && args.sheet.trim() ? ` / ${args.sheet.trim()}` : "";
     return {
       content: [
@@ -131,6 +131,11 @@ registerAppTool(
     };
   },
 );
+
+function displayFileName(path: unknown): string {
+  if (typeof path !== "string") return "workbook";
+  return path.split(/[\\/]/).filter(Boolean).at(-1) ?? "workbook";
+}
 
 async function previewResult(args: {
   path: string;

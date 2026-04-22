@@ -417,8 +417,12 @@ function normalizeNumber(value: unknown) {
 function loadingLabel(args: Record<string, unknown>) {
   const sheet = typeof args.sheet === "string" && args.sheet.trim() ? args.sheet.trim() : undefined;
   const path = typeof args.path === "string" && args.path.trim() ? args.path.trim() : preview.filePath;
-  const filename = path.split(/[\\/]/).at(-1) ?? path;
+  const filename = displayFileName(path);
   return sheet ? `${filename} / ${sheet}` : filename;
+}
+
+function displayFileName(path: string) {
+  return path.split(/[\\/]/).filter(Boolean).at(-1) ?? path;
 }
 
 function isPreview(value: unknown): value is WorkbookPreview {

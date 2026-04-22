@@ -53,6 +53,7 @@ export class HostBridge {
   private lastWidth = 0;
   private lastHeight = 0;
   private connected = false;
+  private targetOrigin = "*";
 
   constructor(
     private readonly appInfo: { name: string; version: string },
@@ -111,18 +112,22 @@ export class HostBridge {
     const message: JsonRpcRequest = { jsonrpc: "2.0", id, method, params };
     return new Promise((resolve, reject) => {
       this.pending.set(id, { resolve, reject });
-      this.target.postMessage(message, "*");
+      this.target.postMessage(message, this.targetOrigin);
     });
   }
 
   private notify(method: string, params?: Record<string, unknown>): void {
     if (!this.connected && method !== "ui/notifications/initialized") return;
     const message: JsonRpcNotification = { jsonrpc: "2.0", method, params };
-    this.target.postMessage(message, "*");
+    this.target.postMessage(message, this.targetOrigin);
   }
 
   private handleMessage = (event: MessageEvent<unknown>): void => {
     if (event.source !== this.target) return;
+    if (this.targetOrigin !== "*" && event.origin !== this.targetOrigin) return;
+    if (this.targetOrigin === "*" && event.origin && event.origin !== "null") {
+      this.targetOrigin = event.origin;
+    }
     if (!isJsonRpcMessage(event.data)) return;
     const message = event.data;
     if ("id" in message && !("method" in message)) {
