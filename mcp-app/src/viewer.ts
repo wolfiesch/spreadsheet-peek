@@ -107,7 +107,7 @@ async function refreshPreview(args: Record<string, unknown>) {
     });
     if (result.isError) {
       loadingMessage = "";
-      errorMessage = result.content?.find((item) => item.type === "text")?.text ?? "Unable to load sheet.";
+      errorMessage = firstTextContent(result.content) ?? "Unable to load sheet.";
       render();
       return;
     }
@@ -127,7 +127,9 @@ async function refreshPreview(args: Record<string, unknown>) {
 
 function render(focusSearch = false, searchCursor?: number) {
   const matches = countMatches(preview, searchTerm);
-  const stateLabel = errorMessage || loadingMessage || (hostConnected ? "Connected to MCP host" : "Local preview mode");
+  const hostStateLabel = hostConnected ? "Connected to MCP host" : "Local preview mode";
+  const statusDetail =
+    errorMessage || (loadingMessage ? `Loading ${loadingMessage}` : matches ? `${matches} search matches` : hostStateLabel);
   const selectedLabel = selectionLabel();
   const summarizeLabel = selection ? `Summarize ${selectedLabel}` : "Summarize selected range";
   root.innerHTML = `
@@ -194,7 +196,7 @@ function render(focusSearch = false, searchCursor?: number) {
 
         <div class="status-row ${errorMessage ? "error" : loadingMessage ? "loading" : ""}">
           <span>${escapeHtml(preview.summary)}</span>
-          <span>${escapeHtml(matches ? `${matches} search matches` : stateLabel)}</span>
+          <span>${escapeHtml(statusDetail)}</span>
         </div>
 
         <div class="grid-wrap" role="region" aria-label="Spreadsheet grid" tabindex="0" aria-busy="${loadingMessage ? "true" : "false"}">
@@ -385,12 +387,32 @@ function setStatus(message: string) {
 }
 
 function previewMatchesArgs(data: WorkbookPreview, args: Record<string, unknown>) {
-  const requestedPath = typeof args.path === "string" ? args.path : undefined;
-  const requestedSheet = typeof args.sheet === "string" ? args.sheet : undefined;
+  const requestedPath = normalizeText(args.path);
+  const requestedSheet = normalizeComparableText(args.sheet);
+  const requestedRange = normalizeComparableText(args.range);
+  const requestedMaxRows = normalizeNumber(args.maxRows);
+  const requestedMaxColumns = normalizeNumber(args.maxColumns);
+  const activeSheet = normalizeComparableText(data.activeSheet);
+  const activeRange = normalizeComparableText(data.range);
   return (
     (!requestedPath || requestedPath === data.filePath) &&
-    (!requestedSheet || requestedSheet.toLowerCase() === data.activeSheet.toLowerCase())
+    (!requestedSheet || requestedSheet === activeSheet) &&
+    (!requestedRange || requestedRange === activeRange) &&
+    (requestedMaxRows === undefined || requestedMaxRows === data.rowLimit) &&
+    (requestedMaxColumns === undefined || requestedMaxColumns === data.columnLimit)
   );
+}
+
+function normalizeText(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function normalizeComparableText(value: unknown) {
+  return normalizeText(value)?.toLowerCase();
+}
+
+function normalizeNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
 function loadingLabel(args: Record<string, unknown>) {
@@ -407,6 +429,10 @@ function isPreview(value: unknown): value is WorkbookPreview {
       (value as WorkbookPreview).kind === "spreadsheet-peek-preview" &&
       Array.isArray((value as WorkbookPreview).rows),
   );
+}
+
+function firstTextContent(content: Array<{ type: string; text?: string }> | undefined) {
+  return content?.find((item) => item.type === "text" && typeof item.text === "string")?.text;
 }
 
 function escapeHtml(value: string) {

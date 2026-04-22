@@ -5,6 +5,7 @@ import { chromium } from "playwright";
 import type { Browser, FrameLocator, Locator, Page } from "playwright";
 import { createServer } from "vite";
 
+import { samplePreview } from "../src/sampleData.js";
 import type { CellValue, PreviewCell, WorkbookPreview, WorkbookSheetSummary } from "../src/types.js";
 
 test("viewer renders workbook chrome, search, and range selection", async () => {
@@ -107,6 +108,73 @@ test("viewer hydrates requested workbook from host tool input and result", async
       assert.equal(call.arguments.sheet, "Balance Sheet");
       assert.equal(call.arguments.maxRows, 2);
       assert.equal(call.arguments.maxColumns, 5);
+    } finally {
+      await hostPage.close();
+    }
+  });
+});
+
+test("viewer refreshes initial host input when preview-shaping args differ", async () => {
+  await withViewerServer(async (url, browser) => {
+    const cappedPreview = makeWorkbookPreview({
+      fileName: "sample-financials.xlsx",
+      activeSheet: "P&L",
+      filePath: samplePreview.filePath,
+      totalRows: 20,
+      totalColumns: 7,
+      rowLimit: 2,
+      columnLimit: 3,
+      truncatedRows: true,
+      truncatedColumns: true,
+      sheets: sampleFinancialSheets(),
+      values: [
+        ["Account", "Jan 2024", "Feb 2024"],
+        ["Revenue", 420000, 445000],
+        ["Services", 180000, 195000],
+      ],
+    });
+    const { hostPage, frame } = await createHostPage(browser, url, {
+      initialToolInput: {
+        args: {
+          path: samplePreview.filePath,
+          sheet: " P&L ",
+          maxRows: 2,
+          maxColumns: 3,
+        },
+        preview: cappedPreview,
+      },
+    });
+
+    try {
+      await assertText(frame.locator(".status-row"), /3 of 7 columns/);
+      assert.equal(await frame.locator(".grid td").count(), 9);
+
+      const call = await lastToolCall(hostPage);
+      assert.equal(call.name, "preview_workbook");
+      assert.equal(call.arguments.path, samplePreview.filePath);
+      assert.equal(call.arguments.sheet, " P&L ");
+      assert.equal(call.arguments.maxRows, 2);
+      assert.equal(call.arguments.maxColumns, 3);
+    } finally {
+      await hostPage.close();
+    }
+  });
+});
+
+test("viewer prioritizes loading and error states over active search matches", async () => {
+  await withViewerServer(async (url, browser) => {
+    const { hostPage, frame } = await createHostPage(browser, url);
+
+    try {
+      await frame.locator("#search").fill("gross");
+      await assertText(frame.locator(".status-row"), /search matches/);
+
+      await sendToolInputPartial(hostPage, { path: "/fixtures/sample-financials.xlsx", sheet: "Balance Sheet" });
+      await assertText(frame.locator(".status-row span").nth(1), /Loading sample-financials\.xlsx \/ Balance Sheet/);
+
+      await sendToolError(hostPage);
+      await assertText(frame.locator(".status-row span").nth(1), /failed to load/);
+      assert.doesNotMatch((await frame.locator(".status-row span").nth(1).textContent()) ?? "", /search matches/);
     } finally {
       await hostPage.close();
     }
@@ -224,8 +292,13 @@ async function withViewerServer(run: (url: string, browser: Browser) => Promise<
   }
 }
 
-async function createHostPage(browser: Browser, url: string): Promise<{ hostPage: Page; frame: FrameLocator }> {
+async function createHostPage(
+  browser: Browser,
+  url: string,
+  options: { initialToolInput?: { args: Record<string, unknown>; preview: WorkbookPreview } } = {},
+): Promise<{ hostPage: Page; frame: FrameLocator }> {
   const hostPage = await browser.newPage({ viewport: { width: 760, height: 760 } });
+  const initialToolInput = JSON.stringify(options.initialToolInput ?? null);
   await hostPage.setContent(`
     <!doctype html>
     <html>
@@ -237,7 +310,12 @@ async function createHostPage(browser: Browser, url: string): Promise<{ hostPage
         ></iframe>
         <script>
           const iframe = document.getElementById("viewer");
-          window.__spreadsheetPeekHost = { initialized: false, nextPreview: null, toolCalls: [] };
+          const initialToolInput = ${initialToolInput};
+          window.__spreadsheetPeekHost = {
+            initialized: false,
+            nextPreview: initialToolInput?.preview || null,
+            toolCalls: []
+          };
           window.addEventListener("message", (event) => {
             const message = event.data;
             if (!message || message.jsonrpc !== "2.0") return;
@@ -260,6 +338,13 @@ async function createHostPage(browser: Browser, url: string): Promise<{ hostPage
                   }
                 }
               }, "*");
+              if (initialToolInput?.args) {
+                event.source.postMessage({
+                  jsonrpc: "2.0",
+                  method: "ui/notifications/tool-input",
+                  params: { arguments: initialToolInput.args }
+                }, "*");
+              }
             }
             if (message.method === "ui/notifications/initialized") {
               window.__spreadsheetPeekHost.initialized = true;
@@ -310,6 +395,37 @@ async function sendToolInput(hostPage: Page, args: Record<string, unknown>, prev
     },
     { args, preview },
   );
+}
+
+async function sendToolInputPartial(hostPage: Page, args: Record<string, unknown>) {
+  await hostPage.evaluate((args) => {
+    const iframe = document.querySelector<HTMLIFrameElement>("#viewer");
+    iframe?.contentWindow?.postMessage(
+      {
+        jsonrpc: "2.0",
+        method: "ui/notifications/tool-input-partial",
+        params: { arguments: args },
+      },
+      "*",
+    );
+  }, args);
+}
+
+async function sendToolError(hostPage: Page) {
+  await hostPage.evaluate(() => {
+    const iframe = document.querySelector<HTMLIFrameElement>("#viewer");
+    iframe?.contentWindow?.postMessage(
+      {
+        jsonrpc: "2.0",
+        method: "ui/notifications/tool-result",
+        params: {
+          isError: true,
+          content: [{ type: "text", text: "Unable to load test workbook." }],
+        },
+      },
+      "*",
+    );
+  });
 }
 
 async function sendToolResult(hostPage: Page, preview: WorkbookPreview) {
