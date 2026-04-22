@@ -1,6 +1,6 @@
 ---
 name: spreadsheet-peek
-description: Inline preview of spreadsheets and delimited tables using the Spreadsheet Peek MCP viewer when available, otherwise `wolfxl peek`. Use proactively when working with .xlsx, .xlsm, .xls, .xlsb, .ods, .csv, .tsv, or .txt files - before data processing, after fixture generation, when debugging table parsing, or when the user references a spreadsheet. Also use when asked to "peek", "preview", "show me the file", or "what does this spreadsheet look like".
+description: Preview spreadsheet/delimited files with the Spreadsheet Peek MCP viewer or `wolfxl peek`. Use proactively for .xlsx, .xlsm, .xls, .xlsb, .ods, .csv, .tsv, or .txt before processing, after fixture generation, during parsing debug, or when asked to peek/preview/show a file.
 version: 2.2.0
 metadata:
   author: wolfgangs
@@ -18,27 +18,27 @@ metadata:
     - "peek\\b"
 ---
 
-# Spreadsheet Peek - Inline Preview
+# Spreadsheet Peek
 
-Show inline previews of spreadsheet files. Prefer the Spreadsheet Peek MCP viewer when the host exposes it; otherwise use `wolfxl peek` in the terminal. This skill is **proactive** - invoke it automatically at the right moments without waiting for the user to ask.
+Show inline previews of spreadsheet files. Prefer the Spreadsheet Peek MCP viewer when available; otherwise use terminal `wolfxl peek`. This skill is **proactive** - invoke it at the right moments without waiting for the user to ask.
 
 ## Prerequisites
 
 - `wolfxl` must be installed: `cargo install wolfxl-cli`
-- `wolfxl-cli >= 0.8.0` supports `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`, `.tsv`, and comma-delimited `.txt` files directly
+- `wolfxl-cli >= 0.8.0` supports `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`, `.tsv`, and comma-delimited `.txt`
 - Formatting fidelity is strongest for `.xlsx` and `.xlsm`; legacy workbook and delimited inputs are value-first previews with limited style metadata
 
 ## MCP Viewer (When Available)
 
-If the host has the `spreadsheet-peek` MCP server enabled, use it for user-visible previews before falling back to terminal output:
+If the `spreadsheet-peek` MCP server is enabled, use it for user-visible previews before terminal output:
 
 ```text
 open_workbook_viewer(path="/absolute/path/to/file.xlsx", sheet="P&L", maxRows=50, maxColumns=40)
 ```
 
-Use `preview_workbook` when you need structured data for reasoning without opening the interactive grid. The MCP tools return a bounded preview, sheet metadata, text summary, and image fallback. The viewer supports sheet tabs, sticky row/column headers, search, range selection, and sending a selected range back to the model.
+Use `preview_workbook` for structured data without opening the grid. MCP tools return a bounded preview, sheet metadata, text summary, and image fallback. The viewer supports sheet tabs, sticky headers, search, range selection, and selected-range handoff.
 
-Still use terminal `wolfxl peek` when the MCP server is unavailable, when you are working in a shell-only agent, or when you need a copy-pasteable command transcript.
+Use terminal `wolfxl peek` when MCP is unavailable, the agent is shell-only, or you need a copy-pasteable transcript.
 
 ## When to Invoke (Proactive Triggers)
 
@@ -73,6 +73,8 @@ Still use terminal `wolfxl peek` when the MCP server is unavailable, when you ar
 **Default rule**: Use box-drawing for the FIRST preview in a conversation (readability). Switch to `--export text | sed -n '1,Np'` for subsequent previews or when context is getting long.
 
 **Measured ratio**: box-drawing is ~3.9x more expensive per row than text export on a 7-column financial workbook, ~3.6x on an 8-column tall ledger, and ~3.0x on a 29-column wide table. The overhead is mostly fixed (header/border lines), so the per-row cost improves with more rows - but text export is still cheaper at every size.
+
+**Delimited fixtures**: CSV/TSV/TXT ledger previews cost ~524 box tokens and ~145 text tokens; quoted multiline CSV costs ~401 and ~116.
 
 **Note**: `--export text` ignores the `-n` flag and dumps ALL rows. Always pipe through `sed -n '1,Np'` to limit what enters the conversation. Prefer `sed` over `head` with current `wolfxl-cli` releases because `head` can close the pipe early and make `wolfxl` print a broken-pipe warning.
 

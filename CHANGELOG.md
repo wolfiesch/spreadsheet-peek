@@ -16,10 +16,12 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 ### Changed
 
 - `SKILL.md`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and the new MCP package metadata are bumped to 2.2.0 for the inline-viewer release.
+- README, `SKILL.md`, and `docs/how-it-works.md` now cite the direct-delimited benchmark rows surfaced by the drift workflow.
 
 ### Fixed
 
 - `.claude-plugin/marketplace.json` now uses an HTTPS git URL source so clean Claude Code plugin installs do not require GitHub SSH keys.
+- The MCP server now resolves `wolfxl` from explicit environment overrides, Cargo, Homebrew, common system paths, and finally `PATH`, which helps desktop hosts launched with a thin environment find `cargo install` binaries.
 
 ## [2.1.0] - 2026-04-22
 

@@ -58,6 +58,8 @@ Two observations from the shape comparison:
 1. On the financial workbook, text export is **3.9x cheaper per row** than box-drawing. The tall ledger lands nearby at **3.6x**, which is useful because it is closer to GL-detail work than a statement package.
 2. On the wide workbook, the *ratio* drops to **3.0x** - because the text-export baseline is itself larger per row when a table has many columns. But the *absolute* per-row savings grows from ~85-90 tokens/row on the narrower samples to ~299 tokens/row on the wide sample. The wider the workbook, the more expensive naive usage gets in raw tokens, even if the ratio looks less dramatic.
 
+Direct delimited inputs are measured separately so the workbook ratios stay stable. The committed 7-column ledger costs 524 tokens in box mode and 145 tokens as text export for 5 rows across `.csv`, `.tsv`, and comma-delimited `.txt`; the quoted multiline CSV fixture costs 401 and 116 tokens. See the direct-delimited table in [`benchmarks/README.md`](../benchmarks/README.md#direct-delimited-input-costs).
+
 Here's the worked example the skill encodes implicitly. Imagine a 30-spreadsheet agent session (a realistic FDD or QoE engagement). Naive usage runs the box-drawing default on every file:
 
 ```

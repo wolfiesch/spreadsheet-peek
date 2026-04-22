@@ -53,6 +53,8 @@ Box-drawing output looks pretty but costs real tokens. The skill teaches the age
 uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
 ```
 
+The same benchmark now measures direct delimited inputs separately. A 7-column ledger costs 524 tokens in box mode and 145 tokens as text export for 5 rows across `.csv`, `.tsv`, and comma-delimited `.txt`; the quoted multiline CSV fixture costs 401 and 116 tokens. Those rows live in [`benchmarks/README.md`](benchmarks/README.md#direct-delimited-input-costs) so workbook ratios stay comparable.
+
 Behavioral claims are smoke-tested separately with:
 
 ```bash
@@ -104,7 +106,7 @@ npm run pack:mcpb
 open dist/spreadsheet-peek.mcpb
 ```
 
-Claude Desktop needs `wolfxl` on `PATH`; install it with `cargo install wolfxl-cli`.
+Claude Desktop needs `wolfxl` installed; the server checks `SPREADSHEET_PEEK_WOLFXL_BIN`, `WOLFXL_BIN`, `~/.cargo/bin/wolfxl`, Homebrew paths, and then `PATH`. Install it with `cargo install wolfxl-cli`.
 
 ### Claude Code
 
