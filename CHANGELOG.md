@@ -4,6 +4,8 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-04-22
+
 ### Changed
 
 - `SKILL.md`, README, setup docs, plugin manifests, and launch-copy drafts now describe the current stable support boundary precisely: direct `wolfxl peek` reads for `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`, `.tsv`, and comma-delimited `.txt`; value-first caveats for legacy/delimited inputs; and common date/currency/percentage rendering where the underlying file carries OOXML style metadata.
