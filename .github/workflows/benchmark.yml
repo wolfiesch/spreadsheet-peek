@@ -96,17 +96,12 @@ jobs:
       - name: Make master benchmark pipe-safe
         run: |
           python3 - <<'PY'
+          import re
           from pathlib import Path
 
           path = Path("main/benchmarks/measure_tokens.py")
           text = path.read_text()
-          patched = text.replace(
-              'wolfxl peek "$1" --export text | head -5',
-              'wolfxl peek "$1" --export text | sed -n "1,5p"',
-          ).replace(
-              'wolfxl peek "$1" --export text | head -16',
-              'wolfxl peek "$1" --export text | sed -n "1,16p"',
-          )
+          patched = re.sub(r"\| head -([0-9]+)", r'| sed -n "1,\1p"', text)
           if patched != text:
               path.write_text(patched)
               print("Patched master benchmark line limiting from head to sed.")

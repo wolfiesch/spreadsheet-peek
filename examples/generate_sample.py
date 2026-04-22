@@ -14,7 +14,7 @@ from openpyxl import Workbook
 
 OUT_PATH = Path(__file__).parent / "sample-financials.xlsx"
 
-DATE_FORMAT = 'yyyy-mm-dd'
+DATE_FORMAT = "yyyy-mm-dd"
 
 # ---- P&L -------------------------------------------------------------------
 PNL_HEADERS = ["Account", "Jan 2024", "Feb 2024", "Mar 2024", "Q1 Total", "Q1 2023", "YoY %"]
