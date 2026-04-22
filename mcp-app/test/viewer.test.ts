@@ -50,6 +50,13 @@ test("viewer renders workbook chrome, search, and range selection", async () => 
       true,
       "wide spreadsheet columns should scroll inside the grid region",
     );
+
+    await page.setViewportSize({ width: 640, height: 140 });
+    assert.equal(
+      await page.evaluate(() => document.documentElement.scrollHeight >= 600),
+      true,
+      "viewer should report a useful content height even when the host iframe starts collapsed",
+    );
   } finally {
     await browser?.close();
     await server.close();
