@@ -154,7 +154,7 @@ npm install
 npm run build
 ```
 
-The plugin points Codex at `skills/` and the same local MCP preview server. Codex hosts that do not render MCP Apps should still receive structured preview data and readable text fallback output.
+The plugin points Codex at `skills/` and the same local MCP preview server. Codex hosts that do not render MCP Apps should still receive structured preview data and readable text fallback output from `preview_workbook`.
 
 **Option B - AGENTS.md skill-only path:**
 

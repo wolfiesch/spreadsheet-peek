@@ -136,7 +136,7 @@ npm install
 npm run build
 ```
 
-Codex hosts that do not render MCP Apps should still receive the structured preview and readable text from `open_workbook_viewer`.
+Codex hosts that do not render MCP Apps should still receive the structured preview and readable text from `preview_workbook`.
 
 **Option B - AGENTS.md skill-only path:**
 
