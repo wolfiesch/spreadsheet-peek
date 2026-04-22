@@ -1,7 +1,7 @@
 ---
 name: spreadsheet-peek
-description: Inline terminal preview of spreadsheets and delimited tables using `wolfxl peek`. Use proactively when working with .xlsx, .xlsm, .xls, .xlsb, .ods, .csv, .tsv, or .txt files - before data processing, after fixture generation, when debugging table parsing, or when the user references a spreadsheet. Also use when asked to "peek", "preview", "show me the file", or "what does this spreadsheet look like".
-version: 2.1.0
+description: Inline preview of spreadsheets and delimited tables using the Spreadsheet Peek MCP viewer when available, otherwise `wolfxl peek`. Use proactively when working with .xlsx, .xlsm, .xls, .xlsb, .ods, .csv, .tsv, or .txt files - before data processing, after fixture generation, when debugging table parsing, or when the user references a spreadsheet. Also use when asked to "peek", "preview", "show me the file", or "what does this spreadsheet look like".
+version: 2.2.0
 metadata:
   author: wolfgangs
   filePattern:
@@ -18,15 +18,27 @@ metadata:
     - "peek\\b"
 ---
 
-# Spreadsheet Peek - Inline Terminal Preview
+# Spreadsheet Peek - Inline Preview
 
-Show inline ASCII table previews of spreadsheet files using `wolfxl peek`. This skill is **proactive** - invoke it automatically at the right moments without waiting for the user to ask.
+Show inline previews of spreadsheet files. Prefer the Spreadsheet Peek MCP viewer when the host exposes it; otherwise use `wolfxl peek` in the terminal. This skill is **proactive** - invoke it automatically at the right moments without waiting for the user to ask.
 
 ## Prerequisites
 
 - `wolfxl` must be installed: `cargo install wolfxl-cli`
 - `wolfxl-cli >= 0.8.0` supports `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`, `.tsv`, and comma-delimited `.txt` files directly
 - Formatting fidelity is strongest for `.xlsx` and `.xlsm`; legacy workbook and delimited inputs are value-first previews with limited style metadata
+
+## MCP Viewer (When Available)
+
+If the host has the `spreadsheet-peek` MCP server enabled, use it for user-visible previews before falling back to terminal output:
+
+```text
+open_workbook_viewer(path="/absolute/path/to/file.xlsx", sheet="P&L", maxRows=50, maxColumns=40)
+```
+
+Use `preview_workbook` when you need structured data for reasoning without opening the interactive grid. The MCP tools return a bounded preview, sheet metadata, text summary, and image fallback. The viewer supports sheet tabs, sticky row/column headers, search, range selection, and sending a selected range back to the model.
+
+Still use terminal `wolfxl peek` when the MCP server is unavailable, when you are working in a shell-only agent, or when you need a copy-pasteable command transcript.
 
 ## When to Invoke (Proactive Triggers)
 
@@ -173,16 +185,6 @@ wolfxl peek file.xlsx -n 15
 # Subsequent sheets (token-efficient)
 wolfxl peek file.xlsx --sheet "Balance Sheet" --export text | sed -n '1,20p'
 wolfxl peek file.xlsx --sheet "Cash Flow" --export text | sed -n '1,20p'
-```
-
-## Shell Aliases
-
-Add these to your `~/.zshrc` or `~/.bashrc`:
-
-```bash
-alias peek='wolfxl peek -n 20 -w 40'
-alias peekall='wolfxl peek -n 0'
-alias peekwide='wolfxl peek -n 20 -w 60'
 ```
 
 ## Python Fallback

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "spreadsheet-peek": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "for root in \"${CLAUDE_PLUGIN_ROOT}\" \"${CODEX_PLUGIN_ROOT}\" \"$PWD\"; do if [ -n \"$root\" ] && [ -x \"$root/mcp-app/bin/run-server.sh\" ]; then exec \"$root/mcp-app/bin/run-server.sh\"; fi; done; exec ./mcp-app/bin/run-server.sh"
+      ]
+    }
+  }
+}

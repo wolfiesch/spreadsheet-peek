@@ -5,7 +5,7 @@
     "email": "wolfgangs2000@gmail.com"
   },
   "metadata": {
-    "description": "Claude Code skills and plugins by Wolfgang Schoenberger."
+    "description": "Codex skills and plugins by Wolfgang Schoenberger."
   },
   "plugins": [
     {
@@ -22,19 +22,7 @@
       "homepage": "https://github.com/wolfiesch/spreadsheet-peek",
       "repository": "https://github.com/wolfiesch/spreadsheet-peek",
       "license": "MIT",
-      "keywords": [
-        "spreadsheet",
-        "excel",
-        "xlsx",
-        "csv",
-        "wolfxl",
-        "preview",
-        "agent",
-        "skill",
-        "token-efficiency",
-        "mcp",
-        "viewer"
-      ],
+      "keywords": ["spreadsheet", "csv", "wolfxl", "excel", "mcp", "viewer"],
       "category": "data",
       "tags": ["spreadsheet", "csv", "wolfxl", "excel", "mcp"]
     }
