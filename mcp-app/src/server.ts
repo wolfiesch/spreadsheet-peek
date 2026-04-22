@@ -17,8 +17,10 @@ const __dirname = dirname(__filename);
 const viewerHtmlPath = join(__dirname, "viewer", "index.html");
 
 const previewInputSchema = {
-  path: z.string().describe("Absolute path to a local spreadsheet or delimited table file."),
-  sheet: z.string().optional().describe("Optional sheet name. Defaults to the first sheet."),
+  path: z
+    .string()
+    .describe("Absolute path to a local spreadsheet, Excel workbook, CSV, TSV, ODS, or delimited table file."),
+  sheet: z.string().optional().describe("Optional workbook sheet name, such as P&L. Defaults to the first sheet."),
   range: z.string().optional().describe("Optional A1 range such as A1:H25."),
   maxRows: z.number().int().min(1).max(500).optional().describe("Maximum data rows to return."),
   maxColumns: z.number().int().min(1).max(120).optional().describe("Maximum columns to return."),
@@ -70,7 +72,7 @@ registerAppTool(
   {
     title: "Preview Workbook",
     description:
-      "Read and render a local spreadsheet with a bounded structured preview for the model.",
+      "Preview a local spreadsheet, Excel workbook, CSV, TSV, ODS, or sheet by file path; returns bounded structured workbook data and a readable table summary.",
     inputSchema: previewInputSchema,
     annotations: {
       readOnlyHint: true,
@@ -94,7 +96,7 @@ registerAppTool(
   {
     title: "Open Workbook Viewer",
     description:
-      "Open an interactive inline spreadsheet viewer for a local workbook, with structured and text fallbacks.",
+      "Render a local spreadsheet, Excel workbook, CSV, TSV, ODS, or sheet inline from a file path using the Spreadsheet Peek grid viewer.",
     inputSchema: previewInputSchema,
     annotations: {
       readOnlyHint: true,
@@ -105,6 +107,7 @@ registerAppTool(
     _meta: {
       ui: {
         resourceUri: APP_URI,
+        visibility: ["model"],
       },
     },
   },

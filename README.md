@@ -91,11 +91,11 @@ npm install
 npm run pack:mcpb
 ```
 
-The generated bundle lives at `mcp-app/dist/spreadsheet-peek.mcpb`. The same server also backs Claude Code and Codex plugin installs through `.mcp.json`; hosts that do not render MCP Apps still get a structured preview plus readable text from `preview_workbook` / `open_workbook_viewer`.
+The generated bundle lives at `mcp-app/dist/spreadsheet-peek.mcpb`. The same server also backs Claude Code and Codex plugin installs through `.mcp.json`; hosts that do not render MCP Apps still get a structured preview plus readable text from `preview_workbook`.
 
 Host behavior covered by the MCP app tests:
 
-- `open_workbook_viewer` returns structured preview data and a `ui://spreadsheet-peek/viewer/index.html` resource.
+- `open_workbook_viewer` returns a lightweight launcher result and a `ui://spreadsheet-peek/viewer/index.html` resource.
 - The inline viewer preserves initial host `tool-input` during the MCP Apps handshake, then calls `preview_workbook` so requested sheets and ranges hydrate into the grid.
 - The viewer reports a useful fixed content height to avoid collapsed Claude Desktop embeds, with spreadsheet overflow kept inside the grid scroller.
 
@@ -113,6 +113,8 @@ open dist/spreadsheet-peek.mcpb
 ```
 
 Claude Desktop needs `wolfxl` installed; the server checks `SPREADSHEET_PEEK_WOLFXL_BIN`, `WOLFXL_BIN`, `~/.cargo/bin/wolfxl`, Homebrew paths, and then `PATH`. Install it with `cargo install wolfxl-cli`.
+
+For manual Claude Desktop smoke tests, ask in natural language instead of asking Claude to call a specific tool name. Example: "Please preview `/absolute/path/to/sample-financials.xlsx`, sheet `P&L`, using Spreadsheet Peek if it is available, and keep the response brief." Direct "call `open_workbook_viewer` with these arguments" prompts can look like tool-injection instructions to the model before the extension is even invoked.
 
 ### Claude Code
 

@@ -3,8 +3,8 @@
   "name": "spreadsheet-peek",
   "display_name": "Spreadsheet Peek",
   "version": "2.2.0",
-  "description": "Inline local spreadsheet viewer for Claude Desktop, powered by wolfxl.",
-  "long_description": "Spreadsheet Peek adds read-only MCP tools and an interactive MCP App grid for local .xlsx, .xlsm, .xls, .xlsb, .ods, .csv, .tsv, and comma-delimited .txt files. It uses the installed wolfxl binary for parsing and keeps workbook contents local.",
+  "description": "Preview and render local Excel, spreadsheet, CSV, TSV, ODS, and workbook files inline with wolfxl.",
+  "long_description": "Spreadsheet Peek adds read-only MCP tools and an interactive MCP App grid for local .xlsx, .xlsm, .xls, .xlsb, .ods, .csv, .tsv, and comma-delimited .txt files. It uses the installed wolfxl binary for parsing, keeps workbook contents local, and helps agents preview or inspect spreadsheet paths before processing them.",
   "author": {
     "name": "Wolfgang Schoenberger",
     "email": "wolfgangs2000@gmail.com",
@@ -27,14 +27,14 @@
   "tools": [
     {
       "name": "preview_workbook",
-      "description": "Return a bounded structured preview of a local spreadsheet."
+      "description": "Preview a local spreadsheet, Excel workbook, CSV, TSV, ODS, or sheet by file path; returns bounded structured workbook data and a readable table summary."
     },
     {
       "name": "open_workbook_viewer",
-      "description": "Open an interactive inline spreadsheet viewer with structured and text fallbacks."
+      "description": "Render a local spreadsheet, Excel workbook, CSV, TSV, ODS, or sheet inline from a file path using the Spreadsheet Peek grid viewer."
     }
   ],
-  "keywords": ["spreadsheet", "excel", "csv", "mcp", "viewer", "wolfxl"],
+  "keywords": ["spreadsheet", "excel", "xlsx", "workbook", "csv", "tsv", "ods", "inline", "preview", "viewer", "wolfxl"],
   "license": "MIT",
   "compatibility": {
     "claude_desktop": ">=0.13.0",

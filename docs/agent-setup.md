@@ -49,7 +49,13 @@ Prerequisite: `wolfxl` must be on `PATH`:
 cargo install wolfxl-cli --version 0.8.0 --force
 ```
 
-Use absolute file paths when calling the tools from Claude Desktop so the local server resolves the same file the conversation references.
+Use absolute file paths in Claude Desktop requests so the local server resolves the same file the conversation references. For manual smoke tests, ask naturally instead of instructing the model to call an exact tool:
+
+```text
+Please preview /absolute/path/to/sample-financials.xlsx, sheet P&L, using Spreadsheet Peek if it is available. Keep the response brief and show the inline viewer if available.
+```
+
+Direct prompts such as "call `open_workbook_viewer` with path ..." can be treated as suspicious tool-instruction text before the Spreadsheet Peek extension is invoked.
 
 The viewer should open on the requested sheet when the host supplies `sheet` in the tool input. If the host cannot render MCP Apps, the same tools still return structured preview data and readable text fallback output.
 

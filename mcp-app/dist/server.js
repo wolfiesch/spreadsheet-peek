@@ -31162,8 +31162,8 @@ var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
 var viewerHtmlPath = join2(__dirname, "viewer", "index.html");
 var previewInputSchema = {
-  path: external_exports3.string().describe("Absolute path to a local spreadsheet or delimited table file."),
-  sheet: external_exports3.string().optional().describe("Optional sheet name. Defaults to the first sheet."),
+  path: external_exports3.string().describe("Absolute path to a local spreadsheet, Excel workbook, CSV, TSV, ODS, or delimited table file."),
+  sheet: external_exports3.string().optional().describe("Optional workbook sheet name, such as P&L. Defaults to the first sheet."),
   range: external_exports3.string().optional().describe("Optional A1 range such as A1:H25."),
   maxRows: external_exports3.number().int().min(1).max(500).optional().describe("Maximum data rows to return."),
   maxColumns: external_exports3.number().int().min(1).max(120).optional().describe("Maximum columns to return.")
@@ -31211,7 +31211,7 @@ K3(
   "preview_workbook",
   {
     title: "Preview Workbook",
-    description: "Read and render a local spreadsheet with a bounded structured preview for the model.",
+    description: "Preview a local spreadsheet, Excel workbook, CSV, TSV, ODS, or sheet by file path; returns bounded structured workbook data and a readable table summary.",
     inputSchema: previewInputSchema,
     annotations: {
       readOnlyHint: true,
@@ -31233,7 +31233,7 @@ K3(
   "open_workbook_viewer",
   {
     title: "Open Workbook Viewer",
-    description: "Open an interactive inline spreadsheet viewer for a local workbook, with structured and text fallbacks.",
+    description: "Render a local spreadsheet, Excel workbook, CSV, TSV, ODS, or sheet inline from a file path using the Spreadsheet Peek grid viewer.",
     inputSchema: previewInputSchema,
     annotations: {
       readOnlyHint: true,
@@ -31243,7 +31243,8 @@ K3(
     },
     _meta: {
       ui: {
-        resourceUri: APP_URI
+        resourceUri: APP_URI,
+        visibility: ["model"]
       }
     }
   },

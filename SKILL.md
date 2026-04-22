@@ -36,7 +36,7 @@ If the `spreadsheet-peek` MCP server is enabled, use it for user-visible preview
 open_workbook_viewer(path="/absolute/path/to/file.xlsx", sheet="P&L", maxRows=50, maxColumns=40)
 ```
 
-Use `preview_workbook` for structured data without opening the grid. MCP tools return a bounded preview, sheet metadata, and text summary. The viewer supports sheet tabs, sticky headers, search, range selection, and selected-range handoff.
+Use `preview_workbook` when the host selects it for a natural "preview this spreadsheet" request or when you need structured data without explicitly opening the grid. MCP tools return a bounded preview, sheet metadata, and text summary. The viewer supports sheet tabs, sticky headers, search, range selection, and selected-range handoff.
 
 Use terminal `wolfxl peek` when MCP is unavailable, the agent is shell-only, or you need a copy-pasteable transcript.
 
