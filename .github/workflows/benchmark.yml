@@ -27,8 +27,8 @@ env:
   # Pin wolfxl-cli version here. Bump when upstream releases changes affect output.
   # The workflow reads this value from each checkout, so CLI bump PRs compare the
   # proposed PR binary against master's current baseline binary.
-  # Verified against crates.io on 2026-04-19; bump via `cargo search wolfxl-cli`.
-  WOLFXL_CLI_VERSION: "0.7.0"
+  # Verified against crates.io on 2026-04-22; bump via `cargo search wolfxl-cli`.
+  WOLFXL_CLI_VERSION: "0.8.0"
 
 jobs:
   benchmark:

@@ -13,7 +13,10 @@ This directory contains a reproducible demo and sample data for `spreadsheet-pee
 | `generate_tall_ledger.py` | Generates `tall-ledger.xlsx` - an 8-column × 120-row general-ledger detail sample with dates, memo text, debits, credits, and running balances. |
 | `tall-ledger.xlsx` | The generated tall ledger workbook. Gives the benchmark a row-heavy accounting-detail shape between the financial package and the wide dashboard. |
 | `generate_messy_csv.py` | Generates `messy.csv` - a CSV designed to break naive previews (BOM, quoted commas, embedded newlines, escaped quotes, emoji, mixed decimal formats). |
-| `messy.csv` | The generated messy CSV. Use it to sanity-check the SKILL.md CSV fallback chain - `head` alone mis-renders it; `csvlook`/`mlr` handle it cleanly. |
+| `messy.csv` | The generated messy CSV. Use it to sanity-check direct delimited previews plus the CSV-aware fallback recipes for custom inspection. |
+| `sample-minimal.xls` | Small legacy Excel smoke fixture mirrored from upstream `wolfxl-cli` tests so `benchmarks/verify_claims.py` can prove direct `.xls` reads. |
+| `sample-date.xlsb` | Small binary Excel smoke fixture mirrored from upstream `wolfxl-cli` tests so `benchmarks/verify_claims.py` can prove direct `.xlsb` reads and date rendering. |
+| `sample-minimal.ods` | Small OpenDocument Spreadsheet smoke fixture mirrored from upstream `wolfxl-cli` tests so `benchmarks/verify_claims.py` can prove direct `.ods` reads. |
 | `demo.tape` | VHS tape script that records the main README demo GIF. |
 | `demo.gif` | Rendered README demo GIF. |
 
@@ -65,7 +68,11 @@ wolfxl peek examples/wide-table.xlsx --export text | sed -n '1,6p'
 wolfxl peek examples/tall-ledger.xlsx -n 5
 wolfxl peek examples/tall-ledger.xlsx --export text | sed -n '1,16p'
 
-# Messy CSV: the skill's CSV fallback in action
-head -6 examples/messy.csv | column -s, -t     # naive, mis-renders
-csvlook --max-rows 15 examples/messy.csv        # csvkit, renders correctly
+# Direct delimited preview
+wolfxl peek examples/messy.csv -n 5
+
+# Direct legacy workbook previews
+wolfxl peek examples/sample-minimal.xls -n 2
+wolfxl peek examples/sample-date.xlsb -n 2
+wolfxl peek examples/sample-minimal.ods -n 2
 ```

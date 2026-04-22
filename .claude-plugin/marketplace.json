@@ -14,8 +14,8 @@
         "source": "github",
         "repo": "wolfiesch/spreadsheet-peek"
       },
-      "description": "Teaches AI coding agents to use `wolfxl peek` for instant inline previews of .xlsx/.xlsm spreadsheets, with proactive triggers, token-efficiency rules, readable date/number rendering, and CSV/legacy workbook fallbacks baked in.",
-      "version": "2.0.0",
+      "description": "Teaches AI coding agents to use `wolfxl peek` for instant inline previews of spreadsheets and delimited tables, with proactive triggers, token-efficiency rules, readable date/number rendering, and format caveats baked in.",
+      "version": "2.1.0",
       "author": {
         "name": "Wolfgang Schoenberger"
       },
@@ -26,6 +26,7 @@
         "spreadsheet",
         "excel",
         "xlsx",
+        "csv",
         "wolfxl",
         "preview",
         "agent",

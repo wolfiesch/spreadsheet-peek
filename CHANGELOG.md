@@ -6,11 +6,13 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 ### Changed
 
-- `SKILL.md`, README, setup docs, plugin manifests, and VHS tapes now describe the current stable support boundary precisely: direct `wolfxl peek` reads for `.xlsx` / `.xlsm`, CSV and legacy workbook fallbacks for other formats, and readable date/number output without over-promising currency or percentage symbol fidelity.
+- `SKILL.md`, README, setup docs, plugin manifests, and launch-copy drafts now describe the current stable support boundary precisely: direct `wolfxl peek` reads for `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`, `.tsv`, and comma-delimited `.txt`; value-first caveats for legacy/delimited inputs; and common date/currency/percentage rendering where the underlying file carries OOXML style metadata.
+- `SKILL.md`, `.claude-plugin/plugin.json`, and `.claude-plugin/marketplace.json` are bumped to 2.1.0 to mark the broader direct-format behavior.
 - `examples/generate_sample.py` now writes real date cells for the Balance Sheet period headers and regenerates `examples/sample-financials.xlsx`, so the sample workbook demonstrates an actual supported rendering behavior instead of relying only on string literals.
 - Added `examples/tall-ledger.xlsx` plus `examples/generate_tall_ledger.py`, and expanded the benchmark corpus to cover a row-heavy 8-column accounting-detail shape in addition to the financial package and wide dashboard.
+- Added tiny `.xls`, `.xlsb`, and `.ods` smoke fixtures under `examples/` so the published direct-format claims are checked in CI instead of merely documented.
 - `benchmarks/measure_tokens.py` now measures export previews against the same data-row count as box-drawing previews. The headline ratios are now ~3.9x for the 7-column financial workbook, ~3.6x for the 8-column tall ledger, and ~3.0x for the 29-column wide workbook, replacing the older line-count-based ~4.9x / ~3.6x figures.
-- Added `benchmarks/verify_claims.py` and wired it into CI to smoke-test non-token claims: `.xlsx` / `.xlsm` direct preview, Balance Sheet date rendering, `sed` pipe hygiene, `agent --max-tokens`, and the stable 0.7.x CSV direct-read boundary.
+- Added `benchmarks/verify_claims.py` and wired it into CI to smoke-test non-token claims: direct preview for `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`, `.tsv`, and `.txt`; Balance Sheet date rendering; currency/percentage rendering; `sed` pipe hygiene; and `agent --max-tokens`.
 - Token-efficient examples now use `sed -n '1,Np'` instead of `head` for `wolfxl peek --export text` output, avoiding the broken-pipe warning current stable `wolfxl-cli` releases can emit when `head` exits early.
 
 ### Fixed
@@ -19,7 +21,7 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - `.github/workflows/benchmark.yml` now resolves `WOLFXL_CLI_VERSION` from both the PR and master checkouts before installing branch-specific `wolfxl` binaries, runs when docs/manifests with benchmark claims change, preserves the benchmark command's exit code through `tee`, and updates a single sticky drift comment instead of posting duplicates.
 - `docs/how-it-works.md` now refers to the embedded recording as a screencast instead of pinning a stale duration.
 - `benchmarks/measure_tokens.py` now measures bounded export previews by truncating command output inside Python instead of piping `wolfxl peek` through `head`, so the benchmark stays portable and fails only on real command failures.
-- Benchmark provenance docs and the bug report template now cite `wolfxl-cli 0.7.0`, matching the current 2.x support contract.
+- Benchmark provenance docs, `install.sh`, and the bug report template now cite `wolfxl-cli 0.8.0`, matching the current 2.1.x support contract.
 
 ## [2.0.0] - 2026-04-19
 

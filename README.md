@@ -2,7 +2,7 @@
 
 > **Stop letting AI agents write throwaway Python just to look at a spreadsheet.**
 
-An agent-agnostic skill that teaches AI coding agents (Claude Code, Codex, Cursor, etc.) to use [`wolfxl peek`](https://crates.io/crates/wolfxl-cli) for instant inline previews of `.xlsx` / `.xlsm` spreadsheets - with proactive triggers, token-efficiency rules, readable date/number rendering, and fallbacks for CSV and legacy workbook formats baked in.
+An agent-agnostic skill that teaches AI coding agents (Claude Code, Codex, Cursor, etc.) to use [`wolfxl peek`](https://crates.io/crates/wolfxl-cli) for instant inline previews of `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`, `.tsv`, and comma-delimited `.txt` files - with proactive triggers, token-efficiency rules, readable date/number rendering, and format caveats baked in.
 
 **Before vs after** - a naive agent writes throwaway Python every time; the same agent with `spreadsheet-peek` runs one `wolfxl peek` call:
 
@@ -30,7 +30,7 @@ That's ~250 generation tokens + ~0.5-1s of openpyxl startup + ugly tuple-dump ou
 With `spreadsheet-peek`, the agent runs `wolfxl peek data.xlsx -n 15` instead:
 - **Zero generation tokens** for the command (it's a one-liner the agent already knows)
 - **Instant Rust-speed parsing** (no openpyxl cold start)
-- **Readable output** - dates render as ISO `YYYY-MM-DD`, and numeric cells are grouped for scanning
+- **Readable output** - dates render as ISO `YYYY-MM-DD`, common currency/percentage formats render in human-facing previews, and numeric cells are grouped for scanning
 - **Readable ASCII table** the user can actually read
 - **Proactive triggers** - the agent previews before processing, after fixture generation, and when you mention a file path, without being asked
 
@@ -56,7 +56,7 @@ uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
 Behavioral claims are smoke-tested separately with:
 
 ```bash
-python benchmarks/verify_claims.py
+uv run --with openpyxl python benchmarks/verify_claims.py
 ```
 
 A single naive 15-row preview of a 29-column workbook already costs ~5,600 tokens - more than four financial-shape previews combined. Over a long agent session, the mode-switch rule is the difference between a context window that survives and one that blows up mid-task. Full methodology in [`benchmarks/`](benchmarks/) and the worked example in [`docs/how-it-works.md`](docs/how-it-works.md).
@@ -112,8 +112,8 @@ Codex reads `AGENTS.md` from the repo root. Paste the body of `SKILL.md` into yo
 ```markdown
 ## Spreadsheet Previews
 
-When the user references a `.xlsx` or `.xlsm` file, or when about to run a
-data pipeline that reads one, preview it first with `wolfxl peek`:
+When the user references a spreadsheet or delimited table file, or when about
+to run a data pipeline that reads one, preview it first with `wolfxl peek`:
 
     wolfxl peek <file> -n 15
 
@@ -122,19 +122,15 @@ token-efficient mode:
 
     wolfxl peek <file> --export text | sed -n '1,20p'
 
-For `.csv` files, `wolfxl peek` doesn't read them directly. For simple CSVs:
+Direct preview works for `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`,
+`.tsv`, and comma-delimited `.txt` files with `wolfxl-cli >= 0.8.0`:
 
-    head -15 file.csv | column -s, -t
+    wolfxl peek data.csv -n 15
+    wolfxl peek workbook.xlsb -n 15
 
-If the CSV has quoted commas, embedded newlines, or a UTF-8 BOM,
-`column -s, -t` will mis-render it. Use a CSV-aware tool instead:
-
-    mlr --icsv --opprint head -n 15 file.csv   # or: csvlook --max-rows 15 file.csv
-
-For `.xls`, `.xlsb`, and `.ods`, convert a temporary copy to `.xlsx` first
-or use a format-specific reader until your installed `wolfxl-cli` release
-supports direct reads. See SKILL.md#csv-fallback and
-SKILL.md#legacy-workbook-fallback for the full decision tree.
+For custom delimiters, non-UTF-8 encodings, raw dimension checks, or older
+installed `wolfxl` binaries, use SKILL.md#delimited-file-notes and
+SKILL.md#legacy-workbook-notes for the full decision tree.
 
 Full skill reference: https://github.com/wolfiesch/spreadsheet-peek
 ```
@@ -159,7 +155,7 @@ For the full technical rationale (why proactive triggers, how the token math wor
 ## FAQ
 
 **Why a skill instead of an MCP server?**
-An MCP server is a long-running process with its own install, auth, and schema surface. The skill is one markdown file that teaches the agent a shell command it can already run. `wolfxl-cli 0.7.0` already ships `map`, `schema`, and `agent --max-tokens N`; those are useful shell-native surfaces for orientation and budgeted previews. An MCP wrapper becomes interesting only when it adds workflow value beyond those commands.
+An MCP server is a long-running process with its own install, auth, and schema surface. The skill is one markdown file that teaches the agent a shell command it can already run. `wolfxl-cli 0.8.0` ships `peek`, `map`, `schema`, and `agent --max-tokens N` across spreadsheet and delimited inputs; those are useful shell-native surfaces for orientation and budgeted previews. An MCP wrapper becomes interesting only when it adds workflow value beyond those commands.
 
 **Why not `pandas.read_excel()` or `openpyxl` directly?**
 Speed and tokens. `openpyxl` cold-start is 0.5-1s before it reads a byte; `wolfxl peek` is instantaneous. Box-drawing output costs about 3-4x more tokens per row than `wolfxl peek --export text` for the same preview slice, while tuple dumps are harder for the user to read. The skill includes a Python fallback for sandboxed agents that can't shell out, but it's the fallback, not the default.
@@ -168,13 +164,13 @@ Speed and tokens. `openpyxl` cold-start is 0.5-1s before it reads a byte; `wolfx
 The skill's "Python fallback" section (`SKILL.md`) covers this: `openpyxl` + `tabulate` produces a similar box-drawing table. Token costs are higher and startup is slower, but the output shape matches so the agent can keep its downstream reasoning identical.
 
 **Does this actually work with CSV?**
-`wolfxl peek` 0.7.x does not read CSV directly. The skill handles CSV through a shell fallback (`head`, `column -s, -t`, `mlr`, `csvlook`) and the frontmatter still triggers on `.csv` paths so the agent knows to reach for the right tool. See the [CSV Fallback](SKILL.md#csv-fallback) section.
+Yes. `wolfxl-cli 0.8.0` reads `.csv`, `.tsv`, and comma-delimited `.txt` files directly. The skill still documents `mlr` / `csvlook` fallbacks for custom delimiters, non-UTF-8 encodings, dimension checks, and older installed binaries. See the [Delimited File Notes](SKILL.md#delimited-file-notes) section.
 
 **Windows support?**
-`wolfxl-cli` is available on macOS, Linux, and Windows via `cargo install wolfxl-cli` (requires a Rust toolchain). The skill itself is platform-agnostic (it's a markdown file). The CSV fallback uses `head` and `column`, which are POSIX utilities - on Windows use WSL, Git Bash, or substitute PowerShell equivalents (`Get-Content -TotalCount 15`, `Import-Csv | Format-Table`, etc.) in your shell config.
+`wolfxl-cli` is available on macOS, Linux, and Windows via `cargo install wolfxl-cli` (requires a Rust toolchain). The skill itself is platform-agnostic (it's a markdown file). The optional shell fallback recipes use POSIX utilities - on Windows use WSL, Git Bash, or substitute PowerShell equivalents (`Get-Content -TotalCount 15`, `Import-Csv | Format-Table`, etc.) in your shell config.
 
 **Will this bloat my context window with a giant system prompt?**
-`SKILL.md` is ~9.7 KB. Claude Code loads it on-demand only when a trigger fires (file pattern match, bash pattern match, or description relevance), so a session that never touches a spreadsheet pays zero cost. Other agents that paste it into a static system prompt pay the ~9.7 KB once per conversation - a fraction of what a single wide box-drawing preview can cost.
+`SKILL.md` is ~9.5 KB. Claude Code loads it on-demand only when a trigger fires (file pattern match, bash pattern match, or description relevance), so a session that never touches a spreadsheet pays zero cost. Other agents that paste it into a static system prompt pay the ~9.5 KB once per conversation - a fraction of what a single wide box-drawing preview can cost.
 
 ## What's in the skill
 
@@ -185,6 +181,7 @@ The skill's "Python fallback" section (`SKILL.md`) covers this: `openpyxl` + `ta
 - **Token economy** - box-drawing vs text export tradeoff with measured numbers
 - **Multi-sheet workflow** - how to navigate workbooks with multiple tabs efficiently
 - **Command reference** - full `wolfxl peek` flag cheat sheet (sheets, columns, exports)
+- **Format caveats** - direct support boundaries plus fallback recipes for custom CSVs, old `wolfxl` binaries, or high-fidelity legacy styling
 - **Python fallback** - openpyxl + tabulate snippet for when `wolfxl` isn't available
 - **Output interpretation** - how to read `wolfxl peek`'s header lines and truncation warnings
 
@@ -200,9 +197,9 @@ The skill's "Python fallback" section (`SKILL.md`) covers this: `openpyxl` + `ta
 
 ## File formats supported
 
-**Direct `wolfxl peek` path (current stable)**: `.xlsx` · `.xlsm`
+**Direct `wolfxl peek` path (`wolfxl-cli >= 0.8.0`)**: `.xlsx` · `.xlsm` · `.xls` · `.xlsb` · `.ods` · `.csv` · `.tsv` · comma-delimited `.txt`
 
-**Fallback paths**: `.csv` uses shell CSV tools; `.xls`, `.xlsb`, and `.ods` need temporary conversion to `.xlsx` or a format-specific reader until a published `wolfxl-cli` release supports them directly. See the [CSV fallback](SKILL.md#csv-fallback) and [legacy workbook fallback](SKILL.md#legacy-workbook-fallback) sections.
+**Caveats**: formatting fidelity is strongest for `.xlsx` / `.xlsm`. Legacy workbook formats and delimited files are value-first previews with limited style metadata. See [Delimited File Notes](SKILL.md#delimited-file-notes) and [Legacy Workbook Notes](SKILL.md#legacy-workbook-notes) for the fallback decision tree.
 
 ## Try it
 

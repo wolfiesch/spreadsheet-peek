@@ -20,7 +20,7 @@ uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
 
 ## Results
 
-Last measured: 2026-04-22 · wolfxl-cli 0.7.0 · tiktoken `cl100k_base`
+Last measured: 2026-04-22 · wolfxl-cli 0.8.0 · tiktoken `cl100k_base`
 
 | Mode | Tokens | Bytes | Data rows | Tokens/row |
 |------|-------:|------:|----------:|-----------:|
@@ -60,17 +60,17 @@ The wide-table case is where this matters most in absolute terms: a single naive
 
 - **Claude tokenizer ground truth**: Anthropic's tokenizer isn't publicly available, so we use cl100k_base as a proxy. PRs welcome if Anthropic publishes a client-side tokenizer.
 - **Generation-side token cost**: The box-drawing output is what the *agent reads* (context tokens). The *generation cost* of writing `wolfxl peek file -n 15` vs writing a 20-line Python script is a separate measurement - we estimate ~150-200 tokens saved per invocation on the generation side.
-- **CSV input path**: `wolfxl peek` 0.7.x doesn't read CSV files directly; the SKILL.md CSV fallback uses `head`/`column`/`csvlook --max-rows` instead. The CSV export rows above measure exporting an `.xlsx` preview as CSV, not reading a `.csv` file. Benchmarking CSV input fallbacks is straightforward but the variance between tools and CSV shapes makes a single table misleading - left as a TODO.
+- **Delimited input token costs**: `wolfxl peek` 0.8.0 reads `.csv`, `.tsv`, and comma-delimited `.txt` directly. The CSV export rows above still measure exporting an `.xlsx` preview as CSV so the output-mode ratios stay comparable across the three workbook shapes. Delimited-input token costs can be added once there is a representative corpus beyond the single messy smoke fixture.
 
 ## Claim Verification
 
 Behavioral claims are checked separately:
 
 ```bash
-python benchmarks/verify_claims.py
+uv run --with openpyxl python benchmarks/verify_claims.py
 ```
 
-That script smoke-tests `.xlsx` / `.xlsm` direct previews, Balance Sheet date rendering, `sed`-limited text export, `wolfxl agent --max-tokens`, and the current stable 0.7.x CSV direct-read boundary.
+That script smoke-tests direct previews for `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`, `.tsv`, and comma-delimited `.txt`; Balance Sheet date rendering; currency and percentage number-format rendering; `sed`-limited text export; and `wolfxl agent --max-tokens`.
 
 ## Contributing benchmark data
 

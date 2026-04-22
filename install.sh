@@ -17,7 +17,7 @@ REPO="wolfiesch/spreadsheet-peek"
 BRANCH="master"
 RAW_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 SKILL_DIR="${HOME}/.claude/skills/spreadsheet-peek"
-MIN_WOLFXL_VERSION="0.7.0"
+MIN_WOLFXL_VERSION="0.8.0"
 
 say() { printf '==> %s\n' "$*"; }
 warn() { printf 'warning: %s\n' "$*" >&2; }
@@ -34,6 +34,25 @@ wolfxl_compatibility() {
     case "${wolfxl_help}" in *map*) ;; *) printf 'false\n'; return 0 ;; esac
     case "${wolfxl_help}" in *agent*) ;; *) printf 'false\n'; return 0 ;; esac
     case "${wolfxl_help}" in *schema*) ;; *) printf 'false\n'; return 0 ;; esac
+
+    wolfxl_version="$(wolfxl --version 2>/dev/null || true)"
+    wolfxl_major="$(printf '%s\n' "${wolfxl_version}" | sed -n 's/^wolfxl \([0-9][0-9]*\)\..*/\1/p')"
+    wolfxl_minor="$(printf '%s\n' "${wolfxl_version}" | sed -n 's/^wolfxl [0-9][0-9]*\.\([0-9][0-9]*\)\..*/\1/p')"
+
+    if [ -z "${wolfxl_major}" ] || [ -z "${wolfxl_minor}" ]; then
+        printf 'false\n'
+        return 0
+    fi
+
+    if [ "${wolfxl_major}" -gt 0 ]; then
+        printf 'true\n'
+        return 0
+    fi
+
+    if [ "${wolfxl_minor}" -lt 8 ]; then
+        printf 'false\n'
+        return 0
+    fi
 
     printf 'true\n'
 }
@@ -118,7 +137,7 @@ cat <<'MSG'
 Done. Next steps:
 
   1. Start a new Claude Code session - the skill loads from ~/.claude/skills/.
-  2. Reference an .xlsx file; the agent should preview it with `wolfxl peek` automatically.
+  2. Reference a spreadsheet or delimited table; the agent should preview it with `wolfxl peek` automatically.
   3. Other agents (Codex, Cursor, Continue, Aider): see
      https://github.com/wolfiesch/spreadsheet-peek/blob/master/docs/agent-setup.md
 

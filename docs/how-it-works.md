@@ -1,6 +1,6 @@
 # How spreadsheet-peek Works
 
-`spreadsheet-peek` is a small idea delivered as a single file (`SKILL.md`): teach an AI coding agent to use [`wolfxl peek`](https://crates.io/crates/wolfxl-cli) instead of improvising Python every time it touches a `.xlsx`. The payoff is two-sided. The agent gets faster, more readable previews with date/number rendering that is easier to scan than tuple dumps. The user gets a context window that survives long sessions. This doc unpacks the mechanics behind that claim.
+`spreadsheet-peek` is a small idea delivered as a single file (`SKILL.md`): teach an AI coding agent to use [`wolfxl peek`](https://crates.io/crates/wolfxl-cli) instead of improvising Python every time it touches a spreadsheet or delimited table. The payoff is two-sided. The agent gets faster, more readable previews with date/number rendering that is easier to scan than tuple dumps. The user gets a context window that survives long sessions. This doc unpacks the mechanics behind that claim.
 
 The short version sits at three layers:
 
@@ -23,8 +23,8 @@ Most agent integrations are *reactive*. The user asks "what does that file look 
 `spreadsheet-peek` inverts that. The `SKILL.md` body lists five specific conditions where the agent is expected to preview without being asked:
 
 1. **Before data processing.** Any pipeline, ETL, or script that reads a spreadsheet gets a preview of the input first. The cost is one `wolfxl peek` call (~0.05s, ~600 tokens). The benefit is the user sees what the pipeline is actually processing before the run, not after a silent misclassification buries the real question under hundreds of rows of output.
-2. **After generating a test fixture.** When the agent creates or modifies an `.xlsx` under `tests/`, it previews the result. Fixtures that look right on paper frequently render wrong (merged cells collapsed, numbers stored as strings, off-by-one header rows), and catching that before a test run saves a debugging round.
-3. **When the user references a spreadsheet by path.** "Look at `data/q3.xlsx`" becomes `wolfxl peek data/q3.xlsx -n 15` before anything else, rather than a conversational description of what's in the file from memory.
+2. **After generating a test fixture.** When the agent creates or modifies a spreadsheet or delimited fixture under `tests/`, it previews the result. Fixtures that look right on paper frequently render wrong (merged cells collapsed, numbers stored as strings, off-by-one header rows), and catching that before a test run saves a debugging round.
+3. **When the user references a spreadsheet by path.** "Look at `data/q3.xlsx`" or "check `exports/customers.csv`" becomes `wolfxl peek <file> -n 15` before anything else, rather than a conversational description of what's in the file from memory.
 4. **When debugging a parsing issue.** If a classifier flagged a sheet as the wrong archetype, the agent looks at what the parser actually got.
 5. **When comparing before/after.** Transformations show source and result side-by-side.
 
@@ -104,7 +104,7 @@ The frontmatter is the only agent-specific piece, and even that is portable. Cla
 
 **None of these siblings exist yet.** That is deliberate. Shipping one skill end-to-end (benchmarks, CI, OG card, install script, compat matrix) and letting it settle before forking the pattern is faster than building four half-finished skills. If you want to build one, the shape above is the blueprint.
 
-A note on the YAML frontmatter, because it is easy to under-think. The `description` field is the *retrieval hook* Claude Code uses to decide whether to load the skill at all. It has to be pointed enough that "work with an `.xlsx`" pulls it in and general enough that "preview this file" does too. The `filePattern` globs catch path mentions the description might miss; the `bashPattern` entries catch cases where the agent is about to shell out to something spreadsheet-shaped without having said the word "xlsx" in the turn. Each of those is cheap to add and expensive to notice is missing, so when you fork the pattern, err on the side of more frontmatter triggers, not fewer.
+A note on the YAML frontmatter, because it is easy to under-think. The `description` field is the *retrieval hook* Claude Code uses to decide whether to load the skill at all. It has to be pointed enough that "work with an `.xlsx`" or "preview this CSV" pulls it in and general enough that "preview this file" does too. The `filePattern` globs catch path mentions the description might miss; the `bashPattern` entries catch cases where the agent is about to shell out to something spreadsheet-shaped without having said the word "xlsx" in the turn. Each of those is cheap to add and expensive to notice is missing, so when you fork the pattern, err on the side of more frontmatter triggers, not fewer.
 
 The same logic applies to SKILL.md body size. The skill currently sits just under ~10 KB. That is still small enough to paste into another agent's system-prompt mechanism without crowding out real instructions. If a sibling skill grows past ~10 KB of prose, split it: keep the triggers and the one-paragraph rationale in the body, move the command reference to a linked doc. Agents do not skim; every line in the skill body is loaded into context verbatim when the skill fires.
 
@@ -120,4 +120,4 @@ It is not marketing. If the 3.9x ratio above is wrong on a larger file or a diff
 
 ---
 
-*Last verified against `wolfxl-cli 0.7.0` and `tiktoken cl100k_base`, 2026-04-22.*
+*Last verified against `wolfxl-cli 0.8.0` and `tiktoken cl100k_base`, 2026-04-22.*
