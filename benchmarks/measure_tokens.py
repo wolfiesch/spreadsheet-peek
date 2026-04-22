@@ -26,6 +26,8 @@ WIDE = EXAMPLES / "wide-table.xlsx"
 TALL_LEDGER = EXAMPLES / "tall-ledger.xlsx"
 DELIMITED_CSV = EXAMPLES / "sample-ledger.csv"
 DELIMITED_TSV = EXAMPLES / "sample-ledger.tsv"
+DELIMITED_TXT = EXAMPLES / "sample-ledger.txt"
+QUOTED_MULTILINE_CSV = EXAMPLES / "quoted-multiline.csv"
 ENC = tiktoken.get_encoding("cl100k_base")
 
 
@@ -36,6 +38,15 @@ class Sample:
     generator: str
 
 
+@dataclass(frozen=True)
+class DelimitedSample:
+    path: Path
+    label: str
+    generator: str
+    data_rows: int = 5
+    text_max_lines: int | None = 6
+
+
 SAMPLES = [
     Sample(FINANCIALS, "Financials (7 cols)", "examples/generate_sample.py"),
     Sample(TALL_LEDGER, "Tall ledger (8 cols)", "examples/generate_tall_ledger.py"),
@@ -43,8 +54,27 @@ SAMPLES = [
 ]
 
 DELIMITED_SAMPLES = [
-    Sample(DELIMITED_CSV, "CSV ledger (7 cols)", "examples/generate_delimited_samples.py"),
-    Sample(DELIMITED_TSV, "TSV ledger (7 cols)", "examples/generate_delimited_samples.py"),
+    DelimitedSample(
+        DELIMITED_CSV,
+        "CSV ledger (7 cols)",
+        "examples/generate_delimited_samples.py",
+    ),
+    DelimitedSample(
+        DELIMITED_TSV,
+        "TSV ledger (7 cols)",
+        "examples/generate_delimited_samples.py",
+    ),
+    DelimitedSample(
+        DELIMITED_TXT,
+        "TXT ledger (7 cols)",
+        "examples/generate_delimited_samples.py",
+    ),
+    DelimitedSample(
+        QUOTED_MULTILINE_CSV,
+        "Quoted multiline CSV (5 cols)",
+        "examples/generate_delimited_samples.py",
+        text_max_lines=None,
+    ),
 ]
 
 
@@ -117,16 +147,20 @@ def benches_for(sample_path: Path, prefix: str) -> list[dict]:
     ]
 
 
-def delimited_benches_for(sample_path: Path, prefix: str) -> list[dict]:
+def delimited_benches_for(sample: DelimitedSample) -> list[dict]:
     """Measure direct delimited input costs without mixing them into workbook ratios."""
-    s = str(sample_path)
+    s = str(sample.path)
     return [
-        bench(f"{prefix} - Direct box preview (5 rows)", ["wolfxl", "peek", s, "-n", "5"]),
         bench(
-            f"{prefix} - Direct text export (5 data rows)",
+            f"{sample.label} - Direct box preview ({sample.data_rows} rows)",
+            ["wolfxl", "peek", s, "-n", str(sample.data_rows)],
+            data_rows=sample.data_rows,
+        ),
+        bench(
+            f"{sample.label} - Direct text export ({sample.data_rows} data rows)",
             ["wolfxl", "peek", s, "--export", "text"],
-            max_lines=6,
-            data_rows=5,
+            max_lines=sample.text_max_lines,
+            data_rows=sample.data_rows,
         ),
     ]
 
@@ -145,7 +179,7 @@ def main() -> None:
 
     delimited_results = []
     for sample in DELIMITED_SAMPLES:
-        delimited_results.extend(delimited_benches_for(sample.path, sample.label))
+        delimited_results.extend(delimited_benches_for(sample))
 
     # Print markdown table
     print("| Mode | Tokens | Bytes | Data rows | Tokens/row |")
