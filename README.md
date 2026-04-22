@@ -91,7 +91,7 @@ npm install
 npm run pack:mcpb
 ```
 
-The generated bundle lives at `mcp-app/dist/spreadsheet-peek.mcpb`. The same server also backs Claude Code and Codex plugin installs through `.mcp.json`; hosts that do not render MCP Apps still get a structured preview plus SVG image fallback from `preview_workbook` / `open_workbook_viewer`.
+The generated bundle lives at `mcp-app/dist/spreadsheet-peek.mcpb`. The same server also backs Claude Code and Codex plugin installs through `.mcp.json`; hosts that do not render MCP Apps still get a structured preview plus readable text from `preview_workbook` / `open_workbook_viewer`.
 
 ## Agent Setup
 

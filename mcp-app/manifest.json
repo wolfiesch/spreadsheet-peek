@@ -31,7 +31,7 @@
     },
     {
       "name": "open_workbook_viewer",
-      "description": "Open an interactive inline spreadsheet viewer with image and structured fallbacks."
+      "description": "Open an interactive inline spreadsheet viewer with structured and text fallbacks."
     }
   ],
   "keywords": ["spreadsheet", "excel", "csv", "mcp", "viewer", "wolfxl"],

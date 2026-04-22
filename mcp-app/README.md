@@ -4,7 +4,7 @@ This package turns the `spreadsheet-peek` skill into a local, read-only MCP serv
 
 ## Tools
 
-- `preview_workbook`: returns a bounded structured preview, text summary, and SVG image fallback.
+- `preview_workbook`: returns a bounded structured preview and text summary.
 - `open_workbook_viewer`: returns the same preview plus a `ui://spreadsheet-peek/viewer/index.html` MCP App resource for hosts that render inline apps.
 
 Both tools accept:
