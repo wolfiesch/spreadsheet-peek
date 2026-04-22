@@ -1,6 +1,5 @@
-import { App } from "@modelcontextprotocol/ext-apps";
-
 import "./viewer.css";
+import { HostBridge } from "./hostBridge.js";
 import { samplePreview } from "./sampleData.js";
 import { cellsToTsv } from "./tsv.js";
 import type { PreviewCell, WorkbookPreview } from "./types.js";
@@ -17,7 +16,7 @@ let preview: WorkbookPreview = samplePreview;
 let selection: Selection | null = null;
 let isDragging = false;
 let searchTerm = "";
-let hostApp: App | null = null;
+let hostApp: HostBridge | null = null;
 let hostConnected = false;
 let pendingToolArgs: Record<string, unknown> | null = null;
 let loadingMessage = "";
@@ -36,7 +35,7 @@ render();
 async function connectHost() {
   if (window.parent === window) return;
   try {
-    hostApp = new App({ name: "Spreadsheet Peek Viewer", version: APP_VERSION }, {});
+    hostApp = new HostBridge({ name: "Spreadsheet Peek Viewer", version: APP_VERSION });
     hostApp.ontoolinputpartial = (params) => {
       if (params.arguments) {
         pendingToolArgs = params.arguments;

@@ -31206,17 +31206,24 @@ N3(
     ]
   })
 );
-server.registerTool(
+K3(
+  server,
   "preview_workbook",
   {
     title: "Preview Workbook",
-    description: "Read a local spreadsheet with wolfxl and return a structured, bounded preview for the model.",
+    description: "Read and render a local spreadsheet with a bounded structured preview for the model.",
     inputSchema: previewInputSchema,
     annotations: {
       readOnlyHint: true,
       destructiveHint: false,
       idempotentHint: true,
       openWorldHint: false
+    },
+    _meta: {
+      ui: {
+        resourceUri: APP_URI,
+        visibility: ["model", "app"]
+      }
     }
   },
   async (args) => previewResult(args)
@@ -31241,11 +31248,14 @@ K3(
     }
   },
   async (args) => {
-    const result = await previewResult(args);
+    const fileName = typeof args.path === "string" ? args.path.split(/[\\/]/).at(-1) : "workbook";
+    const sheetSuffix = typeof args.sheet === "string" && args.sheet.trim() ? ` / ${args.sheet.trim()}` : "";
     return {
-      ...result,
       content: [
-        ...result.content ?? [],
+        {
+          type: "text",
+          text: `Opening ${fileName}${sheetSuffix} in the Spreadsheet Peek inline viewer.`
+        },
         {
           type: "resource_link",
           uri: APP_URI,

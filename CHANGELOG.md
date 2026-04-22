@@ -33,6 +33,7 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - The MCP viewer tests now simulate host `tool-input` and `tool-result` hydration, including requested-sheet loading and representative wide, tall, and messy preview shapes.
 - The inline viewer now gives selected ranges, search hits, focus, and enabled summarize actions clearer visual affordances.
 - The viewer now compares requested ranges and preview caps before skipping host-input hydration, and keeps loading/error status visible even when a search term has matches.
+- The Claude inline viewer now ships a much smaller HTML resource and makes `open_workbook_viewer` return a lightweight launcher result, reducing host request-expiry and tool-result submission failures.
 
 ## [2.1.0] - 2026-04-22
 
