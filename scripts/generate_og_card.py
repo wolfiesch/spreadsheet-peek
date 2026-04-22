@@ -113,7 +113,7 @@ def main() -> None:
     # Three-bullet feature strip
     bullets = [
         ("Proactive triggers.", CYAN),
-        ("~5x cheaper previews.", GREEN),
+        ("~4x cheaper previews.", GREEN),
         ("Agent-agnostic.", ORANGE),
     ]
     by = 324

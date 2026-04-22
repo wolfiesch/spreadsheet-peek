@@ -44,7 +44,7 @@ There's no automated test suite because the skill is behavioral, not code. The r
 1. Copy your modified `SKILL.md` to `~/.claude/skills/spreadsheet-peek/` (or your agent's equivalent)
 2. Start a fresh agent session
 3. Reference a spreadsheet file and verify the agent invokes `wolfxl peek` correctly
-4. Try edge cases: multi-sheet workbooks, very large files, CSV vs XLSX, style-aware rendering (currency, percent, dates)
+4. Try edge cases: multi-sheet workbooks, very large files, CSV vs XLSX, date headers, and fallback paths for legacy formats
 
 ## Pull request checklist
 

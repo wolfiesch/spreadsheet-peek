@@ -1,6 +1,6 @@
 ---
 name: spreadsheet-peek
-description: Inline terminal preview of Excel spreadsheets using `wolfxl peek`. Use proactively when working with .xlsx, .xls, .xlsm, .xlsb, or .ods files - before data processing, after fixture generation, when debugging table parsing, or when the user references a spreadsheet. Also use when asked to "peek", "preview", "show me the file", or "what does this spreadsheet look like". For .csv files, see the CSV fallback section below.
+description: Inline terminal preview of Excel spreadsheets using `wolfxl peek`. Use proactively when working with .xlsx or .xlsm files - before data processing, after fixture generation, when debugging table parsing, or when the user references a spreadsheet. Also use when asked to "peek", "preview", "show me the file", or "what does this spreadsheet look like". For .xls, .xlsb, .ods, or .csv files, see the fallback sections below.
 version: 2.0.0
 metadata:
   author: wolfgangs
@@ -23,8 +23,8 @@ Show inline ASCII table previews of spreadsheet files using `wolfxl peek`. This 
 ## Prerequisites
 
 - `wolfxl` must be installed: `cargo install wolfxl-cli`
-- Supports Excel-family formats: `.xlsx`, `.xls`, `.xlsm`, `.xlsb`, `.ods`
-- `.csv` is **not** handled by `wolfxl peek` directly - see [CSV Fallback](#csv-fallback) below
+- `wolfxl-cli 0.7.x` supports `.xlsx` and OOXML `.xlsm` workbooks directly
+- `.xls`, `.xlsb`, `.ods`, and `.csv` are **not** handled by the current stable `wolfxl peek` release - see [Legacy Workbook Fallback](#legacy-workbook-fallback) and [CSV Fallback](#csv-fallback) below
 
 ## When to Invoke (Proactive Triggers)
 
@@ -34,7 +34,7 @@ Show inline ASCII table previews of spreadsheet files using `wolfxl peek`. This 
 
 2. **After generating a test fixture**: When a fixture `.xlsx` or `.csv` file is created or modified (especially in `tests/` directories), preview it to confirm the fixture looks right.
 
-3. **When the user references a spreadsheet**: If the user mentions a `.xlsx` or `.csv` file path, preview it before discussing it. Don't describe the file - show it.
+3. **When the user references a spreadsheet**: If the user mentions a spreadsheet or `.csv` file path, preview it before discussing it. Don't describe the file - show it.
 
 4. **When debugging parsing issues**: If investigating why a table was misclassified or mis-parsed, preview the raw input to see what the parser actually received.
 
@@ -51,16 +51,16 @@ Show inline ASCII table previews of spreadsheet files using `wolfxl peek`. This 
 
 `wolfxl peek`'s box-drawing output uses Unicode border characters that cost real tokens. Choose the right mode based on context:
 
-| Mode | When to use | Token cost (5 rows) |
+| Mode | When to use | Token cost (5 data rows) |
 |------|-------------|---------------------|
 | **Box-drawing** (`wolfxl peek file -n 5`) | User is looking, readability matters | ~573 tokens (~115/row) |
-| **Text export** (`wolfxl peek file --export text \| head -5`) | Context-sensitive, large files, repeated previews | ~117 tokens (~23/row) |
+| **Text export** (`wolfxl peek file --export text \| sed -n '1,6p'`) | Context-sensitive, large files, repeated previews | ~148 tokens (~30/row) |
 
-**Default rule**: Use box-drawing for the FIRST preview in a conversation (readability). Switch to `--export text | head` for subsequent previews or when context is getting long.
+**Default rule**: Use box-drawing for the FIRST preview in a conversation (readability). Switch to `--export text | sed -n '1,Np'` for subsequent previews or when context is getting long.
 
-**Measured ratio**: box-drawing is ~4.9x more expensive per row than text export on a 7-column workbook, ~3.6x on a 29-column wide-table. The overhead is mostly fixed (header/border lines), so the per-row cost improves with more rows - but text export is still cheaper at every size.
+**Measured ratio**: box-drawing is ~3.9x more expensive per row than text export on a 7-column workbook, ~3.0x on a 29-column wide-table. The overhead is mostly fixed (header/border lines), so the per-row cost improves with more rows - but text export is still cheaper at every size.
 
-**Note**: `--export text` ignores the `-n` flag and dumps ALL rows. Always pipe through `head -N` to limit output.
+**Note**: `--export text` ignores the `-n` flag and dumps ALL rows. Always pipe through `sed -n '1,Np'` to limit what enters the conversation. Prefer `sed` over `head` with current `wolfxl-cli` releases because `head` can close the pipe early and make `wolfxl` print a broken-pipe warning.
 
 ## Commands
 
@@ -71,7 +71,12 @@ wolfxl peek <file> -n 15
 
 ### Token-efficient preview (large files or repeat views)
 ```bash
-wolfxl peek <file> --export text | head -20
+wolfxl peek <file> --export text | sed -n '1,20p'
+```
+
+### Budgeted agent briefing (large or unfamiliar workbook)
+```bash
+wolfxl agent <file> --max-tokens 800
 ```
 
 ### Full dump (all rows, use sparingly)
@@ -119,7 +124,7 @@ head -15 file.csv | column -s, -t
 # CSV-aware tools (use these when the file might have quoted fields,
 # embedded newlines, UTF-8 BOM, or any non-trivial escaping):
 mlr --icsv --opprint head -n 15 file.csv         # miller
-csvlook -n file.csv | head -20                    # csvkit
+csvlook --max-rows 15 file.csv                    # csvkit
 
 # Rough row and column dimensions (heuristic - wc -l over-counts rows
 # when fields contain embedded newlines; tr , wc -l over-counts columns
@@ -133,7 +138,21 @@ mlr --icsv --opprint put '$columns = NF' then head -n 1 file.csv
 
 **Which to use**: `head` is always available and costs zero tokens for the tool invocation. Use `column -s, -t` only on simple CSVs where no field contains a comma, a quote, or a newline. For any CSV with quoted fields, embedded newlines, or BOMs, reach for `mlr` or `csvkit` - plain `head`/`column` will mis-render them and `wc`/`tr` will lie about the dimensions.
 
+**If `mlr`/`csvlook` are missing**: use the raw `head` preview, then install `miller` or `csvkit` only if the CSV is messy enough to justify it.
+
 **If you must use Python** (CSV too messy for shell tools), reach for `csv.DictReader` + `tabulate`, not pandas - pandas has a ~1s import cost and is overkill for a preview.
+
+## Legacy Workbook Fallback
+
+Current stable `wolfxl-cli` releases do not read `.xls`, `.xlsb`, or `.ods` directly. If you need to inspect one, convert a temporary copy to `.xlsx` first, then run `wolfxl peek` on the converted file:
+
+```bash
+mkdir -p /tmp/spreadsheet-peek
+soffice --headless --convert-to xlsx --outdir /tmp/spreadsheet-peek file.xls
+wolfxl peek /tmp/spreadsheet-peek/file.xlsx -n 15
+```
+
+If LibreOffice is not installed, use the best available reader for the format and say that the direct `wolfxl peek` path is not supported by the installed release. Do not pretend an `.xls`/`.ods` parse error is a workbook problem.
 
 ## Multi-Sheet Workflow
 
@@ -148,8 +167,8 @@ When previewing a multi-sheet workbook:
 wolfxl peek file.xlsx -n 15
 
 # Subsequent sheets (token-efficient)
-wolfxl peek file.xlsx --sheet "Balance Sheet" --export text | head -20
-wolfxl peek file.xlsx --sheet "Cash Flow" --export text | head -20
+wolfxl peek file.xlsx --sheet "Balance Sheet" --export text | sed -n '1,20p'
+wolfxl peek file.xlsx --sheet "Cash Flow" --export text | sed -n '1,20p'
 ```
 
 ## Shell Aliases
@@ -177,19 +196,19 @@ print(tabulate.tabulate(rows[1:], headers=rows[0] or [], tablefmt='grid'))
 ## Why `wolfxl peek` Over Disposable Python Scripts
 
 `wolfxl peek` saves ~150-200 generation tokens per invocation (no Python code to write). The tradeoff:
-- **Box-drawing output** is ~5x larger than raw TSV (Unicode borders cost tokens on the context side)
-- **`--export text | head`** is the most token-efficient option overall (~117 tokens for 5 rows vs ~250 for Python approach)
+- **Box-drawing output** is ~3-4x larger than text export for equal preview slices (Unicode borders cost tokens on the context side)
+- **`--export text | sed -n '1,Np'`** is the most token-efficient option overall (~148 tokens for 5 data rows vs ~250 for Python approach)
 - **Reliability**: `wolfxl peek` never fails on import errors, env issues, or edge cases in ad-hoc parsing code
 - **Speed**: Rust binary parses instantly vs ~0.5-1s openpyxl startup
-- **Style-aware**: Excel number formats (currency, percentages, dates) render in their native form - `$1,234.56` instead of `1234.56`, `12.5%` instead of `0.125`
+- **Readable formatting**: Date cells render as ISO dates, and numeric cells are grouped for scanning. Current stable `peek` output does not promise every Excel currency or percentage symbol.
 
 **Never write disposable Python to view a spreadsheet. Use `wolfxl peek`.**
 
 ## Output Interpretation Notes
 
 - Empty cells show as blank (no value in the cell)
-- Numbers with thousand separators (e.g., `1,200`) reflect Excel number formatting preserved by `wolfxl peek`
-- Currency cells render with their format (e.g., `$1,234.56`); percentages render as `12.5%`; dates as ISO `YYYY-MM-DD`
+- Numeric cells are grouped for readability (e.g., `1,200` instead of `1200`)
+- Date cells render as ISO `YYYY-MM-DD`; current stable `peek` output does not promise to preserve every currency or percentage symbol from Excel number-format metadata
 - The header line `Sheet: SheetName (N rows × M columns)` tells you the full dimensions
 - `Available sheets:` line appears when the workbook has multiple tabs
-- The banner `wolfxl peek - Excel preview` confirms you're getting `wolfxl`'s styled output (vs a manual openpyxl dump)
+- The banner `wolfxl peek - Excel preview` confirms you're getting `wolfxl` output (vs a manual openpyxl dump)

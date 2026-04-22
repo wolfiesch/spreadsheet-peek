@@ -4,12 +4,19 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 ## [Unreleased]
 
+### Changed
+
+- `SKILL.md`, README, setup docs, plugin manifests, and VHS tapes now describe the current stable support boundary precisely: direct `wolfxl peek` reads for `.xlsx` / `.xlsm`, CSV and legacy workbook fallbacks for other formats, and readable date/number output without over-promising currency or percentage symbol fidelity.
+- `examples/generate_sample.py` now writes real date cells for the Balance Sheet period headers and regenerates `examples/sample-financials.xlsx`, so the sample workbook demonstrates an actual supported rendering behavior instead of relying only on string literals.
+- `benchmarks/measure_tokens.py` now measures export previews against the same data-row count as box-drawing previews. The headline ratios are now ~3.9x for the 7-column financial workbook and ~3.0x for the 29-column wide workbook, replacing the older line-count-based ~4.9x / ~3.6x figures.
+- Token-efficient examples now use `sed -n '1,Np'` instead of `head` for `wolfxl peek --export text` output, avoiding the broken-pipe warning current stable `wolfxl-cli` releases can emit when `head` exits early.
+
 ### Fixed
 
 - `install.sh` now treats old `wolfxl` binaries as incompatible unless they expose the full `peek` / `map` / `agent` / `schema` surface, and uses `cargo install --force wolfxl-cli` so reruns can upgrade them in place.
-- `.github/workflows/benchmark.yml` now resolves `WOLFXL_CLI_VERSION` from both the PR and master checkouts before installing branch-specific `wolfxl` binaries, so future CLI bump PRs compare the new PR binary against the old master baseline instead of masking CLI output drift.
+- `.github/workflows/benchmark.yml` now resolves `WOLFXL_CLI_VERSION` from both the PR and master checkouts before installing branch-specific `wolfxl` binaries, runs when docs/manifests with benchmark claims change, preserves the benchmark command's exit code through `tee`, and updates a single sticky drift comment instead of posting duplicates.
 - `docs/how-it-works.md` now refers to the embedded recording as a screencast instead of pinning a stale duration.
-- `benchmarks/measure_tokens.py` now fails loudly when a measured command exits non-zero, including piped export commands via `bash -o pipefail`.
+- `benchmarks/measure_tokens.py` now measures bounded export previews by truncating command output inside Python instead of piping `wolfxl peek` through `head`, so the benchmark stays portable and fails only on real command failures.
 - Benchmark provenance docs and the bug report template now cite `wolfxl-cli 0.7.0`, matching the current 2.x support contract.
 
 ## [2.0.0] - 2026-04-19
@@ -19,22 +26,22 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 The motivation for the swap is owning the full stack: `wolfxl-cli` is built on the same author's `wolfxl-core` Rust crate, which means feature requests this skill could previously only file as upstream issues (sprint-2 features like `--map`, `--agent --max-tokens`, `--schema`, MCP server mode) are now ours to ship.
 
 ### Added
-- **Style-aware rendering as the headline feature.** `wolfxl peek` reads Excel's `xl/styles.xml` and renders cells with their declared number format: currency as `$1,234.56`, percentages as `12.5%`, dates as ISO `YYYY-MM-DD`. Previously the agent saw `1234.56` / `0.125` / Excel serial integers and had to guess. SKILL.md, README, `docs/how-it-works.md`, and the screencast tape all surface this as the v2 differentiator
+- **Readable rendering as the headline feature.** `wolfxl peek` gives agents a clean table preview instead of raw `openpyxl` tuple dumps. Current stable output renders date cells as ISO `YYYY-MM-DD` and groups numeric cells for scanning; richer currency and percentage symbol fidelity belongs upstream in `wolfxl-cli`
 - `CLAUDE.md` "Sister project" section pointing maintainers at the upstream `wolfxl` repo for parser-side changes, plus a version-contract line (`spreadsheet-peek 2.x` requires `wolfxl-cli >= 0.4.0`)
 
 ### Changed
-- **`SKILL.md`** version → 2.0.0; frontmatter `description` and `bashPattern` rewritten (`xleak` → `wolfxl`/`peek\b`); body command reference rewritten across 32 invocations; "Why this skill exists" callout updated to lead with style-aware rendering as the first reason to prefer the CLI over disposable Python; v1-only flags that `wolfxl-cli 0.4.0` doesn't have yet (`--formulas`, `--list-tables`, `--table`, `--sheet <index>`) removed and tracked on the upstream sprint-2 backlog. `--sheet "Name"` is preserved
-- **`.claude-plugin/plugin.json`** version → 2.0.0; description + keywords updated to mention `wolfxl peek` and style-aware rendering
+- **`SKILL.md`** version → 2.0.0; frontmatter `description` and `bashPattern` rewritten (`xleak` → `wolfxl`/`peek\b`); body command reference rewritten across 32 invocations; "Why this skill exists" callout updated to lead with readable rendering as the first reason to prefer the CLI over disposable Python; v1-only flags that `wolfxl-cli 0.4.0` doesn't have yet (`--formulas`, `--list-tables`, `--table`, `--sheet <index>`) removed and tracked on the upstream sprint-2 backlog. `--sheet "Name"` is preserved
+- **`.claude-plugin/plugin.json`** version → 2.0.0; description + keywords updated to mention `wolfxl peek` and readable rendering
 - **`.claude-plugin/marketplace.json`** plugin entry version → 2.0.0; description + keywords + tags updated in lockstep with `plugin.json`
 - **`install.sh`** rewritten - single install path on macOS/Linux/Windows: `cargo install wolfxl-cli` (homebrew tap is sprint-2 backlog per the migration plan's R3 risk). Sanity check now runs `command -v wolfxl` instead of `command -v xleak`
 - **`.github/workflows/benchmark.yml`** - `XLEAK_VERSION: "0.2.5"` env replaced with `WOLFXL_CLI_VERSION: "0.4.0"`; cache path/key + cargo install command updated. Benchmark drift comparison continues to work unchanged because `measure_tokens.py` still emits the same markdown shape
 - **`benchmarks/measure_tokens.py`** - all `xleak` invocations swapped for `wolfxl peek`; docstring + row-counter comment updated
-- **`benchmarks/README.md`** results table re-measured against `wolfxl-cli 0.4.0`. New numerics: financials box-drawing 573 tokens / 114.6 per row (was 593 / 118.6); financials text-export unchanged at 117 / 23.4; wide box-drawing 2,249 / 449.8 (was 2,263 / 452.6); wide text-export unchanged at 632 / 126.4. Headline ratio drops from **5.1x → 4.9x** on financials (still solid; the small drop is `wolfxl peek`'s slightly tighter header line). Wide ratio unchanged at 3.6x
-- **`README.md`** + **`docs/how-it-works.md`** + **`SKILL.md`** token tables and worked-example math updated to match the new benchmark output (4.9x, 87.5 tokens/row at 15-row box). All four sources stay in lockstep so the CI drift check on the next PR doesn't fire spuriously
+- **`benchmarks/README.md`** results table re-measured against `wolfxl-cli 0.4.0`. New numerics at the time: financials box-drawing 573 tokens / 114.6 per row (was 593 / 118.6); wide box-drawing 2,249 / 449.8 (was 2,263 / 452.6). The export-row normalization was later corrected under `[Unreleased]`.
+- **`README.md`** + **`docs/how-it-works.md`** + **`SKILL.md`** token tables and worked-example math updated to match the benchmark output. All four sources stay in lockstep so the CI drift check on the next PR doesn't fire spuriously
 - **`docs/agent-setup.md`** - all per-agent install snippets (Codex AGENTS.md, Cursor rules, Continue systemMessage, Aider, Generic) rewritten to `wolfxl peek`. "Verified" badge for Claude Code re-dated to 2026-04-19 against the v2.0.0 plugin install. Troubleshooting section updated: `cargo install wolfxl-cli` replaces the homebrew install path
 - **`CONTRIBUTING.md`** dev setup uses `cargo install wolfxl-cli`; "out of scope" rule sharpened ("feature requests for the parser itself belong upstream in the wolfxl repo")
-- **`examples/README.md`** + **`examples/generate_wide_table.py`** + the three VHS tape scripts (`examples/demo.tape`, `scripts/record_screencast.tape`, `scripts/record_contrast.tape`) - all command examples and inline comments swapped to `wolfxl peek`. The screencast tape was retargeted from "demonstrate the interactive TUI" to "demonstrate style-aware preview + sheet switch + token-efficient mode + wide-table stress" because `wolfxl-cli 0.4.0` doesn't ship a TUI mode yet (planned)
-- **`scripts/generate_og_card.py`** - mock terminal prompt swapped from `xleak financials.xlsx -n 5` to `wolfxl peek financials.xlsx -n 5`. Static snippet preserved (the OG card was always a hand-tuned mock, not live CLI output, to keep image generation deterministic and dependency-free). Bullet copy unchanged (~5x cheaper previews still holds)
+- **`examples/README.md`** + **`examples/generate_wide_table.py`** + the three VHS tape scripts (`examples/demo.tape`, `scripts/record_screencast.tape`, `scripts/record_contrast.tape`) - all command examples and inline comments swapped to `wolfxl peek`. The screencast tape was retargeted from "demonstrate the interactive TUI" to "demonstrate readable preview + sheet switch + token-efficient mode + wide-table stress" because `wolfxl-cli 0.4.0` doesn't ship a TUI mode yet (planned)
+- **`scripts/generate_og_card.py`** - mock terminal prompt swapped from `xleak financials.xlsx -n 5` to `wolfxl peek financials.xlsx -n 5`. Static snippet preserved (the OG card was always a hand-tuned mock, not live CLI output, to keep image generation deterministic and dependency-free)
 - **`.github/ISSUE_TEMPLATE/bug_report.yml`** - the `xleak version` field becomes `wolfxl-cli version` (asks for `wolfxl --version` output)
 - **`.github/ISSUE_TEMPLATE/feature_request.yml`** scope check updated; the "don't replace the backend" rule now points users at the upstream `wolfxl` repo for parser-side requests
 

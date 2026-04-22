@@ -52,10 +52,23 @@ def row_count(output: str) -> int:
     return max(0, len(data_lines) - 1)
 
 
-def bench(label: str, cmd: list[str]) -> dict:
+def first_lines(output: str, limit: int) -> str:
+    """Return the first ``limit`` lines while preserving line endings."""
+    return "".join(output.splitlines(keepends=True)[:limit])
+
+
+def bench(
+    label: str,
+    cmd: list[str],
+    *,
+    max_lines: int | None = None,
+    data_rows: int | None = None,
+) -> dict:
     output = run(cmd)
+    if max_lines is not None:
+        output = first_lines(output, max_lines)
     t = tokens(output)
-    rows = row_count(output) or output.count("\n")  # fall back to line count for text export
+    rows = data_rows or row_count(output) or len(output.splitlines())
     return {
         "label": label,
         "command": " ".join(cmd),
@@ -72,14 +85,12 @@ def benches_for(sample_path: Path, prefix: str) -> list[dict]:
     return [
         bench(f"{prefix} - Box-drawing (5 rows)",  ["wolfxl", "peek", s, "-n", "5"]),
         bench(f"{prefix} - Box-drawing (15 rows)", ["wolfxl", "peek", s, "-n", "15"]),
-        # Pass the path via bash's positional `$1` so paths containing spaces or
-        # shell metacharacters are never re-interpreted by the shell.
-        bench(f"{prefix} - Text export (head -5)",
-              ["bash", "-o", "pipefail", "-c", 'wolfxl peek "$1" --export text | head -5', "--", s]),
-        bench(f"{prefix} - Text export (head -15)",
-              ["bash", "-o", "pipefail", "-c", 'wolfxl peek "$1" --export text | head -15', "--", s]),
-        bench(f"{prefix} - CSV export (head -5)",
-              ["bash", "-o", "pipefail", "-c", 'wolfxl peek "$1" --export csv | head -5', "--", s]),
+        bench(f"{prefix} - Text export (5 data rows)",
+              ["wolfxl", "peek", s, "--export", "text"], max_lines=6, data_rows=5),
+        bench(f"{prefix} - Text export (15 data rows)",
+              ["wolfxl", "peek", s, "--export", "text"], max_lines=16, data_rows=15),
+        bench(f"{prefix} - CSV export (5 data rows)",
+              ["wolfxl", "peek", s, "--export", "csv"], max_lines=6, data_rows=5),
     ]
 
 
@@ -109,7 +120,7 @@ def main() -> None:
     print("## Ratios (box-drawing vs text export, normalized per row)")
     for prefix in ("Financials (7 cols)", "Wide (29 cols)"):
         box = next(r for r in results if r["label"] == f"{prefix} - Box-drawing (5 rows)")
-        text = next(r for r in results if r["label"] == f"{prefix} - Text export (head -5)")
+        text = next(r for r in results if r["label"] == f"{prefix} - Text export (5 data rows)")
         ratio = box["tokens_per_row"] / max(1, text["tokens_per_row"])
         print(f"- **{prefix}**: box-drawing is **{ratio:.1f}x** more expensive per row than text export.")
 

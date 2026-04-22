@@ -19,24 +19,24 @@ uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
 
 ## Results
 
-Last measured: 2026-04-19 · wolfxl-cli 0.7.0 · tiktoken `cl100k_base`
+Last measured: 2026-04-22 · wolfxl-cli 0.7.0 · tiktoken `cl100k_base`
 
 | Mode | Tokens | Bytes | Data rows | Tokens/row |
 |------|-------:|------:|----------:|-----------:|
 | Financials (7 cols) - Box-drawing (5 rows)   | 573   | 2,760  | 5  | 114.6 |
 | Financials (7 cols) - Box-drawing (15 rows)  | 1,313 | 6,703  | 15 | 87.5  |
-| Financials (7 cols) - Text export (head -5)  | 117   | 255    | 5  | 23.4  |
-| Financials (7 cols) - Text export (head -15) | 328   | 702    | 15 | 21.9  |
-| Financials (7 cols) - CSV export (head -5)   | 119   | 285    | 5  | 23.8  |
+| Financials (7 cols) - Text export (5 data rows)  | 148   | 319    | 5  | 29.6  |
+| Financials (7 cols) - Text export (15 data rows) | 357   | 762    | 15 | 23.8  |
+| Financials (7 cols) - CSV export (5 data rows)   | 150   | 359    | 5  | 30.0  |
 | Wide (29 cols) - Box-drawing (5 rows)        | 2,249 | 13,464 | 5  | 449.8 |
 | Wide (29 cols) - Box-drawing (15 rows)       | 5,623 | 33,193 | 15 | 374.9 |
-| Wide (29 cols) - Text export (head -5)       | 632   | 1,255  | 5  | 126.4 |
-| Wide (29 cols) - Text export (head -15)      | 1,854 | 3,627  | 15 | 123.6 |
-| Wide (29 cols) - CSV export (head -5)        | 626   | 1,463  | 5  | 125.2 |
+| Wide (29 cols) - Text export (5 data rows)       | 754   | 1,477  | 5  | 150.8 |
+| Wide (29 cols) - Text export (15 data rows)      | 1,975 | 3,867  | 15 | 131.7 |
+| Wide (29 cols) - CSV export (5 data rows)        | 746   | 1,737  | 5  | 149.2 |
 
 **Key ratios**:
-- Financials: box-drawing costs ~4.9x more tokens per row than text export (5-row), ~4.0x at 15 rows.
-- Wide: box-drawing costs ~3.6x per row (5-row), ~3.0x at 15 rows. The *ratio* is smaller because text-export baseline is larger per row; the *absolute* per-row savings (323 tokens vs 91 for financials) is ~3.5x higher.
+- Financials: box-drawing costs ~3.9x more tokens per row than text export (5-row), ~3.7x at 15 rows.
+- Wide: box-drawing costs ~3.0x per row (5-row), ~2.8x at 15 rows. The *ratio* is smaller because text-export baseline is larger per row; the *absolute* per-row savings (299 tokens vs 85 for financials) is ~3.5x higher.
 
 ## Why these numbers matter
 
@@ -44,15 +44,15 @@ An agent that previews 10 spreadsheets during a session at 15 rows each, assumin
 
 - **Box-drawing everywhere (financials-shaped)**: 10 × 1,313 = **13,130 tokens** just on previews.
 - **Box-drawing everywhere (wide-shaped)**: 10 × 5,623 = **56,230 tokens** - roughly 28% of a 200K window on previews alone.
-- **Mode switch (box first, text after)**: 1,313 + (9 × 328) = **4,265 tokens** on the financials path; 5,623 + (9 × 1,854) = **22,309 tokens** on the wide path.
+- **Mode switch (box first, text after)**: 1,313 + (9 × 357) = **4,526 tokens** on the financials path; 5,623 + (9 × 1,975) = **23,398 tokens** on the wide path.
 
-The wide-table case is where this matters most in absolute terms: a single naive 15-row preview already costs more than four financial-shape previews. On a workbook wider than ~25 columns, skip box-drawing entirely and go straight to `--export text | head`.
+The wide-table case is where this matters most in absolute terms: a single naive 15-row preview already costs more than four financial-shape previews. On a workbook wider than ~25 columns, skip box-drawing entirely and go straight to `--export text | sed -n '1,Np'`.
 
 ## What's not measured (yet)
 
 - **Claude tokenizer ground truth**: Anthropic's tokenizer isn't publicly available, so we use cl100k_base as a proxy. PRs welcome if Anthropic publishes a client-side tokenizer.
 - **Generation-side token cost**: The box-drawing output is what the *agent reads* (context tokens). The *generation cost* of writing `wolfxl peek file -n 15` vs writing a 20-line Python script is a separate measurement - we estimate ~150-200 tokens saved per invocation on the generation side.
-- **CSV path**: `wolfxl peek` doesn't read CSV files; the SKILL.md CSV fallback uses `head`/`column`/`csvlook` instead. Benchmarking those is straightforward but the variance between tools (and CSV shapes) makes a single table misleading - left as a TODO.
+- **CSV input path**: `wolfxl peek` 0.7.x doesn't read CSV files directly; the SKILL.md CSV fallback uses `head`/`column`/`csvlook --max-rows` instead. The CSV export rows above measure exporting an `.xlsx` preview as CSV, not reading a `.csv` file. Benchmarking CSV input fallbacks is straightforward but the variance between tools and CSV shapes makes a single table misleading - left as a TODO.
 
 ## Contributing benchmark data
 

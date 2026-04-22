@@ -42,23 +42,23 @@ The tape script uses the Dracula theme at 1200x720 with 14pt font to balance rea
 ## Try it yourself
 
 ```bash
-# Default preview (style-aware: currency, %, dates render in their native form)
+# Default preview (readable table with ISO date headers)
 wolfxl peek examples/sample-financials.xlsx -n 10
 
 # Switch sheets
 wolfxl peek examples/sample-financials.xlsx --sheet "Balance Sheet" -n 8
 
-# Token-efficient mode (~4.9x cheaper for repeat views)
-wolfxl peek examples/sample-financials.xlsx --export text | head -15
+# Token-efficient mode (~3.9x cheaper for repeat views)
+wolfxl peek examples/sample-financials.xlsx --export text | sed -n '1,15p'
 
 # Wide columns for long account names
 wolfxl peek examples/sample-financials.xlsx -n 15 -w 50
 
 # Wide-table stress test - box-drawing mode on 29 columns is HUGE
 wolfxl peek examples/wide-table.xlsx -n 3
-wolfxl peek examples/wide-table.xlsx --export text | head -5
+wolfxl peek examples/wide-table.xlsx --export text | sed -n '1,6p'
 
 # Messy CSV: the skill's CSV fallback in action
 head -6 examples/messy.csv | column -s, -t     # naive, mis-renders
-csvlook examples/messy.csv                      # csvkit, renders correctly
+csvlook --max-rows 15 examples/messy.csv        # csvkit, renders correctly
 ```
