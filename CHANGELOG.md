@@ -16,6 +16,10 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 - `SKILL.md`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and the new MCP package metadata are bumped to 2.2.0 for the inline-viewer release.
 
+### Fixed
+
+- `.claude-plugin/marketplace.json` now uses an HTTPS git URL source so clean Claude Code plugin installs do not require GitHub SSH keys.
+
 ## [2.1.0] - 2026-04-22
 
 ### Changed

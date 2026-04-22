@@ -55,7 +55,7 @@ Use absolute file paths when calling the tools from Claude Desktop so the local 
 
 ## Claude Code
 
-> ✅ **Verified 2026-04-19** - Skill loads from `~/.claude/skills/spreadsheet-peek/SKILL.md` in an active Claude Code session; frontmatter description and `filePattern`/`bashPattern` triggers are recognized by the skills index. The v2.0.0 plugin install was verified end-to-end against the `wolfie-tools` marketplace; the v2.2.0 MCP server path is documented here and should be round-tripped before marking it verified.
+> ✅ **Verified 2026-04-22** - Skill loads from `~/.claude/skills/spreadsheet-peek/SKILL.md` in an active Claude Code session; frontmatter description and `filePattern`/`bashPattern` triggers are recognized by the skills index. The plugin install was round-tripped against the `wolfie-tools` marketplace in a clean temp home without GitHub SSH keys; the v2.2.0 MCP server path is documented here and should be round-tripped before marking it verified.
 
 Claude Code has two install paths: a **plugin** (recommended, one command, versioned, easy to uninstall) and a **skill-only** install (no plugin machinery, just a SKILL.md in the skills directory). Both end up with the skill active; pick whichever fits your setup.
 

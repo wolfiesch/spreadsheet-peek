@@ -11,8 +11,8 @@
     {
       "name": "spreadsheet-peek",
       "source": {
-        "source": "github",
-        "repo": "wolfiesch/spreadsheet-peek"
+        "source": "url",
+        "url": "https://github.com/wolfiesch/spreadsheet-peek.git"
       },
       "description": "Adds proactive spreadsheet previews plus a local MCP server for structured and visual inline workbook inspection.",
       "version": "2.2.0",
