@@ -93,6 +93,9 @@ jobs:
       - name: Install Python deps
         run: python3 -m pip install --quiet tiktoken openpyxl
 
+      - name: Verify PR branch claims
+        run: PATH="$HOME/.cache/spreadsheet-peek/wolfxl-cli/${{ steps.wolfxl-versions.outputs.pr }}/bin:$PATH" python3 pr/benchmarks/verify_claims.py
+
       - name: Run benchmark on PR branch
         run: |
           set -o pipefail

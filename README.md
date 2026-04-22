@@ -36,19 +36,27 @@ With `spreadsheet-peek`, the agent runs `wolfxl peek data.xlsx -n 15` instead:
 
 ## Token efficiency (the part that's easy to miss)
 
-Box-drawing output looks pretty but costs real tokens. The skill teaches the agent when to switch modes, with measurements taken against two sample shapes: a typical financial workbook (7 columns) and a wide operations dashboard (29 columns).
+Box-drawing output looks pretty but costs real tokens. The skill teaches the agent when to switch modes, with measurements taken against three sample shapes: a typical financial workbook (7 columns), a tall ledger (8 columns), and a wide operations dashboard (29 columns).
 
 | Sample | Mode | Command | Tokens (5 data rows) | Tokens/row |
 |--------|------|---------|----------------:|-----------:|
 | Financials (7 cols) | Box-drawing | `wolfxl peek file -n 5` | 573 | 114.6 |
 | Financials (7 cols) | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | 148 | 29.6 |
+| Tall ledger (8 cols) | Box-drawing | `wolfxl peek file -n 5` | 624 | 124.8 |
+| Tall ledger (8 cols) | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | 173 | 34.6 |
 | Wide (29 cols)      | Box-drawing | `wolfxl peek file -n 5` | 2,249 | 449.8 |
 | Wide (29 cols)      | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | 754 | 150.8 |
 
-**~3.9x cheaper per row on typical shapes, ~3.0x on wide tables** - but the *absolute* per-row savings is far larger on wide tables (299 tokens/row saved vs 85). Measured with `cl100k_base` (GPT-4 tokenizer) against [`examples/sample-financials.xlsx`](examples/sample-financials.xlsx) and [`examples/wide-table.xlsx`](examples/wide-table.xlsx). Reproduce with:
+**~3.9x cheaper per row on typical financial shapes, ~3.6x on tall ledgers, ~3.0x on wide tables** - but the *absolute* per-row savings is far larger on wide tables (299 tokens/row saved vs 85-90 on the narrower samples). Measured with `cl100k_base` (GPT-4 tokenizer) against [`examples/sample-financials.xlsx`](examples/sample-financials.xlsx), [`examples/tall-ledger.xlsx`](examples/tall-ledger.xlsx), and [`examples/wide-table.xlsx`](examples/wide-table.xlsx). Reproduce with:
 
 ```bash
 uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
+```
+
+Behavioral claims are smoke-tested separately with:
+
+```bash
+python benchmarks/verify_claims.py
 ```
 
 A single naive 15-row preview of a 29-column workbook already costs ~5,600 tokens - more than four financial-shape previews combined. Over a long agent session, the mode-switch rule is the difference between a context window that survives and one that blows up mid-task. Full methodology in [`benchmarks/`](benchmarks/) and the worked example in [`docs/how-it-works.md`](docs/how-it-works.md).

@@ -8,7 +8,9 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 - `SKILL.md`, README, setup docs, plugin manifests, and VHS tapes now describe the current stable support boundary precisely: direct `wolfxl peek` reads for `.xlsx` / `.xlsm`, CSV and legacy workbook fallbacks for other formats, and readable date/number output without over-promising currency or percentage symbol fidelity.
 - `examples/generate_sample.py` now writes real date cells for the Balance Sheet period headers and regenerates `examples/sample-financials.xlsx`, so the sample workbook demonstrates an actual supported rendering behavior instead of relying only on string literals.
-- `benchmarks/measure_tokens.py` now measures export previews against the same data-row count as box-drawing previews. The headline ratios are now ~3.9x for the 7-column financial workbook and ~3.0x for the 29-column wide workbook, replacing the older line-count-based ~4.9x / ~3.6x figures.
+- Added `examples/tall-ledger.xlsx` plus `examples/generate_tall_ledger.py`, and expanded the benchmark corpus to cover a row-heavy 8-column accounting-detail shape in addition to the financial package and wide dashboard.
+- `benchmarks/measure_tokens.py` now measures export previews against the same data-row count as box-drawing previews. The headline ratios are now ~3.9x for the 7-column financial workbook, ~3.6x for the 8-column tall ledger, and ~3.0x for the 29-column wide workbook, replacing the older line-count-based ~4.9x / ~3.6x figures.
+- Added `benchmarks/verify_claims.py` and wired it into CI to smoke-test non-token claims: `.xlsx` / `.xlsm` direct preview, Balance Sheet date rendering, `sed` pipe hygiene, `agent --max-tokens`, and the stable 0.7.x CSV direct-read boundary.
 - Token-efficient examples now use `sed -n '1,Np'` instead of `head` for `wolfxl peek --export text` output, avoiding the broken-pipe warning current stable `wolfxl-cli` releases can emit when `head` exits early.
 
 ### Fixed

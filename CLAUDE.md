@@ -14,8 +14,9 @@ When you edit this repo, you are usually editing agent behavior. Treat `SKILL.md
 - **`.claude-plugin/plugin.json`** - Claude Code plugin manifest. Enables `/plugin install spreadsheet-peek@wolfie-tools` after the marketplace is added. The `skills/spreadsheet-peek/SKILL.md` path is a **symlink** to the repo-root `SKILL.md` (single source of truth - edit the root file, never the symlinked copy). Version field here should track `SKILL.md`'s frontmatter version.
 - **`.claude-plugin/marketplace.json`** - the `wolfie-tools` marketplace definition. `version` and `description` here also track `SKILL.md`'s frontmatter; updating SKILL.md's `version` in lockstep is part of the release checklist.
 - **`README.md`** / **`docs/how-it-works.md`** - user-facing rationale. Cites numeric claims (e.g. "~3.9x cheaper") that must match what `benchmarks/measure_tokens.py` actually prints.
-- **`benchmarks/measure_tokens.py`** - the arbiter for token-cost claims. Uses `tiktoken`'s `cl100k_base` encoding as a Claude proxy. Runs against both `examples/sample-financials.xlsx` (7 cols) and `examples/wide-table.xlsx` (29 cols) so ratios are characterized across workbook topology, not just one shape.
-- **`examples/generate_sample.py`** / **`examples/generate_wide_table.py`** / **`examples/generate_messy_csv.py`** - deterministic sample generators. Commit the regenerated files alongside generator changes; the benchmark and CSV-fallback docs pin to them.
+- **`benchmarks/measure_tokens.py`** - the arbiter for token-cost claims. Uses `tiktoken`'s `cl100k_base` encoding as a Claude proxy. Runs against `examples/sample-financials.xlsx` (7 cols), `examples/tall-ledger.xlsx` (8 cols), and `examples/wide-table.xlsx` (29 cols) so ratios are characterized across workbook topology, not just one shape.
+- **`benchmarks/verify_claims.py`** - smoke-checks non-token claims: `.xlsx` / `.xlsm` direct preview, Balance Sheet date rendering, `sed` pipe hygiene, `agent --max-tokens`, and the stable 0.7.x CSV direct-read boundary.
+- **`examples/generate_sample.py`** / **`examples/generate_wide_table.py`** / **`examples/generate_tall_ledger.py`** / **`examples/generate_messy_csv.py`** - deterministic sample generators. Commit the regenerated files alongside generator changes; the benchmark and CSV-fallback docs pin to them.
 - **`scripts/record_contrast.tape`** + **`scripts/naive_preview.py`** - the "why this exists" contrast GIF (openpyxl tuple dump vs `wolfxl peek`). The naive script is a pedagogical artifact - it is *supposed* to look like throwaway agent code, so keep it minimal.
 - **`examples/demo.tape`** / **`scripts/record_screencast.tape`** - VHS tape scripts for reproducible GIF/screencast regeneration.
 - **`install.sh`** - POSIX `sh` installer. Runs compatibility-checked `cargo install --force wolfxl-cli` (single path on macOS, Linux, and Windows in v2.0.0 - homebrew tap is sprint-2 backlog), then drops `SKILL.md` into `~/.claude/skills/spreadsheet-peek/`. Must stay clean under `shellcheck -o all`; uses `mktemp` + `trap` for atomic SKILL.md download.
@@ -25,7 +26,7 @@ When you edit this repo, you are usually editing agent behavior. Treat `SKILL.md
 ## The three load-bearing invariants
 
 1. **Agent-agnostic `SKILL.md`.** No Claude Code-only features in the body. Frontmatter is the only place Claude-specific triggers live. If you add a feature that only works in Claude Code, it belongs in a separate doc.
-2. **Numeric claims match the benchmark.** If you change `SKILL.md`, `README.md`, `benchmarks/README.md`, or `docs/how-it-works.md` in ways that touch the token-cost table (~3.9x ratio on financials, ~3.0x on wide; 114.6 tokens/row box-drawing, 29.6 tokens/row text export on the 7-column financials sample), rerun `measure_tokens.py` and update all four sources, or CI will flag drift.
+2. **Numeric claims match the benchmark.** If you change `SKILL.md`, `README.md`, `benchmarks/README.md`, or `docs/how-it-works.md` in ways that touch the token-cost table (~3.9x ratio on financials, ~3.6x on tall ledger, ~3.0x on wide; 114.6 tokens/row box-drawing, 29.6 tokens/row text export on the 7-column financials sample), rerun `measure_tokens.py` and update all four sources, or CI will flag drift.
 3. **`wolfxl-cli` version pin in CI.** The `WOLFXL_CLI_VERSION` env in `.github/workflows/benchmark.yml` must point at a real published crates.io version. The workflow resolves that value from both the PR checkout and the master checkout, so CLI bump PRs compare PR output using the proposed binary against master output using the current binary. Verified via `cargo search wolfxl-cli`. An unpinned or fictional version makes every CI run fail (precedent: an earlier `xleak 0.9.0` pin was fictional and broke every run; the current `0.7.0` matches the published `wolfxl-cli` crate).
 
 ## Commands
@@ -36,11 +37,18 @@ uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
 ```
 Prints the markdown table cited in README/docs. Any edit that touches the cost claims should be followed by this command; paste the new table into the affected files.
 
+### Verify behavioral claims
+```bash
+python benchmarks/verify_claims.py
+```
+Checks stable support claims beyond token math: xlsx/xlsm preview, date rendering, sed-limited export, budgeted agent output, and the current CSV direct-read boundary.
+
 ### Regenerate the sample workbook
 ```bash
 uv run --with openpyxl python examples/generate_sample.py
+uv run --with openpyxl python examples/generate_tall_ledger.py
 ```
-Commit the regenerated `examples/sample-financials.xlsx` alongside generator changes.
+Commit regenerated `.xlsx` files alongside generator changes.
 
 ### Re-record the demo GIF / screencast
 ```bash

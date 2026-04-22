@@ -40,20 +40,22 @@ This is the part of the skill that pays the agent-level dividend. The technical 
 
 The next layer is more mechanical. `wolfxl peek`'s default output uses Unicode box-drawing characters for borders. They look great in a terminal. They cost real tokens in an agent's context window.
 
-From [`benchmarks/measure_tokens.py`](../benchmarks/measure_tokens.py), measured with `cl100k_base` (GPT-4 tokenizer, a reasonable proxy for Claude) against two sample shapes committed to `examples/`:
+From [`benchmarks/measure_tokens.py`](../benchmarks/measure_tokens.py), measured with `cl100k_base` (GPT-4 tokenizer, a reasonable proxy for Claude) against three sample shapes committed to `examples/`:
 
 | Sample | Mode | Command | Tokens (5 data rows) | Tokens/row |
 |--------|------|---------|----------------:|-----------:|
 | [`sample-financials.xlsx`](../examples/sample-financials.xlsx) (7 cols) | Box-drawing | `wolfxl peek file -n 5` | **573** | 114.6 |
 | 〃 | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | **148** | 29.6 |
 | 〃 | CSV export | `wolfxl peek file --export csv \| sed -n '1,6p'` | 150 | 30.0 |
+| [`tall-ledger.xlsx`](../examples/tall-ledger.xlsx) (8 cols) | Box-drawing | `wolfxl peek file -n 5` | **624** | 124.8 |
+| 〃 | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | **173** | 34.6 |
 | [`wide-table.xlsx`](../examples/wide-table.xlsx) (29 cols) | Box-drawing | `wolfxl peek file -n 5` | **2,249** | 449.8 |
 | 〃 | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | **754** | 150.8 |
 
-Two observations from the two-shape comparison:
+Two observations from the shape comparison:
 
-1. On the financial workbook, text export is **3.9x cheaper per row** than box-drawing. The overhead is mostly fixed (header lines, border runs), so the per-row cost improves with larger slices, but the ratio holds.
-2. On the wide workbook, the *ratio* drops to **3.0x** - because the text-export baseline is itself larger per row when a table has many columns. But the *absolute* per-row savings grows from ~85 tokens/row (financials) to ~299 tokens/row (wide). The wider the workbook, the more expensive naive usage gets in raw tokens, even if the ratio looks less dramatic.
+1. On the financial workbook, text export is **3.9x cheaper per row** than box-drawing. The tall ledger lands nearby at **3.6x**, which is useful because it is closer to GL-detail work than a statement package.
+2. On the wide workbook, the *ratio* drops to **3.0x** - because the text-export baseline is itself larger per row when a table has many columns. But the *absolute* per-row savings grows from ~85-90 tokens/row on the narrower samples to ~299 tokens/row on the wide sample. The wider the workbook, the more expensive naive usage gets in raw tokens, even if the ratio looks less dramatic.
 
 Here's the worked example the skill encodes implicitly. Imagine a 30-spreadsheet agent session (a realistic FDD or QoE engagement). Naive usage runs the box-drawing default on every file:
 

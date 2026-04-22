@@ -58,7 +58,7 @@ Show inline ASCII table previews of spreadsheet files using `wolfxl peek`. This 
 
 **Default rule**: Use box-drawing for the FIRST preview in a conversation (readability). Switch to `--export text | sed -n '1,Np'` for subsequent previews or when context is getting long.
 
-**Measured ratio**: box-drawing is ~3.9x more expensive per row than text export on a 7-column workbook, ~3.0x on a 29-column wide-table. The overhead is mostly fixed (header/border lines), so the per-row cost improves with more rows - but text export is still cheaper at every size.
+**Measured ratio**: box-drawing is ~3.9x more expensive per row than text export on a 7-column financial workbook, ~3.6x on an 8-column tall ledger, and ~3.0x on a 29-column wide table. The overhead is mostly fixed (header/border lines), so the per-row cost improves with more rows - but text export is still cheaper at every size.
 
 **Note**: `--export text` ignores the `-n` flag and dumps ALL rows. Always pipe through `sed -n '1,Np'` to limit what enters the conversation. Prefer `sed` over `head` with current `wolfxl-cli` releases because `head` can close the pipe early and make `wolfxl` print a broken-pipe warning.
 
