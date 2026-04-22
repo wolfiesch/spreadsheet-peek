@@ -24,6 +24,8 @@ EXAMPLES = Path(__file__).parent.parent / "examples"
 FINANCIALS = EXAMPLES / "sample-financials.xlsx"
 WIDE = EXAMPLES / "wide-table.xlsx"
 TALL_LEDGER = EXAMPLES / "tall-ledger.xlsx"
+DELIMITED_CSV = EXAMPLES / "sample-ledger.csv"
+DELIMITED_TSV = EXAMPLES / "sample-ledger.tsv"
 ENC = tiktoken.get_encoding("cl100k_base")
 
 
@@ -38,6 +40,11 @@ SAMPLES = [
     Sample(FINANCIALS, "Financials (7 cols)", "examples/generate_sample.py"),
     Sample(TALL_LEDGER, "Tall ledger (8 cols)", "examples/generate_tall_ledger.py"),
     Sample(WIDE, "Wide (29 cols)", "examples/generate_wide_table.py"),
+]
+
+DELIMITED_SAMPLES = [
+    Sample(DELIMITED_CSV, "CSV ledger (7 cols)", "examples/generate_delimited_samples.py"),
+    Sample(DELIMITED_TSV, "TSV ledger (7 cols)", "examples/generate_delimited_samples.py"),
 ]
 
 
@@ -110,8 +117,22 @@ def benches_for(sample_path: Path, prefix: str) -> list[dict]:
     ]
 
 
+def delimited_benches_for(sample_path: Path, prefix: str) -> list[dict]:
+    """Measure direct delimited input costs without mixing them into workbook ratios."""
+    s = str(sample_path)
+    return [
+        bench(f"{prefix} - Direct box preview (5 rows)", ["wolfxl", "peek", s, "-n", "5"]),
+        bench(
+            f"{prefix} - Direct text export (5 data rows)",
+            ["wolfxl", "peek", s, "--export", "text"],
+            max_lines=6,
+            data_rows=5,
+        ),
+    ]
+
+
 def main() -> None:
-    for sample in SAMPLES:
+    for sample in [*SAMPLES, *DELIMITED_SAMPLES]:
         if not sample.path.exists():
             raise SystemExit(
                 f"Sample file not found: {sample.path}\n"
@@ -121,6 +142,10 @@ def main() -> None:
     results = []
     for sample in SAMPLES:
         results.extend(benches_for(sample.path, sample.label))
+
+    delimited_results = []
+    for sample in DELIMITED_SAMPLES:
+        delimited_results.extend(delimited_benches_for(sample.path, sample.label))
 
     # Print markdown table
     print("| Mode | Tokens | Bytes | Data rows | Tokens/row |")
@@ -139,6 +164,16 @@ def main() -> None:
         text = next(r for r in results if r["label"] == f"{prefix} - Text export (5 data rows)")
         ratio = box["tokens_per_row"] / max(1, text["tokens_per_row"])
         print(f"- **{prefix}**: box-drawing is **{ratio:.1f}x** more expensive per row than text export.")
+
+    print()
+    print("## Direct delimited input costs")
+    print("| Mode | Tokens | Bytes | Data rows | Tokens/row |")
+    print("|------|-------:|------:|----------:|-----------:|")
+    for r in delimited_results:
+        print(
+            f"| {r['label']} | {r['tokens']:,} | {r['bytes']:,} | "
+            f"{r['rows']} | {r['tokens_per_row']} |"
+        )
 
 
 if __name__ == "__main__":

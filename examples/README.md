@@ -12,6 +12,9 @@ This directory contains a reproducible demo and sample data for `spreadsheet-pee
 | `wide-table.xlsx` | The generated wide workbook. Fed into `benchmarks/measure_tokens.py` alongside the financial sample. |
 | `generate_tall_ledger.py` | Generates `tall-ledger.xlsx` - an 8-column × 120-row general-ledger detail sample with dates, memo text, debits, credits, and running balances. |
 | `tall-ledger.xlsx` | The generated tall ledger workbook. Gives the benchmark a row-heavy accounting-detail shape between the financial package and the wide dashboard. |
+| `generate_delimited_samples.py` | Generates `sample-ledger.csv` and `sample-ledger.tsv` - matching 7-column ledger extracts for direct delimited-input token benchmarks. |
+| `sample-ledger.csv` | Generated CSV ledger extract used by `benchmarks/measure_tokens.py` for direct `.csv` input costs. |
+| `sample-ledger.tsv` | Generated TSV ledger extract used by `benchmarks/measure_tokens.py` for direct `.tsv` input costs. |
 | `generate_messy_csv.py` | Generates `messy.csv` - a CSV designed to break naive previews (BOM, quoted commas, embedded newlines, escaped quotes, emoji, mixed decimal formats). |
 | `messy.csv` | The generated messy CSV. Use it to sanity-check direct delimited previews plus the CSV-aware fallback recipes for custom inspection. |
 | `sample-minimal.xls` | Small legacy Excel smoke fixture mirrored from upstream `wolfxl-cli` tests so `benchmarks/verify_claims.py` can prove direct `.xls` reads. |
@@ -29,6 +32,7 @@ All sample data is synthetic - no real company data. Regenerate with:
 uv run --with openpyxl python examples/generate_sample.py
 uv run --with openpyxl python examples/generate_wide_table.py
 uv run --with openpyxl python examples/generate_tall_ledger.py
+python3 examples/generate_delimited_samples.py # no deps beyond stdlib
 python3 examples/generate_messy_csv.py     # no deps beyond stdlib
 ```
 
@@ -70,6 +74,8 @@ wolfxl peek examples/tall-ledger.xlsx --export text | sed -n '1,16p'
 
 # Direct delimited preview
 wolfxl peek examples/messy.csv -n 5
+wolfxl peek examples/sample-ledger.csv -n 5
+wolfxl peek examples/sample-ledger.tsv -n 5
 
 # Direct legacy workbook previews
 wolfxl peek examples/sample-minimal.xls -n 2
