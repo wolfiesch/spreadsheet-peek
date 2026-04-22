@@ -95,6 +95,8 @@ The MCP App layer is deliberately additive. `SKILL.md` still teaches a shell-nat
 
 That split keeps terminal agents cheap and reliable while giving Claude Desktop a real inline grid with sheet tabs, sticky row/column headers, search, range selection, and selected-range handoff to the model.
 
+The viewer's host contract is intentionally small. It accepts initial `tool-input` from the host, preserves those arguments through the MCP Apps `ui/initialize` handshake, asks the same MCP server for `preview_workbook`, and renders the returned `structuredContent`. That flow is covered in browser tests so requested sheets, collapsed Claude Desktop embeds, and wide/tall/messy workbook shapes do not quietly regress.
+
 ## 4. Extending the pattern
 
 `spreadsheet-peek` is a template more than a tool. The shape generalizes cleanly to any opaque binary format an agent might touch:

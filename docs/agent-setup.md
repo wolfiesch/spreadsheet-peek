@@ -16,7 +16,7 @@ Badges get re-dated whenever the skill, the agent, or the agent's instruction-lo
 ## Table of contents
 
 - [Claude Code](#claude-code) ✅ Verified 2026-04-19
-- [Claude Desktop](#claude-desktop-mcp-viewer) 📖 Documented
+- [Claude Desktop](#claude-desktop-mcp-viewer) ✅ Verified 2026-04-22
 - [Codex](#codex) 📖 Documented
 - [Cursor](#cursor) 📖 Documented
 - [Continue](#continue) 📖 Documented
@@ -27,7 +27,7 @@ Badges get re-dated whenever the skill, the agent, or the agent's instruction-lo
 
 ## Claude Desktop MCP Viewer
 
-> 📖 **Documented** - The local MCP Bundle follows Anthropic's MCPB manifest and stdio-server packaging model. Host installation should be round-tripped before marking this verified.
+> ✅ **Verified 2026-04-22** - The local MCP Bundle installed in Claude Desktop, `open_workbook_viewer` rendered `examples/sample-financials.xlsx` inline, and the viewer showed sheet tabs plus the spreadsheet grid. The current automated browser tests also simulate MCP Apps host sizing, initial `tool-input`, proxied `preview_workbook`, and `tool-result` hydration.
 
 Claude Desktop is the recommended path for the full inline spreadsheet grid. Build the bundled MCP server and viewer:
 
@@ -50,6 +50,8 @@ cargo install wolfxl-cli --version 0.8.0 --force
 ```
 
 Use absolute file paths when calling the tools from Claude Desktop so the local server resolves the same file the conversation references.
+
+The viewer should open on the requested sheet when the host supplies `sheet` in the tool input. If the host cannot render MCP Apps, the same tools still return structured preview data and readable text fallback output.
 
 ---
 

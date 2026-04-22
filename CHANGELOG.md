@@ -18,6 +18,7 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - `SKILL.md`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and the new MCP package metadata are bumped to 2.2.0 for the inline-viewer release.
 - README, `SKILL.md`, and `docs/how-it-works.md` now cite the direct-delimited benchmark rows surfaced by the drift workflow.
 - The MCP app now sources its runtime app version from `package.json` and drops the unused Vite basic SSL dev dependency.
+- README, `docs/how-it-works.md`, `docs/agent-setup.md`, and `mcp-app/README.md` now document the verified Claude Desktop inline-viewer path and the tested MCP Apps host-hydration contract.
 
 ### Fixed
 

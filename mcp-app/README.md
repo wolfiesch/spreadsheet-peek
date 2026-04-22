@@ -21,6 +21,19 @@ Both tools accept:
 
 `path` should be absolute when the host is not running from the same project directory as the workbook.
 
+## Host Behavior
+
+The inline viewer is designed for MCP Apps hosts that render `ui://` resources, with Claude Desktop as the verified target for the full grid. The viewer listens for the host's initial `tool-input`, keeps it through the `ui/initialize` handshake, calls `preview_workbook` when the host can proxy server tools, and hydrates the returned `structuredContent` into the grid. This is what keeps a requested sheet such as `P&L` or `Balance Sheet` from falling back to the bundled sample preview.
+
+Hosts that do not render MCP Apps still receive the text summary and structured workbook preview from both tools. Treat Codex support as structured/text fallback until inline MCP App rendering is verified there.
+
+The browser regression tests cover:
+
+- collapsed-host iframe sizing and fixed content-height reporting;
+- requested-sheet hydration from `tool-input` through `preview_workbook`;
+- wide, tall, and messy preview shapes rendered from host `tool-result` data;
+- search, cell selection, and selected-range summarize affordances.
+
 ## Development
 
 ```bash
