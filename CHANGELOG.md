@@ -36,6 +36,7 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - The viewer now compares requested ranges and preview caps before skipping host-input hydration, and keeps loading/error status visible even when a search term has matches.
 - The Claude inline viewer now ships a much smaller HTML resource and makes `open_workbook_viewer` return a lightweight launcher result, reducing host request-expiry and tool-result submission failures.
 - MCPB tool descriptions and docs now favor natural spreadsheet preview requests over exact-tool-call prompts, improving Claude Desktop discovery and avoiding prompt-shape false alarms during manual smoke tests.
+- Codex setup docs now record the local marketplace round trip, CLI fallback smoke, and the remaining Codex CLI MCP-tool exposure boundary.
 
 ## [2.1.0] - 2026-04-22
 

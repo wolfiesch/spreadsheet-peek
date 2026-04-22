@@ -156,6 +156,8 @@ npm run build
 
 The plugin points Codex at `skills/` and the same local MCP preview server. Codex hosts that do not render MCP Apps should still receive structured preview data and readable text fallback output from `preview_workbook`.
 
+Local Codex CLI note: `codex plugin marketplace add /path/to/spreadsheet-peek` round-trips this repo as the `wolfie-tools` marketplace. As of Codex CLI `0.122.0`, full plugin/MCP tool exposure still depends on the host; `codex exec` can use the repo skill rules and `wolfxl peek` fallback even when inline MCP tools are not exposed.
+
 **Option B - AGENTS.md skill-only path:**
 
 Codex reads `AGENTS.md` from the repo root. Paste the body of `SKILL.md` into your `AGENTS.md` under a `## Spreadsheet Previews` heading, or add:

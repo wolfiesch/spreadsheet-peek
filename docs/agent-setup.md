@@ -17,7 +17,7 @@ Badges get re-dated whenever the skill, the agent, or the agent's instruction-lo
 
 - [Claude Code](#claude-code) ✅ Verified 2026-04-19
 - [Claude Desktop](#claude-desktop-mcp-viewer) ✅ Verified 2026-04-22
-- [Codex](#codex) 📖 Documented
+- [Codex](#codex) 📖 Documented, local marketplace smoke 2026-04-22
 - [Cursor](#cursor) 📖 Documented
 - [Continue](#continue) 📖 Documented
 - [Aider](#aider) 📖 Documented
@@ -124,7 +124,7 @@ Plugin installs update via `/plugin update spreadsheet-peek`.
 
 ## Codex
 
-> 📖 **Documented** - The skill-only path follows Codex's published `AGENTS.md` convention. The plugin path is included under `.codex-plugin/` but should be round-tripped before marking it verified.
+> 📖 **Documented, local marketplace smoke 2026-04-22** - The skill-only path follows Codex's published `AGENTS.md` convention. `codex plugin marketplace add /path/to/spreadsheet-peek` was round-tripped locally with Codex CLI `0.122.0`, and a read-only `codex exec` smoke used the repo `SKILL.md` plus `wolfxl peek` to preview `examples/sample-financials.xlsx`. The MCP server launcher was separately round-tripped over stdio and exposed `preview_workbook` / `open_workbook_viewer`; this Codex CLI build did not expose a separate plugin install subcommand or callable Spreadsheet Peek MCP tools inside `codex exec`, so full Codex plugin/MCP tool exposure remains documented rather than verified.
 
 **Option A - Codex plugin path:**
 
