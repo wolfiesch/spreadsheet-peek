@@ -17,6 +17,7 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 ### Changed
 
+- README now keeps the top of the page to the contrast demo plus the new agent workflow demo, with the older standalone `examples/demo.gif` still available as a reproducible example asset.
 - `SKILL.md`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and the new MCP package metadata are bumped to 2.2.0 for the inline-viewer release.
 - `.codex-plugin/plugin.json` now carries complete Codex-facing discovery metadata, including the shared skill path, MCP server path, read-only interface summary, and short starter prompts.
 - README, `SKILL.md`, and `docs/how-it-works.md` now cite the direct-delimited benchmark rows surfaced by the drift workflow.

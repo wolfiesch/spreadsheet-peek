@@ -12,10 +12,6 @@ An agent-agnostic skill that teaches AI coding agents (Claude Code, Codex, Curso
 
 ![agent preview demo](assets/agent-preview.gif)
 
-And here's the styled box-drawing output (run `wolfxl peek file.xlsx`):
-
-![demo](examples/demo.gif)
-
 ## Why this exists
 
 Without this skill, every agent reinvents spreadsheet inspection the same way:
