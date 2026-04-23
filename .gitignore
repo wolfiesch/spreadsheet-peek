@@ -25,3 +25,6 @@ mcp-app/screenshots/
 # Claude Code session hook artifacts
 logs/
 .claude/
+
+# Local UI/review screenshots captured during manual plugin smoke tests
+artifacts/
