@@ -17,7 +17,7 @@ Badges get re-dated whenever the skill, the agent, or the agent's instruction-lo
 
 - [Claude Code](#claude-code) ✅ Verified 2026-04-19
 - [Claude Desktop](#claude-desktop-mcp-viewer) ✅ Verified 2026-04-22
-- [Codex](#codex) 📖 Documented, local marketplace smoke 2026-04-22
+- [Codex](#codex) ✅ Verified 2026-04-23 for MCP tools; inline viewer UI unverified
 - [Cursor](#cursor) 📖 Documented
 - [Continue](#continue) 📖 Documented
 - [Aider](#aider) 📖 Documented
@@ -124,7 +124,7 @@ Plugin installs update via `/plugin update spreadsheet-peek`.
 
 ## Codex
 
-> 📖 **Documented, local marketplace smoke 2026-04-22** - The skill-only path follows Codex's published `AGENTS.md` convention. `codex plugin marketplace add /path/to/spreadsheet-peek` was round-tripped locally with Codex CLI `0.122.0`, and a read-only `codex exec` smoke used the repo `SKILL.md` plus `wolfxl peek` to preview `examples/sample-financials.xlsx`. The MCP server launcher was separately round-tripped over stdio and exposed `preview_workbook` / `open_workbook_viewer`; this Codex CLI build did not expose a separate plugin install subcommand or callable Spreadsheet Peek MCP tools inside `codex exec`, so full Codex plugin/MCP tool exposure remains documented rather than verified.
+> ✅ **Verified 2026-04-23 for MCP tool calls; inline viewer UI still unverified** - `codex plugin marketplace add /path/to/spreadsheet-peek` and app-server plugin install were round-tripped locally with Codex CLI `0.123.0`. After install, `codex mcp list` exposed enabled `spreadsheet-peek`; app-server reported `preview_workbook`, `open_workbook_viewer`, and the `ui://spreadsheet-peek/viewer/index.html` resource with `text/html;profile=mcp-app`; a read-only `codex exec` smoke called `preview_workbook` against `examples/sample-financials.xlsx` and returned the sheet list. A second smoke called `open_workbook_viewer` and returned the viewer resource link, but the `codex exec` transcript did not render inline HTML. Visible inline rendering in Codex Desktop has not been verified because Computer Use cannot control the Codex app window.
 
 **Option A - Codex plugin path:**
 
@@ -136,7 +136,7 @@ npm install
 npm run build
 ```
 
-Codex hosts that do not render MCP Apps should still receive the structured preview and readable text from `preview_workbook`.
+Codex hosts that do not render MCP Apps should still receive the structured preview and readable text from `preview_workbook`. Treat the `ui://spreadsheet-peek/viewer/index.html` resource as exposed in Codex, but keep Codex Desktop inline iframe rendering marked unverified until the desktop UI itself is inspected.
 
 **Option B - AGENTS.md skill-only path:**
 
