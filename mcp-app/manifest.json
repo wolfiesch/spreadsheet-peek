@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "spreadsheet-peek",
   "display_name": "Spreadsheet Peek",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Preview and render local Excel, spreadsheet, CSV, TSV, ODS, and workbook files inline with wolfxl.",
   "long_description": "Spreadsheet Peek adds read-only MCP tools and an interactive MCP App grid for local .xlsx, .xlsm, .xls, .xlsb, .ods, .csv, .tsv, and comma-delimited .txt files. It uses the installed wolfxl binary for parsing, keeps workbook contents local, and helps agents preview or inspect spreadsheet paths before processing them.",
   "author": {

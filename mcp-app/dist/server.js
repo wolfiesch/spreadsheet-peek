@@ -31118,7 +31118,7 @@ function powerShellQuote(value) {
 // package.json
 var package_default = {
   name: "@wolfie-tools/spreadsheet-peek-mcp",
-  version: "2.2.0",
+  version: "2.2.1",
   private: true,
   description: "Local MCP server and MCP App viewer for inline spreadsheet previews.",
   type: "module",

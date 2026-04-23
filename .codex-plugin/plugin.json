@@ -1,6 +1,6 @@
 {
   "name": "spreadsheet-peek",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Adds proactive spreadsheet previews plus a local MCP server for structured and visual inline workbook inspection.",
   "author": {
     "name": "Wolfgang Schoenberger",

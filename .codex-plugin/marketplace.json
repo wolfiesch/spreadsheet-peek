@@ -15,7 +15,7 @@
         "repo": "wolfiesch/spreadsheet-peek"
       },
       "description": "Adds proactive spreadsheet previews plus a local MCP server for structured and visual inline workbook inspection.",
-      "version": "2.2.0",
+      "version": "2.2.1",
       "author": {
         "name": "Wolfgang Schoenberger"
       },

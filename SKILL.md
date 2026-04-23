@@ -1,7 +1,7 @@
 ---
 name: spreadsheet-peek
 description: Preview spreadsheet/delimited files with the Spreadsheet Peek MCP viewer or `wolfxl peek`. Use proactively for .xlsx, .xlsm, .xls, .xlsb, .ods, .csv, .tsv, or .txt before processing, after fixture generation, during parsing debug, or when asked to peek/preview/show a file.
-version: 2.2.0
+version: 2.2.1
 metadata:
   author: wolfgangs
   filePattern:
