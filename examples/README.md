@@ -24,6 +24,8 @@ This directory contains a reproducible demo and sample data for `spreadsheet-pee
 | `sample-minimal.ods` | Small OpenDocument Spreadsheet smoke fixture mirrored from upstream `wolfxl-cli` tests so `benchmarks/verify_claims.py` can prove direct `.ods` reads. |
 | `demo.tape` | VHS tape script that records the main README demo GIF. |
 | `demo.gif` | Rendered README demo GIF. |
+| `../scripts/record_agent_preview.tape` | VHS tape script that records the README agent workflow GIF. |
+| `../assets/agent-preview.gif` | Rendered GIF showing the user-path mention -> Spreadsheet Peek preview workflow. |
 
 ## Regenerating the samples
 
@@ -47,9 +49,10 @@ brew install charmbracelet/tap/vhs
 
 # From the repo root
 vhs examples/demo.tape
+vhs scripts/record_agent_preview.tape
 ```
 
-The tape script uses the Dracula theme at 1200x720 with 14pt font to balance readability and file size (target: <500KB for Twitter/GitHub friendliness).
+The tape scripts use the Dracula theme at 1200x720 with 14pt font to balance readability and file size.
 
 ## Try it yourself
 

@@ -8,6 +8,10 @@ An agent-agnostic skill that teaches AI coding agents (Claude Code, Codex, Curso
 
 ![contrast demo](assets/contrast.gif)
 
+**Agent workflow demo** - when a user mentions a spreadsheet path, the agent previews it first instead of guessing at the file shape:
+
+![agent preview demo](assets/agent-preview.gif)
+
 And here's the styled box-drawing output (run `wolfxl peek file.xlsx`):
 
 ![demo](examples/demo.gif)
@@ -98,6 +102,20 @@ Host behavior covered by the MCP app tests:
 - `open_workbook_viewer` returns a lightweight launcher result and a `ui://spreadsheet-peek/viewer/index.html` resource.
 - The inline viewer preserves initial host `tool-input` during the MCP Apps handshake, then calls `preview_workbook` so requested sheets and ranges hydrate into the grid.
 - The viewer reports a useful fixed content height to avoid collapsed Claude Desktop embeds, with spreadsheet overflow kept inside the grid scroller.
+
+## How this differs from Excel MCP servers
+
+Spreadsheet Peek is a focused first-look layer for agents. It teaches coding agents to inspect spreadsheet and delimited files before they parse, transform, benchmark, or discuss them. Broader Excel MCP servers are better when the job is editing workbooks, creating formulas, mutating sheets, or automating Excel as an application.
+
+| Need | Use Spreadsheet Peek | Use a broader Excel MCP |
+|------|----------------------|-------------------------|
+| Preview a local workbook before running a script | Yes | Optional |
+| Keep spreadsheet inspection read-only and low-permission | Yes | Depends on server |
+| Show a fast, bounded, token-aware preview in an agent session | Yes | Depends on server |
+| Edit cells, create sheets, charts, formulas, or pivots | No | Yes |
+| Treat Excel as an automation surface | No | Yes |
+
+Comparable projects such as [`excel-mcp-server`](https://github.com/haris-musa/excel-mcp-server) and [SheetForge MCP](https://mcpservers.org/servers/iheldan/sheetforge-mcp) are useful when an agent needs a larger spreadsheet tool surface. Spreadsheet Peek is meant to sit earlier in the workflow: reveal the workbook shape, sheet names, headers, and visible values so the next agent action is grounded.
 
 ## Agent Setup
 

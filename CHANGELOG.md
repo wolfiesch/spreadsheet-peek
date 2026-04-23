@@ -6,6 +6,8 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 ### Added
 
+- Added a README differentiation section clarifying that Spreadsheet Peek is a focused, read-only preview layer rather than a broad Excel automation MCP server.
+- Added `scripts/record_agent_preview.tape` and `assets/agent-preview.gif` to demonstrate the user-path mention -> Spreadsheet Peek preview workflow.
 - Added `examples/sample-ledger.csv`, `examples/sample-ledger.tsv`, and `examples/generate_delimited_samples.py` so direct CSV/TSV input costs are benchmarked against committed fixtures.
 - `benchmarks/measure_tokens.py` now prints a separate direct-delimited-input cost table for `.csv` and `.tsv` previews without disturbing the existing workbook output-mode ratios.
 - Added `examples/sample-ledger.txt` and `examples/quoted-multiline.csv` so comma-delimited `.txt` and quoted multiline CSV inputs are benchmarked and smoke-tested from committed fixtures.
