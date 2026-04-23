@@ -174,7 +174,7 @@ npm run build
 
 The plugin points Codex at `skills/` and the same local MCP preview server. Codex CLI `0.123.0` has been smoke-tested after plugin install: `codex mcp list` exposes `spreadsheet-peek`, `codex exec` can call `preview_workbook`, and `open_workbook_viewer` returns the `ui://spreadsheet-peek/viewer/index.html` MCP App resource link. Codex hosts that do not render MCP Apps should still receive structured preview data and readable text fallback output from `preview_workbook`.
 
-Local Codex CLI note: `codex plugin marketplace add /path/to/spreadsheet-peek` round-trips this repo as the `wolfie-tools` marketplace. The current local marketplace resolver uses the published marketplace entry; a dedicated local Codex marketplace catalog would need `.agents/plugins/marketplace.json` if local-only installs become a release target. Visible inline HTML rendering in Codex Desktop remains unverified, so do not mark Codex as a full inline-viewer host until the desktop UI renders the MCP App iframe.
+Local Codex CLI note: `codex plugin marketplace add /path/to/spreadsheet-peek` round-trips this repo as the `wolfie-tools` marketplace. The current local marketplace resolver uses the published marketplace entry; a dedicated local Codex marketplace catalog would need `.codex-plugin/marketplace.json` if local-only installs become a release target. Visible inline HTML rendering in Codex Desktop remains unverified, so do not mark Codex as a full inline-viewer host until the desktop UI renders the MCP App iframe.
 
 **Option B - AGENTS.md skill-only path:**
 
