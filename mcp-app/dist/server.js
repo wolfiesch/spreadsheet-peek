@@ -31148,6 +31148,9 @@ var package_default = {
     vite: "^7.3.0",
     "vite-plugin-singlefile": "^2.3.0"
   },
+  overrides: {
+    tmp: "^0.2.4"
+  },
   engines: {
     node: ">=20"
   }
