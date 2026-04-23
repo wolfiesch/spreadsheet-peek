@@ -6,6 +6,8 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 ### Added
 
+- Added a README differentiation section clarifying that Spreadsheet Peek is a focused, read-only preview layer rather than a broad Excel automation MCP server.
+- Added `scripts/record_agent_preview.tape` and `assets/agent-preview.gif` to demonstrate the user-path mention -> Spreadsheet Peek preview workflow.
 - Added `examples/sample-ledger.csv`, `examples/sample-ledger.tsv`, and `examples/generate_delimited_samples.py` so direct CSV/TSV input costs are benchmarked against committed fixtures.
 - `benchmarks/measure_tokens.py` now prints a separate direct-delimited-input cost table for `.csv` and `.tsv` previews without disturbing the existing workbook output-mode ratios.
 - Added `examples/sample-ledger.txt` and `examples/quoted-multiline.csv` so comma-delimited `.txt` and quoted multiline CSV inputs are benchmarked and smoke-tested from committed fixtures.
@@ -15,6 +17,7 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 ### Changed
 
+- README now keeps the top of the page to the contrast demo plus the new agent workflow demo, with the older standalone `examples/demo.gif` still available as a reproducible example asset.
 - `SKILL.md`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and the new MCP package metadata are bumped to 2.2.0 for the inline-viewer release.
 - `.codex-plugin/plugin.json` now carries complete Codex-facing discovery metadata, including the shared skill path, MCP server path, read-only interface summary, and short starter prompts.
 - README, `SKILL.md`, and `docs/how-it-works.md` now cite the direct-delimited benchmark rows surfaced by the drift workflow.
@@ -37,7 +40,7 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - The viewer now compares requested ranges and preview caps before skipping host-input hydration, and keeps loading/error status visible even when a search term has matches.
 - The Claude inline viewer now ships a much smaller HTML resource and makes `open_workbook_viewer` return a lightweight launcher result, reducing host request-expiry and tool-result submission failures.
 - MCPB tool descriptions and docs now favor natural spreadsheet preview requests over exact-tool-call prompts, improving Claude Desktop discovery and avoiding prompt-shape false alarms during manual smoke tests.
-- Codex setup docs now record the local marketplace round trip, CLI fallback smoke, and the remaining Codex CLI MCP-tool exposure boundary.
+- Codex setup docs now record the verified Codex CLI 0.123.0 plugin install, `preview_workbook` MCP tool smoke, and `open_workbook_viewer` resource-link smoke while keeping visible Codex Desktop inline-viewer rendering marked unverified.
 - The MCP host bridge now pins post-handshake messages to the first concrete host origin it receives, and viewer/server status labels handle trailing slashes in requested paths.
 - The MCP host bridge now cleans up failed handshakes and times out unanswered host requests so pending JSON-RPC calls cannot hang forever.
 

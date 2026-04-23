@@ -8,9 +8,9 @@ An agent-agnostic skill that teaches AI coding agents (Claude Code, Codex, Curso
 
 ![contrast demo](assets/contrast.gif)
 
-And here's the styled box-drawing output (run `wolfxl peek file.xlsx`):
+**Agent workflow demo** - when a user mentions a spreadsheet path, the agent previews it first instead of guessing at the file shape:
 
-![demo](examples/demo.gif)
+![agent preview demo](assets/agent-preview.gif)
 
 ## Why this exists
 
@@ -99,6 +99,20 @@ Host behavior covered by the MCP app tests:
 - The inline viewer preserves initial host `tool-input` during the MCP Apps handshake, then calls `preview_workbook` so requested sheets and ranges hydrate into the grid.
 - The viewer reports a useful fixed content height to avoid collapsed Claude Desktop embeds, with spreadsheet overflow kept inside the grid scroller.
 
+## How this differs from Excel MCP servers
+
+Spreadsheet Peek is a focused first-look layer for agents. It teaches coding agents to inspect spreadsheet and delimited files before they parse, transform, benchmark, or discuss them. Broader Excel MCP servers are better when the job is editing workbooks, creating formulas, mutating sheets, or automating Excel as an application.
+
+| Need | Use Spreadsheet Peek | Use a broader Excel MCP |
+|------|----------------------|-------------------------|
+| Preview a local workbook before running a script | Yes | Optional |
+| Keep spreadsheet inspection read-only and low-permission | Yes | Depends on server |
+| Show a fast, bounded, token-aware preview in an agent session | Yes | Depends on server |
+| Edit cells, create sheets, charts, formulas, or pivots | No | Yes |
+| Treat Excel as an automation surface | No | Yes |
+
+Comparable projects such as [`excel-mcp-server`](https://github.com/haris-musa/excel-mcp-server) and [SheetForge MCP](https://mcpservers.org/servers/iheldan/sheetforge-mcp) are useful when an agent needs a larger spreadsheet tool surface. Spreadsheet Peek is meant to sit earlier in the workflow: reveal the workbook shape, sheet names, headers, and visible values so the next agent action is grounded.
+
 ## Agent Setup
 
 ### Claude Desktop
@@ -154,9 +168,9 @@ npm install
 npm run build
 ```
 
-The plugin points Codex at `skills/` and the same local MCP preview server. Codex hosts that do not render MCP Apps should still receive structured preview data and readable text fallback output from `preview_workbook`.
+The plugin points Codex at `skills/` and the same local MCP preview server. Codex CLI `0.123.0` has been smoke-tested after plugin install: `codex mcp list` exposes `spreadsheet-peek`, `codex exec` can call `preview_workbook`, and `open_workbook_viewer` returns the `ui://spreadsheet-peek/viewer/index.html` MCP App resource link. Codex hosts that do not render MCP Apps should still receive structured preview data and readable text fallback output from `preview_workbook`.
 
-Local Codex CLI note: `codex plugin marketplace add /path/to/spreadsheet-peek` round-trips this repo as the `wolfie-tools` marketplace. As of Codex CLI `0.122.0`, full plugin/MCP tool exposure still depends on the host; `codex exec` can use the repo skill rules and `wolfxl peek` fallback even when inline MCP tools are not exposed.
+Local Codex CLI note: `codex plugin marketplace add /path/to/spreadsheet-peek` round-trips this repo as the `wolfie-tools` marketplace. The current local marketplace resolver uses the published marketplace entry; a dedicated local Codex marketplace catalog would need `.codex-plugin/marketplace.json` if local-only installs become a release target. Visible inline HTML rendering in Codex Desktop remains unverified, so do not mark Codex as a full inline-viewer host until the desktop UI renders the MCP App iframe.
 
 **Option B - AGENTS.md skill-only path:**
 
