@@ -4,6 +4,7 @@
   "description": "Adds proactive spreadsheet previews plus a local MCP server for structured and visual inline workbook inspection.",
   "author": {
     "name": "Wolfgang Schoenberger",
+    "email": "wolfgangs2000@gmail.com",
     "url": "https://github.com/wolfiesch"
   },
   "homepage": "https://github.com/wolfiesch/spreadsheet-peek",
@@ -15,20 +16,31 @@
     "spreadsheet",
     "excel",
     "xlsx",
+    "xls",
+    "xlsb",
+    "ods",
     "csv",
+    "tsv",
+    "workbook",
     "wolfxl",
     "preview",
+    "read-only",
     "mcp",
     "viewer"
   ],
   "interface": {
     "displayName": "Spreadsheet Peek",
-    "shortDescription": "Preview spreadsheets with wolfxl and an optional MCP viewer.",
-    "longDescription": "Adds proactive spreadsheet preview behavior plus a local MCP server that returns structured workbook data and visual fallbacks for Codex hosts.",
+    "shortDescription": "Preview spreadsheets with wolfxl before agents process them.",
+    "longDescription": "Adds proactive spreadsheet preview behavior plus a local read-only MCP server. Codex can use the skill rules for portable wolfxl peek previews and the MCP server for structured workbook data, readable text fallback output, and inline viewer resources where supported.",
     "developerName": "Wolfgang Schoenberger",
     "category": "Productivity",
     "capabilities": ["Read"],
     "websiteURL": "https://github.com/wolfiesch/spreadsheet-peek",
+    "defaultPrompt": [
+      "Preview this spreadsheet before processing it.",
+      "Show this workbook with Spreadsheet Peek.",
+      "Summarize the selected spreadsheet range."
+    ],
     "brandColor": "#1f8a70"
   }
 }

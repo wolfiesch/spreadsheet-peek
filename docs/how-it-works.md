@@ -91,7 +91,7 @@ The ratios are reproducible. `uv run --with tiktoken --with openpyxl python benc
 The MCP App layer is deliberately additive. `SKILL.md` still teaches a shell-native behavior that works in any coding agent. The local MCP server under `mcp-app/` adds two read-only tools for richer hosts:
 
 - `preview_workbook` returns bounded structured workbook data plus readable text fallback output.
-- `open_workbook_viewer` returns the same preview and links it to a `ui://spreadsheet-peek/viewer/index.html` resource for MCP Apps hosts.
+- `open_workbook_viewer` returns a small launcher result and links it to a `ui://spreadsheet-peek/viewer/index.html` resource for MCP Apps hosts. The app asks `preview_workbook` for the actual grid data after the host opens it.
 
 That split keeps terminal agents cheap and reliable while giving Claude Desktop a real inline grid with sheet tabs, sticky row/column headers, search, range selection, and selected-range handoff to the model.
 

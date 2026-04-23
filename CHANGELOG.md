@@ -16,6 +16,7 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 ### Changed
 
 - `SKILL.md`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and the new MCP package metadata are bumped to 2.2.0 for the inline-viewer release.
+- `.codex-plugin/plugin.json` now carries complete Codex-facing discovery metadata, including the shared skill path, MCP server path, read-only interface summary, and short starter prompts.
 - README, `SKILL.md`, and `docs/how-it-works.md` now cite the direct-delimited benchmark rows surfaced by the drift workflow.
 - The MCP app now sources its runtime app version from `package.json` and drops the unused Vite basic SSL dev dependency.
 - README, `docs/how-it-works.md`, `docs/agent-setup.md`, and `mcp-app/README.md` now document the verified Claude Desktop inline-viewer path and the tested MCP Apps host-hydration contract.
@@ -33,6 +34,11 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - The MCP viewer tests now simulate host `tool-input` and `tool-result` hydration, including requested-sheet loading and representative wide, tall, and messy preview shapes.
 - The inline viewer now gives selected ranges, search hits, focus, and enabled summarize actions clearer visual affordances.
 - The viewer now compares requested ranges and preview caps before skipping host-input hydration, and keeps loading/error status visible even when a search term has matches.
+- The Claude inline viewer now ships a much smaller HTML resource and makes `open_workbook_viewer` return a lightweight launcher result, reducing host request-expiry and tool-result submission failures.
+- MCPB tool descriptions and docs now favor natural spreadsheet preview requests over exact-tool-call prompts, improving Claude Desktop discovery and avoiding prompt-shape false alarms during manual smoke tests.
+- Codex setup docs now record the local marketplace round trip, CLI fallback smoke, and the remaining Codex CLI MCP-tool exposure boundary.
+- The MCP host bridge now pins post-handshake messages to the first concrete host origin it receives, and viewer/server status labels handle trailing slashes in requested paths.
+- The MCP host bridge now cleans up failed handshakes and times out unanswered host requests so pending JSON-RPC calls cannot hang forever.
 
 ## [2.1.0] - 2026-04-22
 
