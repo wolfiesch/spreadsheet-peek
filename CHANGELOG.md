@@ -4,6 +4,10 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 ## [Unreleased]
 
+### Changed
+
+- README now explains how Spreadsheet Peek differs from broader Excel MCP servers, agent-native Excel CLIs, file-to-Markdown converters, and terminal table viewers.
+
 ## [2.2.1] - 2026-04-23
 
 ### Added

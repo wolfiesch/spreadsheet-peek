@@ -99,19 +99,18 @@ Host behavior covered by the MCP app tests:
 - The inline viewer preserves initial host `tool-input` during the MCP Apps handshake, then calls `preview_workbook` so requested sheets and ranges hydrate into the grid.
 - The viewer reports a useful fixed content height to avoid collapsed Claude Desktop embeds, with spreadsheet overflow kept inside the grid scroller.
 
-## How this differs from Excel MCP servers
+## How this differs from other spreadsheet and LLM tools
 
-Spreadsheet Peek is a focused first-look layer for agents. It teaches coding agents to inspect spreadsheet and delimited files before they parse, transform, benchmark, or discuss them. Broader Excel MCP servers are better when the job is editing workbooks, creating formulas, mutating sheets, or automating Excel as an application.
+Spreadsheet Peek is a focused first-look layer for agents. It helps coding agents inspect spreadsheet and delimited files before they parse, transform, benchmark, or discuss them. The goal is simple: reveal the workbook shape, sheet names, headers, and visible values so the next agent action is grounded.
 
-| Need | Use Spreadsheet Peek | Use a broader Excel MCP |
-|------|----------------------|-------------------------|
-| Preview a local workbook before running a script | Yes | Optional |
-| Keep spreadsheet inspection read-only and low-permission | Yes | Depends on server |
-| Show a fast, bounded, token-aware preview in an agent session | Yes | Depends on server |
-| Edit cells, create sheets, charts, formulas, or pivots | No | Yes |
-| Treat Excel as an automation surface | No | Yes |
+| Tool category | Examples | What they are best at | Spreadsheet Peek's lane |
+|------|----------|------------------------|--------------------------|
+| Broad Excel MCP servers | [`excel-mcp-server`](https://github.com/haris-musa/excel-mcp-server), [Spreadsheet Kit](https://github.com/PSU3D0/spreadsheet-mcp) | Editing workbooks, creating formulas, mutating sheets, or automating Excel-like workflows | Read-only preview before the agent edits or automates anything |
+| Agent-native Excel CLIs | [`apetta/agent-xlsx`](https://github.com/apetta/agent-xlsx), [`carderne/agent-xlsx`](https://github.com/carderne/agent-xlsx) | Probing, reading, searching, screenshots, or structured workbook operations for agents | A smaller preview habit that agents can apply across hosts with one skill file |
+| File-to-Markdown converters | [MarkItDown](https://github.com/microsoft/markitdown), [Docling](https://github.com/docling-project/docling), [Riflet](https://riflet.com/) | Converting documents into LLM-readable Markdown, JSON, or context bundles | Cheap local inspection before deciding which slice deserves more context |
+| Terminal table viewers | [VisiData](https://github.com/saulpw/visidata), [Tabiew](https://github.com/shshemi/tabiew), [csvlens](https://github.com/YS-L/csvlens) | Human-driven table exploration in the terminal | Non-interactive, bounded output that fits naturally inside agent transcripts |
 
-Comparable projects such as [`excel-mcp-server`](https://github.com/haris-musa/excel-mcp-server) and [SheetForge MCP](https://mcpservers.org/servers/iheldan/sheetforge-mcp) are useful when an agent needs a larger spreadsheet tool surface. Spreadsheet Peek is meant to sit earlier in the workflow: reveal the workbook shape, sheet names, headers, and visible values so the next agent action is grounded.
+Use Spreadsheet Peek when the agent needs a quick, local, low-permission look at a file before taking a more expensive step. Use the broader tools when the task needs full workbook editing, large ingestion pipelines, or a human-operated data browser.
 
 ## Agent Setup
 
