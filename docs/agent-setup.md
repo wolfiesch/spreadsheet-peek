@@ -46,7 +46,7 @@ The bundle exposes two tools:
 Prerequisite: `wolfxl` must be on `PATH`:
 
 ```bash
-cargo install wolfxl-cli --version 0.8.0 --force
+cargo install wolfxl-cli --version 0.9.0 --force
 ```
 
 Use absolute file paths in Claude Desktop requests so the local server resolves the same file the conversation references. For manual smoke tests, ask naturally instead of instructing the model to call an exact tool:
@@ -166,7 +166,7 @@ For multi-sheet workbooks, preview each relevant sheet:
     wolfxl peek <file> --sheet "Balance Sheet" -n 15
 
 Direct preview works for `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`,
-`.tsv`, and comma-delimited `.txt` files with `wolfxl-cli >= 0.8.0`:
+`.tsv`, and comma-delimited `.txt` files with `wolfxl-cli >= 0.9.0`:
 
     wolfxl peek data.csv -n 15
     wolfxl peek workbook.xlsb -n 15

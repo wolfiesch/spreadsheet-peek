@@ -4,9 +4,25 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 ## [Unreleased]
 
+### Added
+
+- Added a README "Try it in 30 seconds" path for manually installing `wolfxl-cli` and previewing the sample workbook without setting up an agent.
+- Added a `SKILL.md` Preview Ladder that tells agents when to use readable preview, `wolfxl agent`, text export, and workbook maps.
+- Added installer targets for Claude Code, Codex snippets, both paths, and skill-only downloads.
+- Added MCP viewer metadata for sheet class, headers, tables, named ranges, active range, and truncation state.
+- Added a visible MCP viewer "Copy range" action alongside selected-range summarization.
+- Added `benchmarks/compare_converters.py` as a local comparison harness for Spreadsheet Peek, MarkItDown, and `agent-xlsx` when those optional tools are installed.
+- Added Markdown export benchmark rows for `wolfxl-cli >= 0.9.0`.
+
 ### Changed
 
 - README now explains how Spreadsheet Peek differs from broader Excel MCP servers, agent-native Excel CLIs, file-to-Markdown converters, and terminal table viewers.
+- README, setup docs, plugin manifests, MCP bundle metadata, benchmark docs, and `SKILL.md` now target `spreadsheet-peek 2.4.0` with `wolfxl-cli >= 0.9.0`.
+- The MCP viewer selected-range handoff now sends file name, sheet name, A1 range, row count, column count, and TSV to the model context.
+
+### Fixed
+
+- The MCP viewer now exposes local copy and model-summarize paths separately so copy behavior is clear in hosts and local preview mode.
 
 ## [2.2.1] - 2026-04-23
 

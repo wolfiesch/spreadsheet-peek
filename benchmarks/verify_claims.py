@@ -2,7 +2,7 @@
 
 The token benchmark proves the cost ratios. This script proves the behavioral
 claims that can drift independently: direct format support, date/number-format
-rendering, pipe hygiene, and the budgeted agent surface.
+rendering, Markdown export, pipe hygiene, and the budgeted agent surface.
 
 Run with:
     uv run --with openpyxl python benchmarks/verify_claims.py
@@ -210,11 +210,18 @@ def check_wolfxl_version_floor() -> None:
         )
     major = int(match.group("major"))
     minor = int(match.group("minor"))
-    if (major, minor) < (0, 8):
+    if (major, minor) < (0, 9):
         raise AssertionError(
-            f"claim verification requires wolfxl >= 0.8.0 for direct multi-format reads; got {version}. "
+            f"claim verification requires wolfxl >= 0.9.0 for direct multi-format reads and Markdown export; got {version}. "
             "Update docs, WOLFXL_CLI_VERSION, and this script together."
         )
+
+
+def check_markdown_export() -> None:
+    out = run(["wolfxl", "peek", str(FINANCIALS), "--export", "markdown"]).stdout
+    assert_contains(out, "| Account | Jan 2024 |", "markdown header row")
+    assert_contains(out, "|---|---|", "markdown separator row")
+    assert_contains(out, "| Revenue |", "markdown body row")
 
 
 def main() -> None:
@@ -226,6 +233,7 @@ def main() -> None:
         check_direct_delimited_previews,
         check_date_rendering,
         check_number_format_rendering,
+        check_markdown_export,
         check_sed_pipe_hygiene,
         check_agent_budget_surface,
     ]

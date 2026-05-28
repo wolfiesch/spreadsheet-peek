@@ -159,6 +159,7 @@ export function buildPreview(
     columns: sheet.cols,
     class: sheet.class,
     headers: sheet.headers ?? [],
+    tables: tableNames(sheet.tables),
   }));
   const truncatedRows = boundedRows.length > limitedRows.length;
   const truncatedColumns = bounds.colEnd - bounds.colStart + 1 > shownColumns;
@@ -177,6 +178,7 @@ export function buildPreview(
     fileName,
     activeSheet: peek.sheet,
     sheets,
+    namedRangeCount: Array.isArray(workbookMap.named_ranges) ? workbookMap.named_ranges.length : 0,
     totalRows: peek.rows,
     totalColumns: peek.columns,
     range,
@@ -193,6 +195,24 @@ export function buildPreview(
       textPreview: `wolfxl peek ${commandQuote(filePath)} --sheet ${commandQuote(peek.sheet)} --export text | ${lineLimitCommand()}`,
     },
   };
+}
+
+function tableNames(tables: unknown[] | undefined): string[] {
+  if (!Array.isArray(tables)) return [];
+  return tables
+    .map((table, index) => {
+      if (typeof table === "string") {
+        const name = table.trim();
+        return name || undefined;
+      }
+      if (table && typeof table === "object") {
+        const record = table as Record<string, unknown>;
+        const name = record.name ?? record.displayName ?? record.ref ?? record.range;
+        if (typeof name === "string" && name.trim()) return name.trim();
+      }
+      return `Table ${index + 1}`;
+    })
+    .filter((name): name is string => Boolean(name));
 }
 
 export function selectionToTsv(preview: WorkbookPreview): string {

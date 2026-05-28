@@ -1,6 +1,6 @@
 {
   "name": "@wolfie-tools/spreadsheet-peek-mcp",
-  "version": "2.2.1",
+  "version": "2.4.0",
   "private": true,
   "description": "Local MCP server and MCP App viewer for inline spreadsheet previews.",
   "type": "module",

@@ -131,6 +131,8 @@ h2 {
   display: grid;
   gap: 10px;
   margin-top: 2px;
+  min-height: 0;
+  overflow: auto;
 }
 
 .meta-block {
@@ -231,6 +233,17 @@ h2 {
 .action:not(:disabled):hover {
   border-color: #246f4f;
   background: #246f4f;
+}
+
+.action.secondary {
+  border-color: #9eb5aa;
+  background: #ffffff;
+  color: #1b4b38;
+}
+
+.action.secondary:not(:disabled):hover {
+  border-color: #2d8c61;
+  background: #eef8f2;
 }
 
 .action:not(:disabled):focus-visible {
@@ -533,7 +546,7 @@ h2 {
   }
 
   .action {
-    width: 104px;
+    width: 92px;
     height: 32px;
     padding: 0 10px;
   }

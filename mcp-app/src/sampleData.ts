@@ -26,13 +26,14 @@ export const samplePreview: WorkbookPreview = {
   fileName: "sample-financials.xlsx",
   activeSheet: "P&L",
   sheets: [
-    { name: "P&L", rows: 21, columns: 7, class: "data", headers },
+    { name: "P&L", rows: 21, columns: 7, class: "data", headers, tables: [] },
     {
       name: "Balance Sheet",
       rows: 27,
       columns: 5,
       class: "data",
       headers: ["Account", "2024-03-31", "2023-12-31", "Change $", "Change %"],
+      tables: [],
     },
     {
       name: "Revenue Breakdown",
@@ -40,8 +41,10 @@ export const samplePreview: WorkbookPreview = {
       columns: 7,
       class: "data",
       headers: ["Customer", "Segment", "Jan", "Feb", "Mar", "Q1 Total", "% of Total"],
+      tables: [],
     },
   ],
+  namedRangeCount: 0,
   totalRows: 20,
   totalColumns: 7,
   range: "A1:G15",
