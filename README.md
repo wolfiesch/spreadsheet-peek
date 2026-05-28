@@ -35,10 +35,10 @@ for row in ws.iter_rows(max_row=10, values_only=True):
     print(row)
 ```
 
-That's ~250 generation tokens + ~0.5-1s of openpyxl startup + ugly tuple-dump output. Every. Single. Time.
+That means generated code, Python dependency startup, and raw tuple-dump output. Every. Single. Time.
 
 With `spreadsheet-peek`, the agent runs `wolfxl peek data.xlsx -n 15` instead:
-- **Zero generation tokens** for the command (it's a one-liner the agent already knows)
+- **One reusable command** instead of a fresh throwaway script
 - **Instant Rust-speed parsing** (no openpyxl cold start)
 - **Readable output** - dates render as ISO `YYYY-MM-DD`, common currency/percentage formats render in human-facing previews, and numeric cells are grouped for scanning
 - **Readable ASCII table** the user can actually read
@@ -76,7 +76,7 @@ Behavioral claims are smoke-tested separately with:
 uv run --with openpyxl python benchmarks/verify_claims.py
 ```
 
-A single naive 15-row preview of a 29-column workbook already costs ~5,600 tokens - more than four financial-shape previews combined. Over a long agent session, the mode-switch rule is the difference between a context window that survives and one that blows up mid-task. Full methodology in [`benchmarks/`](benchmarks/) and the worked example in [`docs/how-it-works.md`](docs/how-it-works.md).
+A single readable 15-row box preview of a 29-column workbook already costs ~5,600 tokens - more than four financial-shape previews combined. Over a long agent session, the mode-switch rule is the difference between a context window that survives and one that blows up mid-task. Full methodology in [`benchmarks/`](benchmarks/) and the worked example in [`docs/how-it-works.md`](docs/how-it-works.md).
 
 ## Quick start
 
@@ -241,7 +241,7 @@ For the full technical rationale (why proactive triggers, how the token math wor
 The skill remains the portable behavior layer: it teaches agents when to preview and how to control token cost. The MCP server is now the richer UI layer for hosts that can render MCP Apps. Use the viewer when available; use terminal `wolfxl peek` everywhere else.
 
 **Why not `pandas.read_excel()` or `openpyxl` directly?**
-Speed and tokens. `openpyxl` cold-start is 0.5-1s before it reads a byte; `wolfxl peek` is instantaneous. Box-drawing output costs about 3-4x more tokens per row than `wolfxl peek --export text` for the same preview slice, while tuple dumps are harder for the user to read. The skill includes a Python fallback for sandboxed agents that can't shell out, but it's the fallback, not the default.
+Speed, repeatability, and readability. `openpyxl` cold-start is 0.5-1s before it reads a byte; `wolfxl peek` is instantaneous. Tiny tuple dumps can be compact in output tokens, but the agent still has to generate code and the result is harder for the user to scan. Box-drawing output costs about 3-4x more tokens per row than `wolfxl peek --export text` for the same preview slice, so the skill teaches agents when to switch modes. The Python fallback is for sandboxed agents that cannot shell out.
 
 **What about agents that can't execute shell commands?**
 The skill's "Python fallback" section (`SKILL.md`) covers this: `openpyxl` + `tabulate` produces a similar box-drawing table. Token costs are higher and startup is slower, but the output shape matches so the agent can keep its downstream reasoning identical.

@@ -185,9 +185,9 @@ print(tabulate.tabulate(rows[1:], headers=rows[0] or [], tablefmt='grid'))
 
 ## Why `wolfxl peek` Over Disposable Python Scripts
 
-`wolfxl peek` saves ~150-200 generation tokens per invocation (no Python code to write). The tradeoff:
+`wolfxl peek` saves the agent from generating throwaway Python every time a workbook appears. The tradeoff:
 - **Box-drawing output** is ~3-4x larger than text export for equal preview slices (Unicode borders cost tokens on the context side)
-- **`--export text | sed -n '1,Np'`** is the most token-efficient option overall (~148 tokens for 5 data rows vs ~250 for Python approach)
+- **`--export text | sed -n '1,Np'`** is the most token-efficient repeat-preview mode (~148 tokens for 5 financial rows; tiny raw `openpyxl` tuple dumps can be similar in output tokens but require generated code and are harder to read)
 - **Reliability**: `wolfxl peek` avoids import errors, env issues, and edge cases in ad-hoc parsing code
 - **Speed**: Rust binary parses instantly vs ~0.5-1s openpyxl startup
 - **Readable formatting**: Date cells render as ISO dates, common currency/percentage formats render in human-facing previews, and numeric cells are grouped for scanning. Style fidelity is strongest for `.xlsx` / `.xlsm`.

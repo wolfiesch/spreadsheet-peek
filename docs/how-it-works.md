@@ -139,4 +139,4 @@ It is not marketing. If the 3.9x ratio above is wrong on a larger file or a diff
 
 ---
 
-*Last verified against `wolfxl-cli 0.9.0` and `tiktoken cl100k_base`, 2026-05-27.*
+*Last verified against `wolfxl-cli 0.9.0` and `tiktoken cl100k_base`, 2026-05-28.*

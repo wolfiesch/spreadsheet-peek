@@ -16,7 +16,7 @@ jobs:
   mcp-app:
     runs-on: ubuntu-latest
     env:
-      WOLFXL_CLI_VERSION: "0.8.0"
+      WOLFXL_CLI_VERSION: "0.9.0"
     steps:
       - uses: actions/checkout@v4
 

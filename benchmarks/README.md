@@ -31,18 +31,44 @@ Use this when you want to compare Spreadsheet Peek output size against other
 local converters on your machine:
 
 ```bash
-uv run --with tiktoken python benchmarks/compare_converters.py
-uv run --with tiktoken python benchmarks/compare_converters.py --file examples/wide-table.xlsx
+uv run --with tiktoken --with openpyxl python benchmarks/compare_converters.py
+uv run --with tiktoken --with openpyxl --with 'markitdown[xlsx]' --with agent-xlsx --with click python benchmarks/compare_converters.py --file examples/wide-table.xlsx
 ```
 
-The required baseline is `wolfxl peek --export text`. Optional modes currently
-run only when their commands are installed: MarkItDown (`markitdown`) and
-`agent-xlsx`. Missing optional tools are reported as skipped. Treat the output
-as a local comparison harness, not a universal performance claim.
+The required Spreadsheet Peek rows are text export, workbook map, and bounded
+agent summary. The harness also measures a built-in vanilla `openpyxl` tuple
+dump when `openpyxl` is installed. Optional modes currently run only when their
+commands are installed: MarkItDown (`markitdown`) and `agent-xlsx`. Missing
+optional tools are reported as skipped. Treat the output as a local comparison
+harness, not a universal performance claim.
+
+Local competitor smoke on 2026-05-28:
+
+| File | Path | Output tokens | What it means |
+|------|------|--------------:|---------------|
+| sample-financials.xlsx | Spreadsheet Peek text export | 470 | Full current sheet values. |
+| sample-financials.xlsx | Spreadsheet Peek map | 153 | Workbook structure only. |
+| sample-financials.xlsx | Spreadsheet Peek agent summary | 322 | Bounded workbook overview under `--max-tokens 800`. |
+| sample-financials.xlsx | vanilla openpyxl tuple dump, 15 rows | 414 output / 478 code+output | Small raw tuple dumps can be compact, but agents must generate code and the output is harder to read. |
+| sample-financials.xlsx | MarkItDown | 1,739 | Whole-file Markdown conversion across all sheets. Broader output than a current-sheet preview. |
+| sample-financials.xlsx | agent-xlsx probe | 547 | Workbook structure, no cell-value preview. |
+| wide-table.xlsx | Spreadsheet Peek text export | 3,064 | Full current sheet values for a 29-column sheet. |
+| wide-table.xlsx | Spreadsheet Peek map | 96 | Workbook structure only. |
+| wide-table.xlsx | Spreadsheet Peek agent summary | 724 | Bounded workbook overview under `--max-tokens 800`. |
+| wide-table.xlsx | vanilla openpyxl tuple dump, 15 rows | 1,894 output / 1,957 code+output | Compact, but raw tuples are less readable and do not teach the agent a reusable workflow. |
+| wide-table.xlsx | MarkItDown | 3,162 | Whole-file Markdown conversion. Roughly similar token size on this one-sheet wide fixture. |
+| wide-table.xlsx | agent-xlsx probe | 675 | Workbook structure, no cell-value preview. |
+
+The fair claim is narrow: Spreadsheet Peek is a small first-look layer. It is
+excellent when you need a cheap preview habit, a bounded summary, or a workbook
+map. MarkItDown is broader whole-file conversion. `agent-xlsx probe` is a strong
+structure-first comparator. A tiny openpyxl tuple dump is sometimes compact in
+output tokens, but the agent still has to generate code, wait for Python import
+startup, and read raw tuples instead of formatted spreadsheet values.
 
 ## Results
 
-Last measured: 2026-05-27 · wolfxl-cli 0.9.0 · tiktoken `cl100k_base`
+Last measured: 2026-05-28 · wolfxl-cli 0.9.0 · tiktoken `cl100k_base`
 
 | Mode | Tokens | Bytes | Data rows | Tokens/row |
 |------|-------:|------:|----------:|-----------:|
@@ -97,7 +123,7 @@ An agent that previews 10 spreadsheets during a session at 15 rows each, assumin
 - **Box-drawing everywhere (wide-shaped)**: 10 × 5,623 = **56,230 tokens** - roughly 28% of a 200K window on previews alone.
 - **Mode switch (box first, text after)**: 1,313 + (9 × 357) = **4,526 tokens** on the financials path; 1,434 + (9 × 479) = **5,745 tokens** on the ledger path; 5,623 + (9 × 1,975) = **23,398 tokens** on the wide path.
 
-The wide-table case is where this matters most in absolute terms: a single naive 15-row preview already costs more than four financial-shape previews. On a workbook wider than ~25 columns, skip box-drawing entirely and go straight to `--export text | sed -n '1,Np'`.
+The wide-table case is where this matters most in absolute terms: a single readable 15-row box preview already costs more than four financial-shape previews. On a workbook wider than ~25 columns, skip box-drawing entirely and go straight to `--export text | sed -n '1,Np'`.
 
 Markdown export sits between text export and box-drawing in token cost. Use it when another tool or context converter benefits from Markdown tables; keep text export as the repeat-preview default.
 

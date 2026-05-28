@@ -4,6 +4,8 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-05-28
+
 ### Added
 
 - Added a README "Try it in 30 seconds" path for manually installing `wolfxl-cli` and previewing the sample workbook without setting up an agent.
@@ -12,17 +14,22 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 - Added MCP viewer metadata for sheet class, headers, tables, named ranges, active range, and truncation state.
 - Added a visible MCP viewer "Copy range" action alongside selected-range summarization.
 - Added `benchmarks/compare_converters.py` as a local comparison harness for Spreadsheet Peek, MarkItDown, and `agent-xlsx` when those optional tools are installed.
+- Added vanilla `openpyxl` tuple-dump rows to the local comparison harness so the "agent writes Python" baseline is measured instead of guessed.
 - Added Markdown export benchmark rows for `wolfxl-cli >= 0.9.0`.
+- Added a release checklist for the upstream CLI, Spreadsheet Peek repo, MCP app, install smoke, and GitHub release steps.
 
 ### Changed
 
 - README now explains how Spreadsheet Peek differs from broader Excel MCP servers, agent-native Excel CLIs, file-to-Markdown converters, and terminal table viewers.
 - README, setup docs, plugin manifests, MCP bundle metadata, benchmark docs, and `SKILL.md` now target `spreadsheet-peek 2.4.0` with `wolfxl-cli >= 0.9.0`.
 - The MCP viewer selected-range handoff now sends file name, sheet name, A1 range, row count, column count, and TSV to the model context.
+- Benchmark docs now separate output-token claims from generated-code claims for the vanilla Python baseline.
 
 ### Fixed
 
 - The MCP viewer now exposes local copy and model-summarize paths separately so copy behavior is clear in hosts and local preview mode.
+- The MCP app workflow now installs `wolfxl-cli 0.9.0`, matching the Markdown-export support contract.
+- The MCP app package overrides now resolve the audited transitive dependency alerts.
 
 ## [2.2.1] - 2026-04-23
 
