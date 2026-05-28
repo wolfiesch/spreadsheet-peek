@@ -340,8 +340,8 @@ async function summarizeSelectedRange() {
   const dimensions = selectionDimensions();
   const prompt = `Summarize the selected spreadsheet range ${label} from ${preview.fileName} / ${preview.activeSheet}.`;
   if (!hostApp || !hostConnected) {
-    await writeClipboard(tsv);
-    setStatus("Range copied locally. In an MCP host this sends the range to the model.");
+    const copied = await writeClipboard(tsv);
+    setStatus(copied ? "Range copied locally. In an MCP host this sends the range to the model." : "Clipboard unavailable.");
     return;
   }
   await hostApp.updateModelContext({

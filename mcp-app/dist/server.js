@@ -30980,14 +30980,17 @@ function buildPreview(filePath, workbookMap, peek, options) {
 function tableNames(tables) {
   if (!Array.isArray(tables)) return [];
   return tables.map((table, index) => {
-    if (typeof table === "string") return table;
+    if (typeof table === "string") {
+      const name = table.trim();
+      return name || void 0;
+    }
     if (table && typeof table === "object") {
       const record2 = table;
       const name = record2.name ?? record2.displayName ?? record2.ref ?? record2.range;
       if (typeof name === "string" && name.trim()) return name.trim();
     }
     return `Table ${index + 1}`;
-  }).filter(Boolean);
+  }).filter((name) => Boolean(name));
 }
 function selectionToTsv(preview) {
   return cellsToTsv(preview.rows);

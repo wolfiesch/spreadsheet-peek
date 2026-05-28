@@ -201,7 +201,10 @@ function tableNames(tables: unknown[] | undefined): string[] {
   if (!Array.isArray(tables)) return [];
   return tables
     .map((table, index) => {
-      if (typeof table === "string") return table;
+      if (typeof table === "string") {
+        const name = table.trim();
+        return name || undefined;
+      }
       if (table && typeof table === "object") {
         const record = table as Record<string, unknown>;
         const name = record.name ?? record.displayName ?? record.ref ?? record.range;
@@ -209,7 +212,7 @@ function tableNames(tables: unknown[] | undefined): string[] {
       }
       return `Table ${index + 1}`;
     })
-    .filter(Boolean);
+    .filter((name): name is string => Boolean(name));
 }
 
 export function selectionToTsv(preview: WorkbookPreview): string {
