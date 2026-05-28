@@ -4,6 +4,15 @@ All notable changes to `spreadsheet-peek` are documented here. This project foll
 
 ## [Unreleased]
 
+### Added
+
+- Added `examples/messy-ops-export.xlsx` plus a generator to benchmark a realistic source-export workbook with title rows, notes, blanks, long memos, mixed formats, punctuation, and multiple sheets.
+- Added a messy workbook growth table to the token benchmark so the docs can distinguish multiplier changes from absolute token savings as previews grow.
+
+### Changed
+
+- README, benchmark docs, and the technical deep dive now cite the messy workbook evidence: 5-row text export is 5.2x cheaper than box preview, and absolute savings grows from 644 tokens at 5 rows to 4,311 tokens at 50 rows.
+
 ## [2.4.0] - 2026-05-28
 
 ### Added

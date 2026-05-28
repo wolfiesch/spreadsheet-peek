@@ -41,9 +41,9 @@ This is the part of the skill that pays the agent-level dividend. The technical 
 
 The next layer is more mechanical. `wolfxl peek`'s default output uses Unicode box-drawing characters for borders. They look great in a terminal. They cost real tokens in an agent's context window.
 
-From [`benchmarks/measure_tokens.py`](../benchmarks/measure_tokens.py), measured with `cl100k_base` (GPT-4 tokenizer, a reasonable proxy for Claude) against three sample shapes committed to `examples/`:
+From [`benchmarks/measure_tokens.py`](../benchmarks/measure_tokens.py), measured with `cl100k_base` (GPT-4 tokenizer, a reasonable proxy for Claude) against four sample shapes committed to `examples/`:
 
-| Sample | Mode | Command | Tokens (5 data rows) | Tokens/row |
+| Sample | Mode | Command | Tokens (5 preview rows) | Tokens/row |
 |--------|------|---------|----------------:|-----------:|
 | [`sample-financials.xlsx`](../examples/sample-financials.xlsx) (7 cols) | Box-drawing | `wolfxl peek file -n 5` | **573** | 114.6 |
 | 〃 | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | **148** | 29.6 |
@@ -55,11 +55,30 @@ From [`benchmarks/measure_tokens.py`](../benchmarks/measure_tokens.py), measured
 | [`wide-table.xlsx`](../examples/wide-table.xlsx) (29 cols) | Box-drawing | `wolfxl peek file -n 5` | **2,249** | 449.8 |
 | 〃 | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | **754** | 150.8 |
 | 〃 | Markdown export | `wolfxl peek file --export markdown \| sed -n '1,7p'` | 962 | 192.4 |
+| [`messy-ops-export.xlsx`](../examples/messy-ops-export.xlsx) (12 cols) | Box-drawing | `wolfxl peek file -n 5` | **798** | 159.6 |
+| 〃 | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | **154** | 30.8 |
+| 〃 | Markdown export | `wolfxl peek file --export markdown \| sed -n '1,7p'` | 270 | 54.0 |
 
 Two observations from the shape comparison:
 
 1. On the financial workbook, text export is **3.9x cheaper per row** than box-drawing. The tall ledger lands nearby at **3.6x**, which is useful because it is closer to GL-detail work than a statement package.
 2. On the wide workbook, the *ratio* drops to **3.0x** - because the text-export baseline is itself larger per row when a table has many columns. But the *absolute* per-row savings grows from ~85-90 tokens/row on the narrower samples to ~299 tokens/row on the wide sample. The wider the workbook, the more expensive naive usage gets in raw tokens, even if the ratio looks less dramatic.
+3. On the messy ops export, text export is **5.2x cheaper per row** at 5 rows because the preview starts with sparse title, note, and blank rows where box borders dominate.
+
+The messy workbook also tests whether the advantage expands as the preview gets
+bigger. The honest answer is: the **absolute savings grows**, while the
+multiplier settles down once more real cell content appears.
+
+| Messy preview size | Box preview | Text export | Savings | Ratio |
+|--------------------|------------:|------------:|--------:|------:|
+| 5 rows | 798 | 154 | 644 | 5.2x |
+| 15 rows | 2,220 | 745 | 1,475 | 3.0x |
+| 50 rows | 7,109 | 2,798 | 4,311 | 2.5x |
+
+So the stronger public claim is not "the multiplier always increases." It is:
+as workbook previews get larger or messier, switching from pretty boxes to text
+export saves thousands of context tokens while keeping the same local,
+read-only inspection path.
 
 Direct delimited inputs are measured separately so the workbook ratios stay stable. The committed 7-column ledger costs 524 tokens in box mode and 145 tokens as text export for 5 rows across `.csv`, `.tsv`, and comma-delimited `.txt`; the quoted multiline CSV fixture costs 401 and 116 tokens. See the direct-delimited table in [`benchmarks/README.md`](../benchmarks/README.md#direct-delimited-input-costs).
 
@@ -89,7 +108,7 @@ The skill's actual rule is compressed to one sentence: *"Use box-drawing for the
 
 Markdown export, added in `wolfxl-cli 0.9.0`, is a context-converter option. It costs more than plain text export but less than box-drawing, so use it when a downstream tool benefits from Markdown tables rather than as the default first preview.
 
-The ratios are reproducible. `uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py` prints them against the committed sample file; a CI workflow (see [`.github/workflows/benchmark.yml`](../.github/workflows/benchmark.yml)) re-measures them on every PR that touches the skill so the numbers in this doc can't drift silently.
+The ratios are reproducible. `uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py` prints them against the committed sample files; a CI workflow (see [`.github/workflows/benchmark.yml`](../.github/workflows/benchmark.yml)) re-measures them on every PR that touches the skill so the numbers in this doc can't drift silently.
 
 ## 3. MCP Apps rendering
 

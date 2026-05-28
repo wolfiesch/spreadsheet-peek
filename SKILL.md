@@ -82,14 +82,14 @@ Use the smallest preview that answers the question:
 
 `wolfxl peek`'s box-drawing output uses Unicode border characters that cost real tokens. Choose the right mode based on context:
 
-| Mode | When to use | Token cost (5 data rows) |
+| Mode | When to use | Token cost (5 preview rows) |
 |------|-------------|---------------------|
 | **Box-drawing** (`wolfxl peek file -n 5`) | User is looking, readability matters | ~573 tokens (~115/row) |
 | **Text export** (`wolfxl peek file --export text \| sed -n '1,6p'`) | Context-sensitive, large files, repeated previews | ~148 tokens (~30/row) |
 
 **Default rule**: Use box-drawing for the FIRST preview in a conversation (readability). Switch to `--export text | sed -n '1,Np'` for subsequent previews or when context is getting long.
 
-**Measured ratio**: box-drawing is ~3.9x more expensive per row than text export on a 7-column financial workbook, ~3.6x on an 8-column tall ledger, and ~3.0x on a 29-column wide table. The overhead is mostly fixed (header/border lines), so the per-row cost improves with more rows - but text export is still cheaper at every size.
+**Measured ratio**: box-drawing is ~3.9x more expensive per row than text export on a 7-column financial workbook, ~3.6x on an 8-column tall ledger, ~3.0x on a 29-column wide table, and ~5.2x on a messy 12-column source export at 5 rows. The multiplier depends on shape, but absolute savings grows with bigger previews: the messy fixture saves 644 tokens at 5 rows and 4,311 tokens at 50 rows.
 
 **Delimited fixtures**: CSV/TSV/TXT ledger previews cost ~524 box tokens and ~145 text tokens; quoted multiline CSV costs ~401 and ~116.
 

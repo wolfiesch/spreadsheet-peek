@@ -12,6 +12,8 @@ This directory contains a reproducible demo and sample data for `spreadsheet-pee
 | `wide-table.xlsx` | The generated wide workbook. Fed into `benchmarks/measure_tokens.py` alongside the financial sample. |
 | `generate_tall_ledger.py` | Generates `tall-ledger.xlsx` - an 8-column × 120-row general-ledger detail sample with dates, memo text, debits, credits, and running balances. |
 | `tall-ledger.xlsx` | The generated tall ledger workbook. Gives the benchmark a row-heavy accounting-detail shape between the financial package and the wide dashboard. |
+| `generate_messy_workbook.py` | Generates `messy-ops-export.xlsx` - a source-like workbook with title rows, notes, blanks, long memos, currency, percentages, punctuation, multiple sheets, and 244 physical rows. |
+| `messy-ops-export.xlsx` | The generated messy workbook. Used by the benchmark to test realistic source-export messiness and row-limit growth. |
 | `generate_delimited_samples.py` | Generates `sample-ledger.csv`, `sample-ledger.tsv`, `sample-ledger.txt`, and `quoted-multiline.csv` for direct delimited-input token benchmarks. |
 | `sample-ledger.csv` | Generated CSV ledger extract used by `benchmarks/measure_tokens.py` for direct `.csv` input costs. |
 | `sample-ledger.tsv` | Generated TSV ledger extract used by `benchmarks/measure_tokens.py` for direct `.tsv` input costs. |
@@ -36,6 +38,7 @@ All sample data is synthetic - no real company data. Regenerate with:
 uv run --with openpyxl python examples/generate_sample.py
 uv run --with openpyxl python examples/generate_wide_table.py
 uv run --with openpyxl python examples/generate_tall_ledger.py
+uv run --with openpyxl python examples/generate_messy_workbook.py
 python3 examples/generate_delimited_samples.py # no deps beyond stdlib
 python3 examples/generate_messy_csv.py     # no deps beyond stdlib
 ```
@@ -76,6 +79,10 @@ wolfxl peek examples/wide-table.xlsx --export text | sed -n '1,6p'
 # Tall ledger stress test - row-heavy accounting-detail shape
 wolfxl peek examples/tall-ledger.xlsx -n 5
 wolfxl peek examples/tall-ledger.xlsx --export text | sed -n '1,16p'
+
+# Messy workbook stress test - title rows, notes, long memos, and 244 rows
+wolfxl peek examples/messy-ops-export.xlsx -n 15
+wolfxl peek examples/messy-ops-export.xlsx --export text | sed -n '1,51p'
 
 # Direct delimited preview
 wolfxl peek examples/messy.csv -n 5
