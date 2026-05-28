@@ -47,11 +47,14 @@ From [`benchmarks/measure_tokens.py`](../benchmarks/measure_tokens.py), measured
 |--------|------|---------|----------------:|-----------:|
 | [`sample-financials.xlsx`](../examples/sample-financials.xlsx) (7 cols) | Box-drawing | `wolfxl peek file -n 5` | **573** | 114.6 |
 | 〃 | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | **148** | 29.6 |
+| 〃 | Markdown export | `wolfxl peek file --export markdown \| sed -n '1,7p'` | 212 | 42.4 |
 | 〃 | CSV export | `wolfxl peek file --export csv \| sed -n '1,6p'` | 150 | 30.0 |
 | [`tall-ledger.xlsx`](../examples/tall-ledger.xlsx) (8 cols) | Box-drawing | `wolfxl peek file -n 5` | **624** | 124.8 |
 | 〃 | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | **173** | 34.6 |
+| 〃 | Markdown export | `wolfxl peek file --export markdown \| sed -n '1,7p'` | 217 | 43.4 |
 | [`wide-table.xlsx`](../examples/wide-table.xlsx) (29 cols) | Box-drawing | `wolfxl peek file -n 5` | **2,249** | 449.8 |
 | 〃 | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | **754** | 150.8 |
+| 〃 | Markdown export | `wolfxl peek file --export markdown \| sed -n '1,7p'` | 962 | 192.4 |
 
 Two observations from the shape comparison:
 
@@ -83,6 +86,8 @@ vs. naive (90 total previews, all box-drawing):
 Half the context saved. In a session that also has to hold a codebase, a plan, and a conversation, that difference is the gap between finishing and hitting a compaction.
 
 The skill's actual rule is compressed to one sentence: *"Use box-drawing for the FIRST preview in a conversation, switch to `--export text | sed -n '1,Np'` for subsequent previews or when context is getting long."* That sentence is load-bearing. Without it, agents default to the prettiest output and burn the runway. The `sed` limit also avoids the broken-pipe warning current stable `wolfxl-cli` releases can print when `head` closes the pipe early.
+
+Markdown export, added in `wolfxl-cli 0.9.0`, is a context-converter option. It costs more than plain text export but less than box-drawing, so use it when a downstream tool benefits from Markdown tables rather than as the default first preview.
 
 The ratios are reproducible. `uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py` prints them against the committed sample file; a CI workflow (see [`.github/workflows/benchmark.yml`](../.github/workflows/benchmark.yml)) re-measures them on every PR that touches the skill so the numbers in this doc can't drift silently.
 
@@ -134,4 +139,4 @@ It is not marketing. If the 3.9x ratio above is wrong on a larger file or a diff
 
 ---
 
-*Last verified against `wolfxl-cli 0.8.0` and `tiktoken cl100k_base`, 2026-04-22.*
+*Last verified against `wolfxl-cli 0.9.0` and `tiktoken cl100k_base`, 2026-05-27.*

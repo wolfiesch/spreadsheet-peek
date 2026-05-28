@@ -24,6 +24,9 @@ describe("loadWorkbookPreview", () => {
     assert.equal(preview.rows[0].length, 4);
     assert.equal(preview.rows[0][0].display, "Account");
     assert.ok(preview.sheets.some((sheet) => sheet.name === "Balance Sheet"));
+    assert.equal(typeof preview.namedRangeCount, "number");
+    assert.ok(preview.sheets.every((sheet) => Array.isArray(sheet.tables)));
+    assert.ok(preview.sheets.some((sheet) => sheet.class === "data"));
     assert.equal(preview.truncatedRows, true);
     assert.equal(preview.truncatedColumns, true);
   });
@@ -39,7 +42,7 @@ describe("loadWorkbookPreview", () => {
     assert.equal(preview.rows[0][1].display, "2024-03-31");
   });
 
-  it("reads direct CSV previews through wolfxl 0.8+", async () => {
+  it("reads direct CSV previews through wolfxl 0.9+", async () => {
     const preview = await loadWorkbookPreview({
       path: join(root, "examples", "messy.csv"),
       maxRows: 2,

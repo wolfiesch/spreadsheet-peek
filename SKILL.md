@@ -1,7 +1,7 @@
 ---
 name: spreadsheet-peek
 description: Preview spreadsheet/delimited files with the Spreadsheet Peek MCP viewer or `wolfxl peek`. Use proactively for .xlsx, .xlsm, .xls, .xlsb, .ods, .csv, .tsv, or .txt before processing, after fixture generation, during parsing debug, or when asked to peek/preview/show a file.
-version: 2.2.1
+version: 2.4.0
 metadata:
   author: wolfgangs
   filePattern:
@@ -25,7 +25,7 @@ Show inline previews of spreadsheet files. Prefer the Spreadsheet Peek MCP viewe
 ## Prerequisites
 
 - `wolfxl` must be installed: `cargo install wolfxl-cli`
-- `wolfxl-cli >= 0.8.0` supports `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`, `.tsv`, and comma-delimited `.txt`
+- `wolfxl-cli >= 0.9.0` supports `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`, `.tsv`, and comma-delimited `.txt`, plus Markdown export
 - Formatting fidelity is strongest for `.xlsx` and `.xlsm`; legacy workbook and delimited inputs are value-first previews with limited style metadata
 
 ## MCP Viewer (When Available)
@@ -44,15 +44,11 @@ Use terminal `wolfxl peek` when MCP is unavailable, the agent is shell-only, or 
 
 ### Always preview when:
 
-1. **Before data processing**: When about to run a data pipeline, ETL job, or any script that reads a spreadsheet, preview the input file first so the user sees what the pipeline is processing.
-
-2. **After generating a test fixture**: When a fixture spreadsheet or delimited file is created or modified (especially in `tests/` directories), preview it to confirm the fixture looks right.
-
-3. **When the user references a spreadsheet**: If the user mentions a spreadsheet, CSV, TSV, or table-like text file path, preview it before discussing it. Don't describe the file - show it.
-
-4. **When debugging parsing issues**: If investigating why a table was misclassified or mis-parsed, preview the raw input to see what the parser actually received.
-
-5. **When comparing before/after**: Show both the input and any transformed output side-by-side (run `wolfxl peek` on the input, then show the processing results).
+1. **Before data processing**: preview inputs before running pipelines, ETL jobs, or scripts that read a spreadsheet.
+2. **After fixture changes**: preview generated or modified spreadsheet and delimited fixtures.
+3. **When the user references a file**: if they mention a spreadsheet, CSV, TSV, or table-like text path, show it before discussing it.
+4. **When debugging parsing**: preview the raw input so parser behavior is grounded in the visible file.
+5. **When comparing before/after**: show the input and transformed output with the same preview habit.
 
 ### Skip preview when:
 
@@ -60,6 +56,27 @@ Use terminal `wolfxl peek` when MCP is unavailable, the agent is shell-only, or 
 - The file is being read programmatically (e.g., openpyxl/pandas in Python) and the code output already shows the data
 - The user explicitly says they don't need to see it
 - The file is enormous (>10K rows) and the user didn't ask - mention it exists and offer to preview a slice
+
+## Preview Ladder
+
+Use the smallest preview that answers the question:
+
+1. First human-readable look:
+   ```bash
+   wolfxl peek <file> -n 15
+   ```
+2. Large or unfamiliar workbook briefing:
+   ```bash
+   wolfxl agent <file> --max-tokens 800
+   ```
+3. Repeat previews or context-sensitive work:
+   ```bash
+   wolfxl peek <file> --export text | sed -n '1,20p'
+   ```
+4. Sheet structure before cell values:
+   ```bash
+   wolfxl map <file> --format text
+   ```
 
 ## Token Efficiency (IMPORTANT)
 
@@ -78,56 +95,21 @@ Use terminal `wolfxl peek` when MCP is unavailable, the agent is shell-only, or 
 
 **Note**: `--export text` ignores the `-n` flag and dumps ALL rows. Always pipe through `sed -n '1,Np'` to limit what enters the conversation. Prefer `sed` over `head` with current `wolfxl-cli` releases because `head` can close the pipe early and make `wolfxl` print a broken-pipe warning.
 
-## Commands
+## Command Variants
 
-### Quick preview (default - 15 rows, readable)
 ```bash
-wolfxl peek <file> -n 15
-```
-
-### Token-efficient preview (large files or repeat views)
-```bash
-wolfxl peek <file> --export text | sed -n '1,20p'
-```
-
-### Budgeted agent briefing (large or unfamiliar workbook)
-```bash
-wolfxl agent <file> --max-tokens 800
-```
-
-### Full dump (all rows, use sparingly)
-```bash
-wolfxl peek <file> -n 0
-```
-
-### Specific sheet by name
-```bash
-wolfxl peek <file> --sheet "Balance Sheet" -n 15
-```
-
-### Wide columns (for long text, descriptions)
-```bash
-wolfxl peek <file> -n 15 -w 60
-```
-
-### Export as clean text (for diffing, piping)
-```bash
-wolfxl peek <file> --export text
-```
-
-### Export as CSV
-```bash
-wolfxl peek <file> --export csv
-```
-
-### Export as JSON
-```bash
-wolfxl peek <file> --export json
+wolfxl peek <file> -n 0                              # full readable dump, use sparingly
+wolfxl peek <file> --sheet "Balance Sheet" -n 15     # specific sheet
+wolfxl peek <file> -n 15 -w 60                       # wider cells for long text
+wolfxl peek <file> --export text                     # clean text for diffing or piping
+wolfxl peek <file> --export markdown | sed -n '1,20p' # Markdown table for context converters
+wolfxl peek <file> --export csv                      # CSV export
+wolfxl peek <file> --export json                     # JSON export
 ```
 
 ## Delimited File Notes
 
-`wolfxl peek` reads `.csv`, `.tsv`, and comma-delimited `.txt` files directly in `wolfxl-cli >= 0.8.0`:
+`wolfxl peek` reads `.csv`, `.tsv`, and comma-delimited `.txt` files directly in `wolfxl-cli >= 0.9.0`:
 
 ```bash
 wolfxl peek file.csv -n 15
@@ -148,13 +130,13 @@ mlr --icsv --opprint put '$columns = NF' then head -n 1 file.csv
 
 **Which to use**: default to `wolfxl peek` for conversation-visible previews. Use `head` only for a raw text sniff, `column -s, -t` only on simple CSVs, and `mlr`/`csvkit` for custom delimiters, encodings outside UTF-8, or CSV-aware dimensions.
 
-**Known caveat**: `wolfxl-cli 0.8.0` is UTF-8 only and does not strip BOMs or detect arbitrary delimiters. A UTF-8 BOM may show in the first header cell; non-comma `.txt` files need a CSV-aware tool or a temporary conversion.
+**Known caveat**: `wolfxl-cli 0.9.0` is UTF-8 only and does not strip BOMs or detect arbitrary delimiters. A UTF-8 BOM may show in the first header cell; non-comma `.txt` files need a CSV-aware tool or a temporary conversion.
 
 **If you must use Python** (CSV too messy for shell tools), reach for `csv.DictReader` + `tabulate`, not pandas - pandas has a ~1s import cost and is overkill for a preview.
 
 ## Legacy Workbook Notes
 
-`wolfxl-cli >= 0.8.0` reads `.xls`, `.xlsb`, and `.ods` directly:
+`wolfxl-cli >= 0.9.0` reads `.xls`, `.xlsb`, and `.ods` directly:
 
 ```bash
 wolfxl peek file.xls -n 15
@@ -170,7 +152,7 @@ soffice --headless --convert-to xlsx --outdir /tmp/spreadsheet-peek file.xls
 wolfxl peek /tmp/spreadsheet-peek/file.xlsx -n 15
 ```
 
-If LibreOffice is not installed, use the direct preview and say legacy style fidelity is limited. If an older `wolfxl` rejects these inputs, upgrade with `cargo install wolfxl-cli --version 0.8.0 --force`.
+If LibreOffice is not installed, use the direct preview and say legacy style fidelity is limited. If an older `wolfxl` rejects these inputs, upgrade with `cargo install wolfxl-cli --version 0.9.0 --force`.
 
 ## Multi-Sheet Workflow
 

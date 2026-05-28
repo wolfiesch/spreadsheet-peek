@@ -126,11 +126,14 @@ async function refreshPreview(args: Record<string, unknown>) {
 
 function render(focusSearch = false, searchCursor?: number) {
   const matches = countMatches(preview, searchTerm);
+  const sheetSummary = activeSheetSummary();
   const hostStateLabel = hostConnected ? "Connected to MCP host" : "Local preview mode";
   const statusDetail =
     errorMessage || (loadingMessage ? `Loading ${loadingMessage}` : matches ? `${matches} search matches` : hostStateLabel);
   const selectedLabel = selectionLabel();
+  const dimensions = selectionDimensions();
   const summarizeLabel = selection ? `Summarize ${selectedLabel}` : "Summarize selected range";
+  const copyLabel = selection ? `Copy ${selectedLabel} as TSV` : "Copy selected range";
   root.innerHTML = `
     <main class="shell">
       <aside class="sidebar">
@@ -159,8 +162,28 @@ function render(focusSearch = false, searchCursor?: number) {
             <strong>${escapeHtml(preview.range)}</strong>
           </div>
           <div class="meta-block">
-            <span>Rows</span>
-            <strong>${preview.totalRows}</strong>
+            <span>Shape</span>
+            <strong>${preview.totalRows} rows x ${preview.totalColumns} cols</strong>
+          </div>
+          <div class="meta-block">
+            <span>Sheet type</span>
+            <strong>${escapeHtml(sheetSummary?.class ?? "unknown")}</strong>
+          </div>
+          <div class="meta-block">
+            <span>Headers</span>
+            <strong title="${escapeAttr((sheetSummary?.headers ?? []).join(", "))}">${escapeHtml(compactList(sheetSummary?.headers ?? []))}</strong>
+          </div>
+          <div class="meta-block">
+            <span>Tables</span>
+            <strong title="${escapeAttr((sheetSummary?.tables ?? []).join(", "))}">${escapeHtml(compactList(sheetSummary?.tables ?? [], "none"))}</strong>
+          </div>
+          <div class="meta-block">
+            <span>Named ranges</span>
+            <strong>${preview.namedRangeCount ?? 0}</strong>
+          </div>
+          <div class="meta-block">
+            <span>Preview</span>
+            <strong>${escapeHtml(truncationLabel())}</strong>
           </div>
           <div class="meta-block source">
             <span>Source</span>
@@ -189,6 +212,16 @@ function render(focusSearch = false, searchCursor?: number) {
             >
               <span class="full-label">Summarize range</span>
               <span class="short-label">Summarize</span>
+            </button>
+            <button
+              id="copy-range"
+              class="action secondary"
+              aria-label="${escapeAttr(copyLabel)}"
+              title="${escapeAttr(copyLabel)}"
+              ${selection ? "" : "disabled"}
+            >
+              <span class="full-label">Copy range</span>
+              <span class="short-label">Copy</span>
             </button>
           </div>
         </header>
@@ -225,7 +258,7 @@ function render(focusSearch = false, searchCursor?: number) {
 
         <footer class="footer ${selection ? "has-selection" : ""}">
           <code>${escapeHtml(preview.commands.textPreview)}</code>
-          <span id="status" class="${selection ? "selected-range" : ""}">${selectedLabel}</span>
+          <span id="status" class="${selection ? "selected-range" : ""}">${selection && dimensions ? `${selectedLabel} (${dimensions.rows} x ${dimensions.columns})` : selectedLabel}</span>
         </footer>
       </section>
     </main>
@@ -271,6 +304,9 @@ function bindEvents() {
   root.querySelector<HTMLButtonElement>("#summarize")?.addEventListener("click", () => {
     void summarizeSelectedRange();
   });
+  root.querySelector<HTMLButtonElement>("#copy-range")?.addEventListener("click", () => {
+    void copySelectedRange();
+  });
   root.querySelectorAll<HTMLTableCellElement>("td[data-row][data-column]").forEach((cell) => {
     cell.addEventListener("pointerdown", () => {
       const coords = cellCoords(cell);
@@ -301,17 +337,27 @@ async function summarizeSelectedRange() {
   if (!selection) return;
   const tsv = cellsToTsv(selectedCells());
   const label = selectionLabel();
+  const dimensions = selectionDimensions();
   const prompt = `Summarize the selected spreadsheet range ${label} from ${preview.fileName} / ${preview.activeSheet}.`;
   if (!hostApp || !hostConnected) {
-    await navigator.clipboard?.writeText(tsv).catch(() => undefined);
-    setStatus("Range copied locally. In Claude Desktop this sends the range to the model.");
+    await writeClipboard(tsv);
+    setStatus("Range copied locally. In an MCP host this sends the range to the model.");
     return;
   }
   await hostApp.updateModelContext({
     content: [
       {
         type: "text",
-        text: `${preview.fileName} / ${preview.activeSheet} / ${label}\n\n${tsv}`,
+        text: [
+          "Spreadsheet range",
+          `File: ${preview.fileName}`,
+          `Sheet: ${preview.activeSheet}`,
+          `Range: ${label}`,
+          `Rows: ${dimensions?.rows ?? 0}`,
+          `Columns: ${dimensions?.columns ?? 0}`,
+          "",
+          tsv,
+        ].join("\n"),
       },
     ],
   });
@@ -320,6 +366,22 @@ async function summarizeSelectedRange() {
     content: [{ type: "text", text: prompt }],
   });
   setStatus("Selected range sent to the model.");
+}
+
+async function copySelectedRange() {
+  if (!selection) return;
+  const copied = await writeClipboard(cellsToTsv(selectedCells()));
+  setStatus(copied ? "Selected range copied as TSV." : "Clipboard unavailable.");
+}
+
+async function writeClipboard(text: string) {
+  if (!navigator.clipboard?.writeText) return false;
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function selectedCells() {
@@ -340,6 +402,37 @@ function selectionLabel() {
   const minCol = Math.min(selection.startColumn, selection.endColumn);
   const maxCol = Math.max(selection.startColumn, selection.endColumn);
   return `${columnName(minCol)}${minRow}:${columnName(maxCol)}${maxRow}`;
+}
+
+function selectionDimensions() {
+  if (!selection) return null;
+  const minRow = Math.min(selection.startRow, selection.endRow);
+  const maxRow = Math.max(selection.startRow, selection.endRow);
+  const minCol = Math.min(selection.startColumn, selection.endColumn);
+  const maxCol = Math.max(selection.startColumn, selection.endColumn);
+  return {
+    rows: maxRow - minRow + 1,
+    columns: maxCol - minCol + 1,
+  };
+}
+
+function activeSheetSummary() {
+  return preview.sheets.find((sheet) => sheet.name === preview.activeSheet);
+}
+
+function compactList(values: string[], emptyLabel = "none") {
+  const clean = values.map((value) => value.trim()).filter(Boolean);
+  if (!clean.length) return emptyLabel;
+  const shown = clean.slice(0, 3).join(", ");
+  const hidden = clean.length - 3;
+  return hidden > 0 ? `${shown} +${hidden}` : shown;
+}
+
+function truncationLabel() {
+  if (preview.truncatedRows && preview.truncatedColumns) return "rows and columns clipped";
+  if (preview.truncatedRows) return "rows clipped";
+  if (preview.truncatedColumns) return "columns clipped";
+  return "complete slice";
 }
 
 function isSelected(cell: PreviewCell) {

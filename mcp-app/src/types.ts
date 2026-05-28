@@ -6,6 +6,7 @@ export interface WorkbookSheetSummary {
   columns: number;
   class?: string;
   headers: string[];
+  tables: string[];
 }
 
 export interface PreviewCell {
@@ -25,6 +26,7 @@ export interface WorkbookPreview {
   fileName: string;
   activeSheet: string;
   sheets: WorkbookSheetSummary[];
+  namedRangeCount: number;
   totalRows: number;
   totalColumns: number;
   range: string;

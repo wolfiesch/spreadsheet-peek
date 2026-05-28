@@ -30940,7 +30940,8 @@ function buildPreview(filePath, workbookMap, peek, options) {
     rows: sheet.rows,
     columns: sheet.cols,
     class: sheet.class,
-    headers: sheet.headers ?? []
+    headers: sheet.headers ?? [],
+    tables: tableNames(sheet.tables)
   }));
   const truncatedRows = boundedRows.length > limitedRows.length;
   const truncatedColumns = bounds.colEnd - bounds.colStart + 1 > shownColumns;
@@ -30958,6 +30959,7 @@ function buildPreview(filePath, workbookMap, peek, options) {
     fileName,
     activeSheet: peek.sheet,
     sheets,
+    namedRangeCount: Array.isArray(workbookMap.named_ranges) ? workbookMap.named_ranges.length : 0,
     totalRows: peek.rows,
     totalColumns: peek.columns,
     range,
@@ -30974,6 +30976,18 @@ function buildPreview(filePath, workbookMap, peek, options) {
       textPreview: `wolfxl peek ${commandQuote(filePath)} --sheet ${commandQuote(peek.sheet)} --export text | ${lineLimitCommand()}`
     }
   };
+}
+function tableNames(tables) {
+  if (!Array.isArray(tables)) return [];
+  return tables.map((table, index) => {
+    if (typeof table === "string") return table;
+    if (table && typeof table === "object") {
+      const record2 = table;
+      const name = record2.name ?? record2.displayName ?? record2.ref ?? record2.range;
+      if (typeof name === "string" && name.trim()) return name.trim();
+    }
+    return `Table ${index + 1}`;
+  }).filter(Boolean);
 }
 function selectionToTsv(preview) {
   return cellsToTsv(preview.rows);
@@ -31118,7 +31132,7 @@ function powerShellQuote(value) {
 // package.json
 var package_default = {
   name: "@wolfie-tools/spreadsheet-peek-mcp",
-  version: "2.2.1",
+  version: "2.4.0",
   private: true,
   description: "Local MCP server and MCP App viewer for inline spreadsheet previews.",
   type: "module",

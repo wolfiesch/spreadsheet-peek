@@ -12,6 +12,16 @@ An agent-agnostic skill that teaches AI coding agents (Claude Code, Codex, Curso
 
 ![agent preview demo](assets/agent-preview.gif)
 
+## Try it in 30 seconds
+
+This is the fastest manual path. It is separate from the agent/plugin installs below.
+
+```bash
+cargo install wolfxl-cli
+wolfxl peek examples/sample-financials.xlsx -n 10
+wolfxl peek examples/sample-financials.xlsx --export text | sed -n '1,20p'
+```
+
 ## Why this exists
 
 Without this skill, every agent reinvents spreadsheet inspection the same way:
@@ -42,12 +52,17 @@ Box-drawing output looks pretty but costs real tokens. The skill teaches the age
 |--------|------|---------|----------------:|-----------:|
 | Financials (7 cols) | Box-drawing | `wolfxl peek file -n 5` | 573 | 114.6 |
 | Financials (7 cols) | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | 148 | 29.6 |
+| Financials (7 cols) | Markdown export | `wolfxl peek file --export markdown \| sed -n '1,7p'` | 212 | 42.4 |
 | Tall ledger (8 cols) | Box-drawing | `wolfxl peek file -n 5` | 624 | 124.8 |
 | Tall ledger (8 cols) | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | 173 | 34.6 |
+| Tall ledger (8 cols) | Markdown export | `wolfxl peek file --export markdown \| sed -n '1,7p'` | 217 | 43.4 |
 | Wide (29 cols)      | Box-drawing | `wolfxl peek file -n 5` | 2,249 | 449.8 |
 | Wide (29 cols)      | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | 754 | 150.8 |
+| Wide (29 cols)      | Markdown export | `wolfxl peek file --export markdown \| sed -n '1,7p'` | 962 | 192.4 |
 
 **~3.9x cheaper per row on typical financial shapes, ~3.6x on tall ledgers, ~3.0x on wide tables** - but the *absolute* per-row savings is far larger on wide tables (299 tokens/row saved vs 85-90 on the narrower samples). Measured with `cl100k_base` (GPT-4 tokenizer) against [`examples/sample-financials.xlsx`](examples/sample-financials.xlsx), [`examples/tall-ledger.xlsx`](examples/tall-ledger.xlsx), and [`examples/wide-table.xlsx`](examples/wide-table.xlsx). Reproduce with:
+
+Markdown export is available in `wolfxl-cli >= 0.9.0`. Use it when a downstream context converter wants a Markdown table; keep text export as the default low-token repeat preview.
 
 ```bash
 uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
@@ -82,6 +97,8 @@ Then install the skill for your agent (see [Agent Setup](#agent-setup) below).
 ## Inline MCP viewer
 
 `spreadsheet-peek` now includes an optional local MCP server and MCP App viewer under [`mcp-app/`](mcp-app/). The viewer is read-only and local-first: it calls the installed `wolfxl` binary, returns structured workbook data, and renders an inline grid with sheet tabs, sticky headers, search, range selection, and a "summarize selected range" action in MCP Apps hosts such as Claude Desktop.
+
+**Local-first and read-only:** Spreadsheet Peek reads local files through the local `wolfxl` binary and does not edit workbook files. Broader Excel MCP servers are a better fit when the agent needs to create formulas, mutate sheets, or automate Excel-style editing. Spreadsheet Peek is for first-look inspection before the agent takes the next step.
 
 Build and pack the Claude Desktop bundle:
 
@@ -189,7 +206,7 @@ token-efficient mode:
     wolfxl peek <file> --export text | sed -n '1,20p'
 
 Direct preview works for `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.ods`, `.csv`,
-`.tsv`, and comma-delimited `.txt` files with `wolfxl-cli >= 0.8.0`:
+`.tsv`, and comma-delimited `.txt` files with `wolfxl-cli >= 0.9.0`:
 
     wolfxl peek data.csv -n 15
     wolfxl peek workbook.xlsb -n 15
@@ -230,7 +247,7 @@ Speed and tokens. `openpyxl` cold-start is 0.5-1s before it reads a byte; `wolfx
 The skill's "Python fallback" section (`SKILL.md`) covers this: `openpyxl` + `tabulate` produces a similar box-drawing table. Token costs are higher and startup is slower, but the output shape matches so the agent can keep its downstream reasoning identical.
 
 **Does this actually work with CSV?**
-Yes. `wolfxl-cli 0.8.0` reads `.csv`, `.tsv`, and comma-delimited `.txt` files directly. The skill still documents `mlr` / `csvlook` fallbacks for custom delimiters, non-UTF-8 encodings, dimension checks, and older installed binaries. See the [Delimited File Notes](SKILL.md#delimited-file-notes) section.
+Yes. `wolfxl-cli 0.9.0` reads `.csv`, `.tsv`, and comma-delimited `.txt` files directly. The skill still documents `mlr` / `csvlook` fallbacks for custom delimiters, non-UTF-8 encodings, dimension checks, and older installed binaries. See the [Delimited File Notes](SKILL.md#delimited-file-notes) section.
 
 **Windows support?**
 `wolfxl-cli` is available on macOS, Linux, and Windows via `cargo install wolfxl-cli` (requires a Rust toolchain). The skill itself is platform-agnostic (it's a markdown file). The optional shell fallback recipes use POSIX utilities - on Windows use WSL, Git Bash, or substitute PowerShell equivalents (`Get-Content -TotalCount 15`, `Import-Csv | Format-Table`, etc.) in your shell config.
@@ -265,7 +282,7 @@ Yes. `wolfxl-cli 0.8.0` reads `.csv`, `.tsv`, and comma-delimited `.txt` files d
 
 ## File formats supported
 
-**Direct `wolfxl peek` path (`wolfxl-cli >= 0.8.0`)**: `.xlsx` · `.xlsm` · `.xls` · `.xlsb` · `.ods` · `.csv` · `.tsv` · comma-delimited `.txt`
+**Direct `wolfxl peek` path (`wolfxl-cli >= 0.9.0`)**: `.xlsx` · `.xlsm` · `.xls` · `.xlsb` · `.ods` · `.csv` · `.tsv` · comma-delimited `.txt`
 
 **Caveats**: formatting fidelity is strongest for `.xlsx` / `.xlsm`. Legacy workbook formats and delimited files are value-first previews with limited style metadata. See [Delimited File Notes](SKILL.md#delimited-file-notes) and [Legacy Workbook Notes](SKILL.md#legacy-workbook-notes) for the fallback decision tree.
 

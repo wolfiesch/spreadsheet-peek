@@ -142,6 +142,10 @@ def benches_for(sample_path: Path, prefix: str) -> list[dict]:
               ["wolfxl", "peek", s, "--export", "text"], max_lines=6, data_rows=5),
         bench(f"{prefix} - Text export (15 data rows)",
               ["wolfxl", "peek", s, "--export", "text"], max_lines=16, data_rows=15),
+        bench(f"{prefix} - Markdown export (5 data rows)",
+              ["wolfxl", "peek", s, "--export", "markdown"], max_lines=7, data_rows=5),
+        bench(f"{prefix} - Markdown export (15 data rows)",
+              ["wolfxl", "peek", s, "--export", "markdown"], max_lines=17, data_rows=15),
         bench(f"{prefix} - CSV export (5 data rows)",
               ["wolfxl", "peek", s, "--export", "csv"], max_lines=6, data_rows=5),
     ]

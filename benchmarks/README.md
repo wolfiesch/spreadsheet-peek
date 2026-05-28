@@ -25,9 +25,24 @@ Reproduce with:
 uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
 ```
 
+## Local comparison harness
+
+Use this when you want to compare Spreadsheet Peek output size against other
+local converters on your machine:
+
+```bash
+uv run --with tiktoken python benchmarks/compare_converters.py
+uv run --with tiktoken python benchmarks/compare_converters.py --file examples/wide-table.xlsx
+```
+
+The required baseline is `wolfxl peek --export text`. Optional modes currently
+run only when their commands are installed: MarkItDown (`markitdown`) and
+`agent-xlsx`. Missing optional tools are reported as skipped. Treat the output
+as a local comparison harness, not a universal performance claim.
+
 ## Results
 
-Last measured: 2026-04-22 · wolfxl-cli 0.8.0 · tiktoken `cl100k_base`
+Last measured: 2026-05-27 · wolfxl-cli 0.9.0 · tiktoken `cl100k_base`
 
 | Mode | Tokens | Bytes | Data rows | Tokens/row |
 |------|-------:|------:|----------:|-----------:|
@@ -35,16 +50,22 @@ Last measured: 2026-04-22 · wolfxl-cli 0.8.0 · tiktoken `cl100k_base`
 | Financials (7 cols) - Box-drawing (15 rows)  | 1,313 | 6,703  | 15 | 87.5  |
 | Financials (7 cols) - Text export (5 data rows)  | 148   | 319    | 5  | 29.6  |
 | Financials (7 cols) - Text export (15 data rows) | 357   | 762    | 15 | 23.8  |
+| Financials (7 cols) - Markdown export (5 data rows) | 212 | 445 | 5 | 42.4 |
+| Financials (7 cols) - Markdown export (15 data rows) | 516 | 1,048 | 15 | 34.4 |
 | Financials (7 cols) - CSV export (5 data rows)   | 150   | 359    | 5  | 30.0  |
 | Tall ledger (8 cols) - Box-drawing (5 rows)  | 624   | 3,805  | 5  | 124.8 |
 | Tall ledger (8 cols) - Box-drawing (15 rows) | 1,434 | 9,060  | 15 | 95.6  |
 | Tall ledger (8 cols) - Text export (5 data rows) | 173   | 464    | 5  | 34.6  |
 | Tall ledger (8 cols) - Text export (15 data rows) | 479   | 1,298  | 15 | 31.9  |
+| Tall ledger (8 cols) - Markdown export (5 data rows) | 217 | 606 | 5 | 43.4 |
+| Tall ledger (8 cols) - Markdown export (15 data rows) | 576 | 1,620 | 15 | 38.4 |
 | Tall ledger (8 cols) - CSV export (5 data rows) | 171   | 490    | 5  | 34.2  |
 | Wide (29 cols) - Box-drawing (5 rows)        | 2,249 | 13,464 | 5  | 449.8 |
 | Wide (29 cols) - Box-drawing (15 rows)       | 5,623 | 33,193 | 15 | 374.9 |
 | Wide (29 cols) - Text export (5 data rows)       | 754   | 1,477  | 5  | 150.8 |
 | Wide (29 cols) - Text export (15 data rows)      | 1,975 | 3,867  | 15 | 131.7 |
+| Wide (29 cols) - Markdown export (5 data rows) | 962 | 1,955 | 5 | 192.4 |
+| Wide (29 cols) - Markdown export (15 data rows) | 2,473 | 4,945 | 15 | 164.9 |
 | Wide (29 cols) - CSV export (5 data rows)        | 746   | 1,737  | 5  | 149.2 |
 
 **Key ratios**:
@@ -78,11 +99,13 @@ An agent that previews 10 spreadsheets during a session at 15 rows each, assumin
 
 The wide-table case is where this matters most in absolute terms: a single naive 15-row preview already costs more than four financial-shape previews. On a workbook wider than ~25 columns, skip box-drawing entirely and go straight to `--export text | sed -n '1,Np'`.
 
+Markdown export sits between text export and box-drawing in token cost. Use it when another tool or context converter benefits from Markdown tables; keep text export as the repeat-preview default.
+
 ## What's not measured (yet)
 
 - **Claude tokenizer ground truth**: Anthropic's tokenizer isn't publicly available, so we use cl100k_base as a proxy. PRs welcome if Anthropic publishes a client-side tokenizer.
 - **Generation-side token cost**: The box-drawing output is what the *agent reads* (context tokens). The *generation cost* of writing `wolfxl peek file -n 15` vs writing a 20-line Python script is a separate measurement - we estimate ~150-200 tokens saved per invocation on the generation side.
-- **Custom-delimiter input costs**: `wolfxl peek` 0.8.0 treats `.txt` as comma-delimited input and `.tsv` as tab-delimited input. Arbitrary delimiter detection is outside the direct path; use the fallback tooling in `SKILL.md` for pipe-delimited or semicolon-delimited files.
+- **Custom-delimiter input costs**: `wolfxl peek` 0.9.0 treats `.txt` as comma-delimited input and `.tsv` as tab-delimited input. Arbitrary delimiter detection is outside the direct path; use the fallback tooling in `SKILL.md` for pipe-delimited or semicolon-delimited files.
 
 ## Claim Verification
 

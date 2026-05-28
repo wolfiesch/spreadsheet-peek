@@ -11,6 +11,20 @@ import type { CellValue, PreviewCell, WorkbookPreview, WorkbookSheetSummary } fr
 test("viewer renders workbook chrome, search, and range selection", async () => {
   await withViewerServer(async (url, browser) => {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    let copiedText = "";
+    await page.exposeFunction("__writeClipboard", (text: string) => {
+      copiedText = text;
+    });
+    await page.addInitScript(`
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: (text) => {
+            return window.__writeClipboard(text);
+          }
+        }
+      });
+    `);
     await page.goto(url);
 
     await page.locator(".grid td").first().waitFor();
@@ -25,7 +39,13 @@ test("viewer renders workbook chrome, search, and range selection", async () => 
     await assertText(page.locator("#status"), /B3:B3/);
     assert.equal(await page.locator(".grid td.selected").count(), 1);
     assert.equal(await page.locator("#summarize").isEnabled(), true);
+    assert.equal(await page.locator("#copy-range").isEnabled(), true);
     assert.match((await page.locator("#summarize").getAttribute("aria-label")) ?? "", /B3:B3/);
+    assert.match((await page.locator("#copy-range").getAttribute("aria-label")) ?? "", /B3:B3/);
+
+    await page.locator("#copy-range").dispatchEvent("click");
+    await page.waitForFunction(() => document.querySelector("#status")?.textContent?.includes("copied as TSV"));
+    assert.equal(copiedText, "420000");
 
     await page.setViewportSize({ width: 640, height: 680 });
     assert.equal(
@@ -101,6 +121,7 @@ test("viewer hydrates requested workbook from host tool input and result", async
       await assertText(frame.locator("h2"), /Balance Sheet/);
       await assertText(frame.locator(".sheet-tab.active"), /Balance Sheet/);
       await assertText(frame.locator("h1"), /sample-financials\.xlsx/);
+      await assertText(frame.locator(".meta-grid"), /Named ranges/);
 
       const call = await lastToolCall(hostPage);
       assert.equal(call.name, "preview_workbook");
@@ -108,6 +129,17 @@ test("viewer hydrates requested workbook from host tool input and result", async
       assert.equal(call.arguments.sheet, "Balance Sheet");
       assert.equal(call.arguments.maxRows, 2);
       assert.equal(call.arguments.maxColumns, 5);
+
+      await frame.locator('td[data-row="2"][data-column="1"]').click();
+      await frame.locator("#summarize").dispatchEvent("click");
+      const context = await lastContextUpdate(hostPage);
+      const text = context.content?.[0]?.text ?? "";
+      assert.match(text, /File: sample-financials\.xlsx/);
+      assert.match(text, /Sheet: Balance Sheet/);
+      assert.match(text, /Range: A2:A2/);
+      assert.match(text, /Rows: 1/);
+      assert.match(text, /Columns: 1/);
+      assert.match(text, /Cash/);
     } finally {
       await hostPage.close();
     }
@@ -314,7 +346,9 @@ async function createHostPage(
           window.__spreadsheetPeekHost = {
             initialized: false,
             nextPreview: initialToolInput?.preview || null,
-            toolCalls: []
+            toolCalls: [],
+            contextUpdates: [],
+            messages: []
           };
           window.addEventListener("message", (event) => {
             const message = event.data;
@@ -363,6 +397,14 @@ async function createHostPage(
                   structuredContent: preview
                 }
               }, "*");
+            }
+            if (message.method === "ui/update-model-context") {
+              window.__spreadsheetPeekHost.contextUpdates.push(message.params);
+              event.source.postMessage({ jsonrpc: "2.0", id: message.id, result: {} }, "*");
+            }
+            if (message.method === "ui/message") {
+              window.__spreadsheetPeekHost.messages.push(message.params);
+              event.source.postMessage({ jsonrpc: "2.0", id: message.id, result: {} }, "*");
             }
           });
         </script>
@@ -458,6 +500,27 @@ async function lastToolCall(hostPage: Page): Promise<{ name: string; arguments: 
   return call;
 }
 
+async function lastContextUpdate(hostPage: Page): Promise<{ content?: Array<{ type: string; text?: string }> }> {
+  await hostPage.waitForFunction(() => {
+    const host = (
+      window as unknown as {
+        __spreadsheetPeekHost?: { contextUpdates?: Array<{ content?: Array<{ type: string; text?: string }> }> };
+      }
+    ).__spreadsheetPeekHost;
+    return Boolean(host?.contextUpdates?.length);
+  });
+  const update = await hostPage.evaluate(() => {
+    const host = (
+      window as unknown as {
+        __spreadsheetPeekHost?: { contextUpdates?: Array<{ content?: Array<{ type: string; text?: string }> }> };
+      }
+    ).__spreadsheetPeekHost;
+    return host?.contextUpdates?.at(-1) ?? null;
+  });
+  assert.ok(update, "host did not capture a model-context update");
+  return update;
+}
+
 function makeWorkbookPreview(options: {
   fileName: string;
   activeSheet: string;
@@ -482,6 +545,7 @@ function makeWorkbookPreview(options: {
       rows: options.totalRows,
       columns: options.totalColumns,
       headers: options.values[0]?.map((value) => String(value ?? "")) ?? [],
+      tables: [],
     },
   ];
 
@@ -492,6 +556,7 @@ function makeWorkbookPreview(options: {
     fileName: options.fileName,
     activeSheet: options.activeSheet,
     sheets,
+    namedRangeCount: 0,
     totalRows: options.totalRows,
     totalColumns: options.totalColumns,
     range: `A1:${columnName(Math.max(1, visibleColumns))}${Math.max(1, options.values.length)}`,
@@ -531,9 +596,9 @@ function cellType(value: CellValue): PreviewCell["type"] {
 
 function sampleFinancialSheets(): WorkbookSheetSummary[] {
   return [
-    { name: "P&L", rows: 21, columns: 7, headers: ["Account", "2024 Q1", "2024 Q2", "2024 Q3", "2024 Q4", "FY 2024", "YoY %"] },
-    { name: "Balance Sheet", rows: 27, columns: 5, headers: ["Account", "2024-03-31", "2023-12-31", "Change $", "Change %"] },
-    { name: "Revenue Breakdown", rows: 13, columns: 7, headers: ["Customer", "Segment", "Jan", "Feb", "Mar", "Q1 Total", "% of Revenue"] },
+    { name: "P&L", rows: 21, columns: 7, class: "data", headers: ["Account", "2024 Q1", "2024 Q2", "2024 Q3", "2024 Q4", "FY 2024", "YoY %"], tables: [] },
+    { name: "Balance Sheet", rows: 27, columns: 5, class: "data", headers: ["Account", "2024-03-31", "2023-12-31", "Change $", "Change %"], tables: [] },
+    { name: "Revenue Breakdown", rows: 13, columns: 7, class: "data", headers: ["Customer", "Segment", "Jan", "Feb", "Mar", "Q1 Total", "% of Revenue"], tables: [] },
   ];
 }
 
