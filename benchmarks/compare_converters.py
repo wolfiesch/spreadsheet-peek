@@ -46,7 +46,10 @@ def modes(path: Path) -> list[Mode]:
 def run(command: list[str]) -> tuple[str, str]:
     if shutil.which(command[0]) is None:
         return "skipped", f"{command[0]} is not installed"
-    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+    except OSError as error:
+        return "error", str(error)
     if result.returncode != 0:
         details = result.stderr.strip() or result.stdout.strip() or "no output"
         return "error", details.splitlines()[0]
