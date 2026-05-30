@@ -24,6 +24,8 @@ Reproduce with:
 
 ```bash
 uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
+uv run --with tiktoken --with openpyxl python benchmarks/measure_workflow_cost.py
+uv run --with openpyxl python benchmarks/measure_speed.py
 ```
 
 ## Local comparison harness
@@ -73,9 +75,65 @@ structure-first comparator. A tiny openpyxl tuple dump is sometimes compact in
 output tokens, but the agent still has to generate code, wait for Python import
 startup, and read raw tuples instead of formatted spreadsheet values.
 
+## Agent workflow cost
+
+This benchmark measures command/code tokens plus output tokens. In plain
+English: it counts the thing an agent writes and the thing the agent reads.
+That makes it a closer proxy for a real transcript than output size alone.
+
+```bash
+uv run --with tiktoken --with openpyxl python benchmarks/measure_workflow_cost.py
+```
+
+Last measured: 2026-05-30 · messy ops export · tiktoken `cl100k_base`
+
+| Path | Rows | Command/code tokens | Output tokens | Total tokens | Notes |
+|------|-----:|--------------------:|--------------:|-------------:|-------|
+| wolfxl box preview | 5 | 31 | 798 | 829 | Readable table with borders. |
+| wolfxl text preview | 5 | 40 | 154 | 194 | Same current sheet, bounded for repeat previews. |
+| generated openpyxl tuple dump | 5 | 66 | 198 | 264 | Raw Python tuples; includes generated code cost. |
+| wolfxl box preview | 15 | 31 | 2,220 | 2,251 | Readable table with borders. |
+| wolfxl text preview | 15 | 40 | 745 | 785 | Same current sheet, bounded for repeat previews. |
+| generated openpyxl tuple dump | 15 | 66 | 1,072 | 1,138 | Raw Python tuples; includes generated code cost. |
+| wolfxl box preview | 50 | 31 | 7,109 | 7,140 | Readable table with borders. |
+| wolfxl text preview | 50 | 40 | 2,798 | 2,838 | Same current sheet, bounded for repeat previews. |
+| generated openpyxl tuple dump | 50 | 66 | 4,131 | 4,197 | Raw Python tuples; includes generated code cost. |
+
+**Pairwise savings**:
+- 5 rows: text preview saves 635 tokens vs box preview and 70 tokens vs generated openpyxl tuple dump.
+- 15 rows: text preview saves 1,466 tokens vs box preview and 353 tokens vs generated openpyxl tuple dump.
+- 50 rows: text preview saves 4,302 tokens vs box preview and 1,359 tokens vs generated openpyxl tuple dump.
+
+The openpyxl tuple dump can look competitive at tiny row counts because it does
+almost no formatting. As row counts grow, text export keeps the output smaller
+while preserving date, currency, percentage, and tabular readability.
+
+## Local timing harness
+
+This checks wall-clock command time on the local machine with `hyperfine`.
+Timing depends on hardware, filesystem cache, and installed tools, so treat this
+as local evidence rather than a universal speed promise.
+
+```bash
+uv run --with openpyxl python benchmarks/measure_speed.py
+```
+
+Local timing smoke on 2026-05-30, messy ops export, 10 measured runs after 3
+warmups:
+
+| Path | Mean ms | Stddev ms | Runs | Relative to text preview |
+|------|--------:|----------:|-----:|-------------------------:|
+| wolfxl box preview, 15 rows | 22.8 | 11.5 | 10 | 1.1x |
+| wolfxl text preview, 15 rows | 20.2 | 10.2 | 10 | 1.0x |
+| wolfxl map | 13.8 | 3.8 | 10 | 0.7x |
+| generated openpyxl tuple dump, 15 rows | 207.9 | 125.4 | 10 | 10.3x |
+
+Optional timing rows for MarkItDown and `agent-xlsx` are included only when
+their commands are installed. Missing optional tools are skipped.
+
 ## Results
 
-Last measured: 2026-05-28 · wolfxl-cli 0.9.0 · tiktoken `cl100k_base`
+Last measured: 2026-05-30 · wolfxl-cli 0.9.0 · tiktoken `cl100k_base`
 
 | Mode | Tokens | Bytes | Rows | Tokens/row |
 |------|-------:|------:|-----:|-----------:|
@@ -130,11 +188,17 @@ context still grows quickly.
 | Messy ops export (12 cols) - Text export (15 rows) | 745 | 2,351 | 15 | 49.7 |
 | Messy ops export (12 cols) - Box preview (50 rows) | 7,109 | 56,784 | 50 | 142.2 |
 | Messy ops export (12 cols) - Text export (50 rows) | 2,798 | 8,425 | 50 | 56.0 |
+| Messy ops export (12 cols) - Box preview (100 rows) | 14,100 | 111,285 | 100 | 141.0 |
+| Messy ops export (12 cols) - Text export (100 rows) | 5,768 | 17,228 | 100 | 57.7 |
+| Messy ops export (12 cols) - Box preview (200 rows) | 28,083 | 220,285 | 200 | 140.4 |
+| Messy ops export (12 cols) - Text export (200 rows) | 11,648 | 34,622 | 200 | 58.2 |
 
 **Growth ratios**:
 - 5 rows: box preview is 5.2x more tokens than text export, saving 644 tokens.
 - 15 rows: box preview is 3.0x more tokens than text export, saving 1,475 tokens.
 - 50 rows: box preview is 2.5x more tokens than text export, saving 4,311 tokens.
+- 100 rows: box preview is 2.4x more tokens than text export, saving 8,332 tokens.
+- 200 rows: box preview is 2.4x more tokens than text export, saving 16,435 tokens.
 
 This makes the public claim stronger without overstating it: Spreadsheet Peek's
 mode switch saves more total context as previews grow, while the exact

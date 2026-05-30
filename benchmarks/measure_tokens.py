@@ -213,7 +213,7 @@ def main() -> None:
     growth_results = growth_benches_for(
         MESSY_OPS,
         "Messy ops export (12 cols)",
-        (5, 15, 50),
+        (5, 15, 50, 100, 200),
     )
 
     # Print markdown table
@@ -246,7 +246,7 @@ def main() -> None:
 
     print()
     print("## Messy workbook growth ratios")
-    for rows in (5, 15, 50):
+    for rows in (5, 15, 50, 100, 200):
         box = next(r for r in growth_results if r["label"] == f"Messy ops export (12 cols) - Box preview ({rows} rows)")
         text = next(r for r in growth_results if r["label"] == f"Messy ops export (12 cols) - Text export ({rows} rows)")
         ratio = box["tokens"] / max(1, text["tokens"])

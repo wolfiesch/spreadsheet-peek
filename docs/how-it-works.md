@@ -74,11 +74,21 @@ multiplier settles down once more real cell content appears.
 | 5 rows | 798 | 154 | 644 | 5.2x |
 | 15 rows | 2,220 | 745 | 1,475 | 3.0x |
 | 50 rows | 7,109 | 2,798 | 4,311 | 2.5x |
+| 100 rows | 14,100 | 5,768 | 8,332 | 2.4x |
+| 200 rows | 28,083 | 11,648 | 16,435 | 2.4x |
 
 So the stronger public claim is not "the multiplier always increases." It is:
 as workbook previews get larger or messier, switching from pretty boxes to text
 export saves thousands of context tokens while keeping the same local,
 read-only inspection path.
+
+There is also a workflow-level benchmark that counts the command or generated
+code plus the output. On the messy export at 50 rows, text preview costs 2,838
+total tokens, compared with 7,140 for box preview and 4,197 for a generated
+`openpyxl` tuple dump. A local `hyperfine` timing smoke on the same file measured
+20.2 ms for text preview and 207.9 ms for the generated `openpyxl` tuple dump.
+Those timing numbers are machine-specific, but they support the practical point:
+the reusable command avoids both bulky output and Python startup.
 
 Direct delimited inputs are measured separately so the workbook ratios stay stable. The committed 7-column ledger costs 524 tokens in box mode and 145 tokens as text export for 5 rows across `.csv`, `.tsv`, and comma-delimited `.txt`; the quoted multiline CSV fixture costs 401 and 116 tokens. See the direct-delimited table in [`benchmarks/README.md`](../benchmarks/README.md#direct-delimited-input-costs).
 
@@ -158,4 +168,4 @@ It is not marketing. If the 3.9x ratio above is wrong on a larger file or a diff
 
 ---
 
-*Last verified against `wolfxl-cli 0.9.0` and `tiktoken cl100k_base`, 2026-05-28.*
+*Last verified against `wolfxl-cli 0.9.0` and `tiktoken cl100k_base`, 2026-05-30.*

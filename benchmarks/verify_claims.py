@@ -20,6 +20,7 @@ from openpyxl import Workbook
 ROOT = Path(__file__).parent.parent
 EXAMPLES = ROOT / "examples"
 FINANCIALS = EXAMPLES / "sample-financials.xlsx"
+MESSY_OPS = EXAMPLES / "messy-ops-export.xlsx"
 MESSY_CSV = EXAMPLES / "messy.csv"
 SAMPLE_LEDGER_TSV = EXAMPLES / "sample-ledger.tsv"
 SAMPLE_LEDGER_TXT = EXAMPLES / "sample-ledger.txt"
@@ -224,6 +225,29 @@ def check_markdown_export() -> None:
     assert_contains(out, "| Revenue |", "markdown body row")
 
 
+def check_messy_workbook_rendering() -> None:
+    box_out = run(["wolfxl", "peek", str(MESSY_OPS), "-n", "15"]).stdout
+    assert_contains(box_out, "Sheet: Spend Export", "messy workbook active sheet")
+    assert_contains(
+        box_out,
+        "Available sheets: Spend Export, Review Rollup, Reviewer Notes",
+        "messy workbook sheet list",
+    )
+    assert_contains(box_out, "TXN-2024-0001", "messy workbook first transaction")
+    assert_contains(box_out, "2024-01-02", "messy workbook date rendering")
+    assert_contains(box_out, "-$153.00", "messy workbook currency rendering")
+    assert_contains(box_out, "55.0%", "messy workbook percent rendering")
+
+    text_out = run(["wolfxl", "peek", str(MESSY_OPS), "--export", "text"]).stdout
+    assert_contains(text_out, "Q1 Vendor Spend Export", "messy workbook title row")
+    assert_contains(text_out, "Transaction ID\tTxn Date", "messy workbook header row")
+    assert_contains(text_out, 'pipe | and quote " characters', "messy workbook punctuation")
+    assert_contains(text_out, "Multi-line note from AP:\nconfirm", "messy workbook multiline cell")
+
+    markdown_out = run(["wolfxl", "peek", str(MESSY_OPS), "--export", "markdown"]).stdout
+    assert_contains(markdown_out, r"pipe \| and quote", "messy workbook markdown pipe escaping")
+
+
 def main() -> None:
     checks = [
         check_wolfxl_version_floor,
@@ -234,6 +258,7 @@ def main() -> None:
         check_date_rendering,
         check_number_format_rendering,
         check_markdown_export,
+        check_messy_workbook_rendering,
         check_sed_pipe_hygiene,
         check_agent_budget_surface,
     ]
