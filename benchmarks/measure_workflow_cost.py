@@ -59,17 +59,21 @@ def openpyxl_tuple_dump(path: Path, rows: int) -> tuple[str, str]:
             "ws = wb.active",
             f"for row in ws.iter_rows(max_row={rows}, values_only=True):",
             "    print(row)",
+            "wb.close()",
             "",
         ]
     )
     workbook = openpyxl.load_workbook(path, data_only=True)
-    worksheet = workbook.active
-    if worksheet is None:
-        raise RuntimeError("workbook has no active worksheet")
-    output = "".join(
-        f"{tuple(row)}\n"
-        for row in worksheet.iter_rows(max_row=rows, values_only=True)
-    )
+    try:
+        worksheet = workbook.active
+        if worksheet is None:
+            raise RuntimeError("workbook has no active worksheet")
+        output = "".join(
+            f"{row}\n"
+            for row in worksheet.iter_rows(max_row=rows, values_only=True)
+        )
+    finally:
+        workbook.close()
     return code, output
 
 

@@ -84,9 +84,9 @@ read-only inspection path.
 
 There is also a workflow-level benchmark that counts the command or generated
 code plus the output. On the messy export at 50 rows, text preview costs 2,838
-total tokens, compared with 7,140 for box preview and 4,197 for a generated
+total tokens, compared with 7,140 for box preview and 4,200 for a generated
 `openpyxl` tuple dump. A local `hyperfine` timing smoke on the same file measured
-20.2 ms for text preview and 207.9 ms for the generated `openpyxl` tuple dump.
+13.7 ms for text preview and 90.1 ms for the generated `openpyxl` tuple dump.
 Those timing numbers are machine-specific, but they support the practical point:
 the reusable command avoids both bulky output and Python startup.
 

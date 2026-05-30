@@ -91,18 +91,18 @@ Last measured: 2026-05-30 · messy ops export · tiktoken `cl100k_base`
 |------|-----:|--------------------:|--------------:|-------------:|-------|
 | wolfxl box preview | 5 | 31 | 798 | 829 | Readable table with borders. |
 | wolfxl text preview | 5 | 40 | 154 | 194 | Same current sheet, bounded for repeat previews. |
-| generated openpyxl tuple dump | 5 | 66 | 198 | 264 | Raw Python tuples; includes generated code cost. |
+| generated openpyxl tuple dump | 5 | 69 | 198 | 267 | Raw Python tuples; includes generated code cost. |
 | wolfxl box preview | 15 | 31 | 2,220 | 2,251 | Readable table with borders. |
 | wolfxl text preview | 15 | 40 | 745 | 785 | Same current sheet, bounded for repeat previews. |
-| generated openpyxl tuple dump | 15 | 66 | 1,072 | 1,138 | Raw Python tuples; includes generated code cost. |
+| generated openpyxl tuple dump | 15 | 69 | 1,072 | 1,141 | Raw Python tuples; includes generated code cost. |
 | wolfxl box preview | 50 | 31 | 7,109 | 7,140 | Readable table with borders. |
 | wolfxl text preview | 50 | 40 | 2,798 | 2,838 | Same current sheet, bounded for repeat previews. |
-| generated openpyxl tuple dump | 50 | 66 | 4,131 | 4,197 | Raw Python tuples; includes generated code cost. |
+| generated openpyxl tuple dump | 50 | 69 | 4,131 | 4,200 | Raw Python tuples; includes generated code cost. |
 
 **Pairwise savings**:
-- 5 rows: text preview saves 635 tokens vs box preview and 70 tokens vs generated openpyxl tuple dump.
-- 15 rows: text preview saves 1,466 tokens vs box preview and 353 tokens vs generated openpyxl tuple dump.
-- 50 rows: text preview saves 4,302 tokens vs box preview and 1,359 tokens vs generated openpyxl tuple dump.
+- 5 rows: text preview saves 635 tokens vs box preview and 73 tokens vs generated openpyxl tuple dump.
+- 15 rows: text preview saves 1,466 tokens vs box preview and 356 tokens vs generated openpyxl tuple dump.
+- 50 rows: text preview saves 4,302 tokens vs box preview and 1,362 tokens vs generated openpyxl tuple dump.
 
 The openpyxl tuple dump can look competitive at tiny row counts because it does
 almost no formatting. As row counts grow, text export keeps the output smaller
@@ -123,10 +123,10 @@ warmups:
 
 | Path | Mean ms | Stddev ms | Runs | Relative to text preview |
 |------|--------:|----------:|-----:|-------------------------:|
-| wolfxl box preview, 15 rows | 22.8 | 11.5 | 10 | 1.1x |
-| wolfxl text preview, 15 rows | 20.2 | 10.2 | 10 | 1.0x |
-| wolfxl map | 13.8 | 3.8 | 10 | 0.7x |
-| generated openpyxl tuple dump, 15 rows | 207.9 | 125.4 | 10 | 10.3x |
+| wolfxl box preview, 15 rows | 11.4 | 4.5 | 10 | 0.8x |
+| wolfxl text preview, 15 rows | 13.7 | 5.2 | 10 | 1.0x |
+| wolfxl map | 8.3 | 0.6 | 10 | 0.6x |
+| generated openpyxl tuple dump, 15 rows | 90.1 | 6.2 | 10 | 6.6x |
 
 Optional timing rows for MarkItDown and `agent-xlsx` are included only when
 their commands are installed. Missing optional tools are skipped.

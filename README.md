@@ -81,7 +81,7 @@ uv run --with openpyxl python benchmarks/verify_claims.py
 
 A single readable 15-row box preview of a 29-column workbook already costs ~5,600 tokens - more than four financial-shape previews combined. On messy source exports, the multiplier does not grow forever as rows increase, but the absolute token savings grows quickly. Over a long agent session, the mode-switch rule is the difference between a context window that survives and one that blows up mid-task. Full methodology in [`benchmarks/`](benchmarks/) and the worked example in [`docs/how-it-works.md`](docs/how-it-works.md).
 
-The benchmark suite also includes an agent-workflow view that counts command or generated-code tokens plus output tokens. On the messy export at 50 rows, text preview costs 2,838 total tokens, versus 7,140 for box preview and 4,197 for a generated `openpyxl` tuple dump. A local `hyperfine` timing smoke measured 20.2 ms for text preview versus 207.9 ms for the generated `openpyxl` tuple dump on this machine.
+The benchmark suite also includes an agent-workflow view that counts command or generated-code tokens plus output tokens. On the messy export at 50 rows, text preview costs 2,838 total tokens, versus 7,140 for box preview and 4,200 for a generated `openpyxl` tuple dump. A local `hyperfine` timing smoke measured 13.7 ms for text preview versus 90.1 ms for the generated `openpyxl` tuple dump on this machine.
 
 ## Quick start
 

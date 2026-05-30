@@ -72,7 +72,7 @@ def spend_rows(count: int = 240) -> list[list[object]]:
         confidence = 0.55 + ((idx * 17) % 45) / 100
         rows.append(
             [
-                f"TXN-{2024}-{idx + 1:04d}",
+                f"TXN-2024-{idx + 1:04d}",
                 start + timedelta(days=idx % 91),
                 VENDORS[idx % len(VENDORS)],
                 DEPARTMENTS[(idx * 3) % len(DEPARTMENTS)],

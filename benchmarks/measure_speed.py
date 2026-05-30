@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import shutil
 import subprocess
 import sys
@@ -30,15 +31,16 @@ class Command:
 
 
 def quote(value: str | Path) -> str:
-    return "'" + str(value).replace("'", "'\"'\"'") + "'"
+    return shlex.quote(str(value))
 
 
 def commands_for(path: Path) -> tuple[list[Command], list[str]]:
     python_code = (
-        "import openpyxl, pathlib; "
+        "import openpyxl; "
         f"wb=openpyxl.load_workbook({str(path)!r}, data_only=True); "
         "ws=wb.active; "
-        "[print(tuple(row)) for row in ws.iter_rows(max_row=15, values_only=True)]"
+        "print('\\n'.join(str(row) for row in ws.iter_rows(max_row=15, values_only=True))); "
+        "wb.close()"
     )
     commands = [
         Command(
