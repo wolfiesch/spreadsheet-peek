@@ -46,9 +46,9 @@ With `spreadsheet-peek`, the agent runs `wolfxl peek data.xlsx -n 15` instead:
 
 ## Token efficiency (the part that's easy to miss)
 
-Box-drawing output looks pretty but costs real tokens. The skill teaches the agent when to switch modes, with measurements taken against three sample shapes: a typical financial workbook (7 columns), a tall ledger (8 columns), and a wide operations dashboard (29 columns).
+Box-drawing output looks pretty but costs real tokens. The skill teaches the agent when to switch modes, with measurements taken against four sample shapes: a typical financial workbook (7 columns), a tall ledger (8 columns), a wide operations dashboard (29 columns), and a messy source export (12 columns).
 
-| Sample | Mode | Command | Tokens (5 data rows) | Tokens/row |
+| Sample | Mode | Command | Tokens (5 preview rows) | Tokens/row |
 |--------|------|---------|----------------:|-----------:|
 | Financials (7 cols) | Box-drawing | `wolfxl peek file -n 5` | 573 | 114.6 |
 | Financials (7 cols) | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | 148 | 29.6 |
@@ -59,13 +59,16 @@ Box-drawing output looks pretty but costs real tokens. The skill teaches the age
 | Wide (29 cols)      | Box-drawing | `wolfxl peek file -n 5` | 2,249 | 449.8 |
 | Wide (29 cols)      | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | 754 | 150.8 |
 | Wide (29 cols)      | Markdown export | `wolfxl peek file --export markdown \| sed -n '1,7p'` | 962 | 192.4 |
+| Messy ops export (12 cols) | Box-drawing | `wolfxl peek file -n 5` | 798 | 159.6 |
+| Messy ops export (12 cols) | Text export | `wolfxl peek file --export text \| sed -n '1,6p'` | 154 | 30.8 |
 
-**~3.9x cheaper per row on typical financial shapes, ~3.6x on tall ledgers, ~3.0x on wide tables** - but the *absolute* per-row savings is far larger on wide tables (299 tokens/row saved vs 85-90 on the narrower samples). Measured with `cl100k_base` (GPT-4 tokenizer) against [`examples/sample-financials.xlsx`](examples/sample-financials.xlsx), [`examples/tall-ledger.xlsx`](examples/tall-ledger.xlsx), and [`examples/wide-table.xlsx`](examples/wide-table.xlsx). Reproduce with:
+**~3.9x cheaper per row on typical financial shapes, ~3.6x on tall ledgers, ~3.0x on wide tables, and ~5.2x on a messy 12-column ops export at 5 rows** - but the *absolute* savings is the cleaner scaling story. On the messy export, text mode saves 644 tokens at 5 rows, 1,475 tokens at 15 rows, 4,311 tokens at 50 rows, 8,332 tokens at 100 rows, and 16,435 tokens at 200 rows. Measured with `cl100k_base` (GPT-4 tokenizer) against committed synthetic fixtures. Reproduce with:
 
 Markdown export is available in `wolfxl-cli >= 0.9.0`. Use it when a downstream context converter wants a Markdown table; keep text export as the default low-token repeat preview.
 
 ```bash
 uv run --with tiktoken --with openpyxl python benchmarks/measure_tokens.py
+uv run --with tiktoken --with openpyxl python benchmarks/measure_workflow_cost.py
 ```
 
 The same benchmark now measures direct delimited inputs separately. A 7-column ledger costs 524 tokens in box mode and 145 tokens as text export for 5 rows across `.csv`, `.tsv`, and comma-delimited `.txt`; the quoted multiline CSV fixture costs 401 and 116 tokens. Those rows live in [`benchmarks/README.md`](benchmarks/README.md#direct-delimited-input-costs) so workbook ratios stay comparable.
@@ -76,7 +79,9 @@ Behavioral claims are smoke-tested separately with:
 uv run --with openpyxl python benchmarks/verify_claims.py
 ```
 
-A single readable 15-row box preview of a 29-column workbook already costs ~5,600 tokens - more than four financial-shape previews combined. Over a long agent session, the mode-switch rule is the difference between a context window that survives and one that blows up mid-task. Full methodology in [`benchmarks/`](benchmarks/) and the worked example in [`docs/how-it-works.md`](docs/how-it-works.md).
+A single readable 15-row box preview of a 29-column workbook already costs ~5,600 tokens - more than four financial-shape previews combined. On messy source exports, the multiplier does not grow forever as rows increase, but the absolute token savings grows quickly. Over a long agent session, the mode-switch rule is the difference between a context window that survives and one that blows up mid-task. Full methodology in [`benchmarks/`](benchmarks/) and the worked example in [`docs/how-it-works.md`](docs/how-it-works.md).
+
+The benchmark suite also includes an agent-workflow view that counts command or generated-code tokens plus output tokens. On the messy export at 50 rows, text preview costs 2,838 total tokens, versus 7,140 for box preview and 4,200 for a generated `openpyxl` tuple dump. A local `hyperfine` timing smoke measured 10.6 ms for text preview versus 88.6 ms for the generated `openpyxl` tuple dump on this machine.
 
 ## Quick start
 

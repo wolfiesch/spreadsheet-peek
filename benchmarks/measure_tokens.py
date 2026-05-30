@@ -24,6 +24,7 @@ EXAMPLES = Path(__file__).parent.parent / "examples"
 FINANCIALS = EXAMPLES / "sample-financials.xlsx"
 WIDE = EXAMPLES / "wide-table.xlsx"
 TALL_LEDGER = EXAMPLES / "tall-ledger.xlsx"
+MESSY_OPS = EXAMPLES / "messy-ops-export.xlsx"
 DELIMITED_CSV = EXAMPLES / "sample-ledger.csv"
 DELIMITED_TSV = EXAMPLES / "sample-ledger.tsv"
 DELIMITED_TXT = EXAMPLES / "sample-ledger.txt"
@@ -51,6 +52,7 @@ SAMPLES = [
     Sample(FINANCIALS, "Financials (7 cols)", "examples/generate_sample.py"),
     Sample(TALL_LEDGER, "Tall ledger (8 cols)", "examples/generate_tall_ledger.py"),
     Sample(WIDE, "Wide (29 cols)", "examples/generate_wide_table.py"),
+    Sample(MESSY_OPS, "Messy ops export (12 cols)", "examples/generate_messy_workbook.py"),
 ]
 
 DELIMITED_SAMPLES = [
@@ -138,17 +140,40 @@ def benches_for(sample_path: Path, prefix: str) -> list[dict]:
     return [
         bench(f"{prefix} - Box-drawing (5 rows)",  ["wolfxl", "peek", s, "-n", "5"]),
         bench(f"{prefix} - Box-drawing (15 rows)", ["wolfxl", "peek", s, "-n", "15"]),
-        bench(f"{prefix} - Text export (5 data rows)",
+        bench(f"{prefix} - Text export (5 rows)",
               ["wolfxl", "peek", s, "--export", "text"], max_lines=6, data_rows=5),
-        bench(f"{prefix} - Text export (15 data rows)",
+        bench(f"{prefix} - Text export (15 rows)",
               ["wolfxl", "peek", s, "--export", "text"], max_lines=16, data_rows=15),
-        bench(f"{prefix} - Markdown export (5 data rows)",
+        bench(f"{prefix} - Markdown export (5 rows)",
               ["wolfxl", "peek", s, "--export", "markdown"], max_lines=7, data_rows=5),
-        bench(f"{prefix} - Markdown export (15 data rows)",
+        bench(f"{prefix} - Markdown export (15 rows)",
               ["wolfxl", "peek", s, "--export", "markdown"], max_lines=17, data_rows=15),
-        bench(f"{prefix} - CSV export (5 data rows)",
+        bench(f"{prefix} - CSV export (5 rows)",
               ["wolfxl", "peek", s, "--export", "csv"], max_lines=6, data_rows=5),
     ]
+
+
+def growth_benches_for(sample_path: Path, prefix: str, row_limits: tuple[int, ...]) -> list[dict]:
+    """Measure how output cost scales as the preview row limit increases."""
+    s = str(sample_path)
+    results = []
+    for rows in row_limits:
+        results.extend(
+            [
+                bench(
+                    f"{prefix} - Box preview ({rows} rows)",
+                    ["wolfxl", "peek", s, "-n", str(rows)],
+                    data_rows=rows,
+                ),
+                bench(
+                    f"{prefix} - Text export ({rows} rows)",
+                    ["wolfxl", "peek", s, "--export", "text"],
+                    max_lines=rows + 1,
+                    data_rows=rows,
+                ),
+            ]
+        )
+    return results
 
 
 def delimited_benches_for(sample: DelimitedSample) -> list[dict]:
@@ -161,7 +186,7 @@ def delimited_benches_for(sample: DelimitedSample) -> list[dict]:
             data_rows=sample.data_rows,
         ),
         bench(
-            f"{sample.label} - Direct text export ({sample.data_rows} data rows)",
+            f"{sample.label} - Direct text export ({sample.data_rows} rows)",
             ["wolfxl", "peek", s, "--export", "text"],
             max_lines=sample.text_max_lines,
             data_rows=sample.data_rows,
@@ -185,9 +210,15 @@ def main() -> None:
     for sample in DELIMITED_SAMPLES:
         delimited_results.extend(delimited_benches_for(sample))
 
+    growth_results = growth_benches_for(
+        MESSY_OPS,
+        "Messy ops export (12 cols)",
+        (5, 15, 50, 100, 200),
+    )
+
     # Print markdown table
-    print("| Mode | Tokens | Bytes | Data rows | Tokens/row |")
-    print("|------|-------:|------:|----------:|-----------:|")
+    print("| Mode | Tokens | Bytes | Rows | Tokens/row |")
+    print("|------|-------:|------:|-----:|-----------:|")
     for r in results:
         print(
             f"| {r['label']} | {r['tokens']:,} | {r['bytes']:,} | "
@@ -199,14 +230,36 @@ def main() -> None:
     for sample in SAMPLES:
         prefix = sample.label
         box = next(r for r in results if r["label"] == f"{prefix} - Box-drawing (5 rows)")
-        text = next(r for r in results if r["label"] == f"{prefix} - Text export (5 data rows)")
+        text = next(r for r in results if r["label"] == f"{prefix} - Text export (5 rows)")
         ratio = box["tokens_per_row"] / max(1, text["tokens_per_row"])
         print(f"- **{prefix}**: box-drawing is **{ratio:.1f}x** more expensive per row than text export.")
 
     print()
+    print("## Messy workbook growth curve")
+    print("| Mode | Tokens | Bytes | Rows | Tokens/row |")
+    print("|------|-------:|------:|-----:|-----------:|")
+    for r in growth_results:
+        print(
+            f"| {r['label']} | {r['tokens']:,} | {r['bytes']:,} | "
+            f"{r['rows']} | {r['tokens_per_row']} |"
+        )
+
+    print()
+    print("## Messy workbook growth ratios")
+    for rows in (5, 15, 50, 100, 200):
+        box = next(r for r in growth_results if r["label"] == f"Messy ops export (12 cols) - Box preview ({rows} rows)")
+        text = next(r for r in growth_results if r["label"] == f"Messy ops export (12 cols) - Text export ({rows} rows)")
+        ratio = box["tokens"] / max(1, text["tokens"])
+        delta = box["tokens"] - text["tokens"]
+        print(
+            f"- **{rows} rows**: box preview is **{ratio:.1f}x** more tokens "
+            f"than text export, a savings of **{delta:,} tokens**."
+        )
+
+    print()
     print("## Direct delimited input costs")
-    print("| Mode | Tokens | Bytes | Data rows | Tokens/row |")
-    print("|------|-------:|------:|----------:|-----------:|")
+    print("| Mode | Tokens | Bytes | Rows | Tokens/row |")
+    print("|------|-------:|------:|-----:|-----------:|")
     for r in delimited_results:
         print(
             f"| {r['label']} | {r['tokens']:,} | {r['bytes']:,} | "
