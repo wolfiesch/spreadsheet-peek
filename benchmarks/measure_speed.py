@@ -35,12 +35,18 @@ def quote(value: str | Path) -> str:
 
 
 def commands_for(path: Path) -> tuple[list[Command], list[str]]:
-    python_code = (
-        "import openpyxl; "
-        f"wb=openpyxl.load_workbook({str(path)!r}, data_only=True); "
-        "ws=wb.active; "
-        "print('\\n'.join(str(row) for row in ws.iter_rows(max_row=15, values_only=True))); "
-        "wb.close()"
+    python_code = "\n".join(
+        [
+            "import openpyxl",
+            f"wb = openpyxl.load_workbook({str(path)!r}, data_only=True)",
+            "try:",
+            "    ws = wb.active",
+            "    for row in ws.iter_rows(max_row=15, values_only=True):",
+            "        print(row)",
+            "finally:",
+            "    wb.close()",
+            "",
+        ]
     )
     commands = [
         Command(

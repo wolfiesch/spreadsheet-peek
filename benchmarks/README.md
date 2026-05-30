@@ -123,10 +123,10 @@ warmups:
 
 | Path | Mean ms | Stddev ms | Runs | Relative to text preview |
 |------|--------:|----------:|-----:|-------------------------:|
-| wolfxl box preview, 15 rows | 11.4 | 4.5 | 10 | 0.8x |
-| wolfxl text preview, 15 rows | 13.7 | 5.2 | 10 | 1.0x |
-| wolfxl map | 8.3 | 0.6 | 10 | 0.6x |
-| generated openpyxl tuple dump, 15 rows | 90.1 | 6.2 | 10 | 6.6x |
+| wolfxl box preview, 15 rows | 8.4 | 0.9 | 10 | 0.8x |
+| wolfxl text preview, 15 rows | 10.6 | 3.1 | 10 | 1.0x |
+| wolfxl map | 8.3 | 0.4 | 10 | 0.8x |
+| generated openpyxl tuple dump, 15 rows | 88.6 | 11.2 | 10 | 8.4x |
 
 Optional timing rows for MarkItDown and `agent-xlsx` are included only when
 their commands are installed. Missing optional tools are skipped.
